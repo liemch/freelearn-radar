@@ -7,6 +7,7 @@ const serverEnvSchema = z.object({
   APP_URL: z.string().url().default("http://localhost:3000"),
   AUTH_SECRET: optionalString,
   ADMIN_EMAILS: optionalString,
+  ADMIN_BOOTSTRAP_PASSWORD: optionalString,
   CRON_SECRET: optionalString,
   NVIDIA_API_KEY: optionalString,
   NVIDIA_BASE_URL: z

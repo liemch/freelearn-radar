@@ -1,2 +1,2 @@
-// WP1+: course domain types and rules
-export {};
+export * from "@/domain/course/types";
+export * from "@/domain/course/labels";

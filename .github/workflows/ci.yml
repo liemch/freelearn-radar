@@ -30,8 +30,10 @@ jobs:
         run: npm run test
         env:
           DATABASE_URL: postgresql://user:password@localhost:5432/freelearn_radar_test
+          AUTH_SECRET: ci-test-auth-secret-with-more-than-thirty-two-characters
 
       - name: Build
         run: npm run build
         env:
           DATABASE_URL: postgresql://user:password@localhost:5432/freelearn_radar_test
+          AUTH_SECRET: ci-test-auth-secret-with-more-than-thirty-two-characters

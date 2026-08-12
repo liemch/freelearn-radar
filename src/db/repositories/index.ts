@@ -1,2 +1,6 @@
-// WP1+: database repositories
-export {};
+export * from "@/db/repositories/user-repository";
+export * from "@/db/repositories/provider-repository";
+export * from "@/db/repositories/category-repository";
+export * from "@/db/repositories/course-repository";
+export * from "@/db/repositories/candidate-repository";
+export * from "@/db/repositories/discovery-query-repository";

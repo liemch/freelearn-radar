@@ -1,2 +1,10 @@
-// Schema tables will be added in WP1.
-export {};
+export * from "@/db/schema/enums";
+export * from "@/db/schema/users";
+export * from "@/db/schema/providers";
+export * from "@/db/schema/categories";
+export * from "@/db/schema/courses";
+export * from "@/db/schema/course-categories";
+export * from "@/db/schema/course-candidates";
+export * from "@/db/schema/course-verifications";
+export * from "@/db/schema/discovery-queries";
+export * from "@/db/schema/outbound-clicks";
