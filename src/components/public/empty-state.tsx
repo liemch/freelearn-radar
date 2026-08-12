@@ -1,5 +1,7 @@
 import Link from "next/link";
 
+import { Button } from "@/components/ui/button";
+
 type EmptyStateProps = {
   title: string;
   description: string;
@@ -16,21 +18,18 @@ export function EmptyState({
   return (
     <section
       role="status"
-      className="rounded-2xl border border-dashed border-border bg-muted/30 px-6 py-12 text-center"
+      className="rounded-xl border border-dashed border-border bg-muted/25 px-6 py-12 text-center"
     >
       <h2 className="text-xl font-semibold tracking-tight">{title}</h2>
       <p className="mx-auto mt-2 max-w-xl text-sm text-muted-foreground">
         {description}
       </p>
       {actionHref && actionLabel ? (
-        <p className="mt-5">
-          <Link
-            href={actionHref}
-            className="text-sm font-medium text-primary underline-offset-4 hover:underline"
-          >
-            {actionLabel}
-          </Link>
-        </p>
+        <div className="mt-5">
+          <Button asChild variant="outline">
+            <Link href={actionHref}>{actionLabel}</Link>
+          </Button>
+        </div>
       ) : null}
     </section>
   );

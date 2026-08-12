@@ -1,5 +1,7 @@
 import Link from "next/link";
 
+import { Button } from "@/components/ui/button";
+
 type PaginationProps = {
   page: number;
   totalPages: number;
@@ -39,28 +41,25 @@ export function Pagination({
   }
 
   return (
-    <div className="flex items-center justify-between gap-4 pt-2">
+    <nav
+      className="flex items-center justify-between gap-4 pt-2"
+      aria-label="Pagination"
+    >
       <p className="text-sm text-muted-foreground">
         Page {page} of {totalPages}
       </p>
       <div className="flex gap-2">
         {page > 1 ? (
-          <Link
-            href={buildHref(basePath, page - 1, query)}
-            className="rounded-md border border-border px-3 py-1.5 text-sm hover:bg-accent"
-          >
-            Previous
-          </Link>
+          <Button asChild variant="outline" size="sm">
+            <Link href={buildHref(basePath, page - 1, query)}>Previous</Link>
+          </Button>
         ) : null}
         {page < totalPages ? (
-          <Link
-            href={buildHref(basePath, page + 1, query)}
-            className="rounded-md border border-border px-3 py-1.5 text-sm hover:bg-accent"
-          >
-            Next
-          </Link>
+          <Button asChild variant="outline" size="sm">
+            <Link href={buildHref(basePath, page + 1, query)}>Next</Link>
+          </Button>
         ) : null}
       </div>
-    </div>
+    </nav>
   );
 }

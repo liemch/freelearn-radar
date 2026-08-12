@@ -1,52 +1,94 @@
+import type { Metadata } from "next";
 import Link from "next/link";
 
 import { CourseSection } from "@/components/public/course-section";
 import { EmptyState } from "@/components/public/empty-state";
 import { SiteFooter } from "@/components/public/site-footer";
 import { SiteHeader } from "@/components/public/site-header";
+import { PageShell, PageStack } from "@/components/layout/page-shell";
 import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
 import { listCategories } from "@/db/repositories/category-repository";
 import {
   listCoursesByCategorySlug,
   listPublishedCoursesWithProvider,
+  queryCatalog,
 } from "@/db/repositories/course-repository";
+import { listProviders } from "@/db/repositories/provider-repository";
+import { currentBestPath } from "@/domain/discovery/monthly-collection";
 import { rankCourses } from "@/domain/ranking/ranking";
 import { withDb } from "@/lib/db-safe";
 
 export const dynamic = "force-dynamic";
 
+export const metadata: Metadata = {
+  title: "FreeLearn Radar — Free online courses worth your time",
+  description:
+    "Discover curated free online courses. Clear free status, certificate labels, and verification freshness — then go learn on the original provider.",
+  alternates: { canonical: "/" },
+  openGraph: {
+    title: "FreeLearn Radar",
+    description:
+      "Curated free courses with transparent free status and verification freshness.",
+    url: "/",
+    type: "website",
+  },
+  twitter: {
+    card: "summary_large_image",
+    title: "FreeLearn Radar",
+    description: "Find high-quality free courses faster.",
+  },
+};
+
 export default async function HomePage() {
-  const [published, ai, programming, cloud, cybersecurity, data, categories] =
+  const bestHref = currentBestPath();
+
+  const [published, categories, providers, freeCert, shortCourses] =
     await Promise.all([
-      withDb("home.published", (db) => listPublishedCoursesWithProvider(db, 40), []),
-      withDb("home.ai", (db) => listCoursesByCategorySlug(db, "ai", 3), []),
       withDb(
-        "home.programming",
-        (db) => listCoursesByCategorySlug(db, "programming", 3),
-        [],
-      ),
-      withDb("home.cloud", (db) => listCoursesByCategorySlug(db, "cloud", 3), []),
-      withDb(
-        "home.cybersecurity",
-        (db) => listCoursesByCategorySlug(db, "cybersecurity", 3),
-        [],
-      ),
-      withDb(
-        "home.data",
-        (db) => listCoursesByCategorySlug(db, "data-science", 3),
+        "home.published",
+        (db) => listPublishedCoursesWithProvider(db, 60),
         [],
       ),
       withDb("home.categories", (db) => listCategories(db), []),
+      withDb("home.providers", (db) => listProviders(db), []),
+      withDb(
+        "home.freeCert",
+        (db) =>
+          queryCatalog(db, {
+            certificateType: "FREE_CERTIFICATE",
+            sort: "recommended",
+            page: 1,
+            pageSize: 6,
+          }),
+        { items: [], total: 0, page: 1, pageSize: 6, totalPages: 1 },
+      ),
+      withDb(
+        "home.short",
+        (db) =>
+          queryCatalog(db, {
+            durationMaxMinutes: 60,
+            sort: "shortest",
+            page: 1,
+            pageSize: 6,
+          }),
+        { items: [], total: 0, page: 1, pageSize: 6, totalPages: 1 },
+      ),
     ]);
 
+  const topicPreview = await Promise.all(
+    ["ai", "programming", "cloud"]
+      .map(async (slug) => ({
+        slug,
+        courses: await withDb(
+          `home.topic.${slug}`,
+          (db) => listCoursesByCategorySlug(db, slug, 1),
+          [],
+        ),
+      })),
+  );
+
   const ranked = rankCourses(published);
-  const recent = [...published]
-    .sort((a, b) => {
-      const aTime = a.publishedAt?.getTime() ?? 0;
-      const bTime = b.publishedAt?.getTime() ?? 0;
-      return bTime - aTime;
-    })
-    .slice(0, 6);
   const best = ranked.slice(0, 6);
   const freeThisWeek = ranked
     .filter(
@@ -56,120 +98,190 @@ export default async function HomePage() {
         course.priceType === "FREE_FULL",
     )
     .slice(0, 6);
+  const recentlyVerified = [...published]
+    .filter((course) => course.lastVerifiedAt)
+    .sort(
+      (a, b) =>
+        (b.lastVerifiedAt?.getTime() ?? 0) - (a.lastVerifiedAt?.getTime() ?? 0),
+    )
+    .slice(0, 6);
 
   return (
     <main className="flex min-h-screen flex-col">
       <SiteHeader />
 
-      <section className="relative overflow-hidden border-b border-border/60">
-        <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_20%_20%,oklch(0.85_0.08_175/0.35),transparent_45%),radial-gradient(circle_at_80%_0%,oklch(0.9_0.06_90/0.3),transparent_40%)]" />
-        <div className="relative mx-auto flex w-full max-w-6xl flex-col gap-8 px-4 py-14 sm:px-6 sm:py-20">
-          <div className="max-w-3xl space-y-5">
-            <p className="text-sm font-semibold uppercase tracking-[0.18em] text-primary">
-              Learn more. Spend $0.
+      <section className="border-b border-border/60">
+        <PageShell className="py-12 sm:py-16">
+          <div className="max-w-2xl space-y-5">
+            <p className="text-sm font-semibold uppercase tracking-[0.16em] text-primary">
+              Free courses · curated · verified
             </p>
-            <h1 className="text-4xl font-semibold tracking-tight sm:text-5xl lg:text-6xl">
+            <h1 className="font-display text-4xl font-semibold tracking-tight text-balance sm:text-5xl">
               FreeLearn Radar
             </h1>
-            <p className="text-lg text-muted-foreground sm:text-xl">
-              Discover free online courses worth your time — curated from top
-              platforms, with free status first and AI summaries second.
+            <p className="text-lg text-muted-foreground text-pretty">
+              Find free online courses from trusted providers — with clear free
+              status and verification freshness, not coupon spam.
             </p>
             <form
               action="/search"
               method="get"
-              className="flex w-full max-w-xl flex-col gap-3 sm:flex-row"
+              className="flex w-full flex-col gap-3 sm:flex-row"
               role="search"
             >
               <label className="sr-only" htmlFor="home-search">
                 What do you want to learn?
               </label>
-              <input
+              <Input
                 id="home-search"
                 name="q"
                 placeholder="What do you want to learn?"
-                className="border-input bg-background/90 flex h-11 w-full rounded-xl border px-4 text-sm shadow-sm"
+                className="h-11 flex-1 rounded-lg bg-background/90 text-base shadow-sm"
               />
-              <Button type="submit" size="lg" className="rounded-xl">
-                Explore free courses
+              <Button type="submit" size="lg" className="h-11 rounded-lg">
+                Search free courses
               </Button>
             </form>
-            <div className="flex flex-wrap gap-3">
-              <Button asChild variant="outline" className="rounded-xl">
-                <Link href="/search?price=TEMPORARILY_FREE">Free this week</Link>
+            <div className="flex flex-wrap gap-2">
+              <Button asChild variant="outline" size="sm">
+                <Link href="/free-courses/python">Python</Link>
               </Button>
-              <Button asChild variant="ghost">
-                <Link href="/category/ai">Browse AI</Link>
+              <Button asChild variant="outline" size="sm">
+                <Link href="/free-courses/ai">AI</Link>
+              </Button>
+              <Button asChild variant="ghost" size="sm">
+                <Link href="/free-certificate-courses">Free certificates</Link>
               </Button>
             </div>
           </div>
-        </div>
+        </PageShell>
       </section>
 
-      <div className="mx-auto flex w-full max-w-6xl flex-1 flex-col gap-14 px-4 py-12 sm:px-6">
-        {recent.length === 0 ? (
-          <EmptyState
-            title="Catalog not ready yet"
-            description="Run migrations and seed to load curated mock courses, then refresh this page."
-            actionHref="/admin"
-            actionLabel="Open admin"
-          />
-        ) : null}
+      <PageShell>
+        <PageStack>
+          {published.length === 0 ? (
+            <EmptyState
+              title="Catalog not ready yet"
+              description="Run migrations and seed to load curated courses, then refresh this page."
+              actionHref="/admin"
+              actionLabel="Open admin"
+            />
+          ) : null}
 
-        <CourseSection
-          title="Free This Week"
-          subtitle="Fully free, temporarily free, or coupon-ready picks"
-          courses={freeThisWeek}
-          viewAllHref="/search?price=TEMPORARILY_FREE"
-        />
+          {freeThisWeek.length > 0 ? (
+            <CourseSection
+              title="Free this week"
+              subtitle="Fully free, limited-time, or coupon-ready picks"
+              courses={freeThisWeek}
+              viewAllHref="/search?price=TEMPORARILY_FREE"
+            />
+          ) : null}
 
-        <CourseSection
-          title="Best Free Courses"
-          subtitle="Ranked by quality, freshness, free value, and editorial signals"
-          courses={best}
-          viewAllHref="/search?sort=recommended"
-        />
+          {best.length > 0 ? (
+            <CourseSection
+              title="Best free courses"
+              subtitle="Ranked by quality, freshness, trust, and free value"
+              courses={best}
+              viewAllHref="/search?sort=recommended"
+            />
+          ) : null}
 
-        <CourseSection
-          title="Recently Added"
-          subtitle="Newest published courses"
-          courses={recent}
-          viewAllHref="/search?sort=newest"
-        />
+          {categories.length > 0 ? (
+            <section className="space-y-4">
+              <h2 className="text-2xl font-semibold tracking-tight">
+                Browse by topic
+              </h2>
+              <div className="flex flex-wrap gap-2">
+                {categories.map((category) => (
+                  <Link
+                    key={category.id}
+                    href={`/category/${category.slug}`}
+                    className="rounded-full border border-border bg-card px-4 py-2 text-sm font-medium transition hover:border-primary/40 hover:bg-accent"
+                  >
+                    {category.name}
+                  </Link>
+                ))}
+              </div>
+              {topicPreview.some((t) => t.courses.length > 0) ? (
+                <p className="text-sm text-muted-foreground">
+                  Popular landings:{" "}
+                  {topicPreview
+                    .filter((t) => t.courses.length > 0)
+                    .map((t, i) => (
+                      <span key={t.slug}>
+                        {i > 0 ? " · " : null}
+                        <Link
+                          href={`/free-courses/${t.slug}`}
+                          className="text-primary hover:underline capitalize"
+                        >
+                          {t.slug.replace(/-/g, " ")}
+                        </Link>
+                      </span>
+                    ))}
+                </p>
+              ) : null}
+            </section>
+          ) : null}
 
-        <CourseSection title="AI" courses={ai} viewAllHref="/category/ai" />
-        <CourseSection
-          title="Programming"
-          courses={programming}
-          viewAllHref="/category/programming"
-        />
-        <CourseSection title="Cloud" courses={cloud} viewAllHref="/category/cloud" />
-        <CourseSection
-          title="Cybersecurity"
-          courses={cybersecurity}
-          viewAllHref="/category/cybersecurity"
-        />
-        <CourseSection
-          title="Data"
-          courses={data}
-          viewAllHref="/category/data-science"
-        />
+          {recentlyVerified.length > 0 ? (
+            <CourseSection
+              title="Recently verified"
+              subtitle="Free status checked more recently"
+              courses={recentlyVerified}
+              viewAllHref="/search?sort=newest"
+            />
+          ) : null}
 
-        <section className="space-y-4">
-          <h2 className="text-2xl font-semibold tracking-tight">Browse categories</h2>
-          <div className="flex flex-wrap gap-2">
-            {categories.map((category) => (
-              <Link
-                key={category.id}
-                href={`/category/${category.slug}`}
-                className="rounded-full border border-border bg-card/80 px-4 py-2 text-sm font-medium transition hover:border-primary/40 hover:bg-accent"
-              >
-                {category.name}
-              </Link>
-            ))}
-          </div>
-        </section>
-      </div>
+          {freeCert.items.length > 0 ? (
+            <CourseSection
+              title="Free certificate courses"
+              subtitle="Only courses with a free certificate — never guessed"
+              courses={freeCert.items}
+              viewAllHref="/free-certificate-courses"
+            />
+          ) : null}
+
+          {shortCourses.items.length > 0 ? (
+            <CourseSection
+              title="Short courses"
+              subtitle="About an hour or less"
+              courses={shortCourses.items}
+              viewAllHref="/collections/under-1-hour"
+            />
+          ) : null}
+
+          {providers.length > 0 ? (
+            <section className="space-y-4">
+              <h2 className="text-2xl font-semibold tracking-tight">
+                Providers
+              </h2>
+              <div className="flex flex-wrap gap-2">
+                {providers.slice(0, 8).map((provider) => (
+                  <Link
+                    key={provider.id}
+                    href={`/provider/${provider.slug}`}
+                    className="rounded-full border border-border bg-card px-4 py-2 text-sm font-medium hover:bg-accent"
+                  >
+                    {provider.name}
+                  </Link>
+                ))}
+              </div>
+            </section>
+          ) : null}
+
+          <section className="rounded-xl border border-border bg-card/70 p-6">
+            <h2 className="text-xl font-semibold tracking-tight">
+              Monthly collection
+            </h2>
+            <p className="mt-2 text-sm text-muted-foreground">
+              A ranked shortlist for the current month.
+            </p>
+            <Button asChild className="mt-4">
+              <Link href={bestHref}>Open this month&apos;s best</Link>
+            </Button>
+          </section>
+        </PageStack>
+      </PageShell>
 
       <SiteFooter />
     </main>

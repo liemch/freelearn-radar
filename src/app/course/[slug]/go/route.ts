@@ -4,6 +4,7 @@ import { getDb } from "@/db";
 import { getCourseDetailBySlug } from "@/db/repositories/course-repository";
 import { recordOutboundClick } from "@/db/repositories/outbound-click-repository";
 import { buildOutboundUrl } from "@/domain/ranking/ranking";
+import { trackProductEvent } from "@/domain/analytics/product-events";
 import { logger } from "@/lib/logger";
 import { assertSafeHttpUrl } from "@/lib/url";
 
@@ -57,6 +58,14 @@ export async function GET(request: NextRequest, context: RouteContext) {
       status: "success",
       courseId: course.id,
       providerId: course.providerId,
+    });
+
+    trackProductEvent({
+      event: "course_outbound_click",
+      path: `/course/${slug}/go`,
+      courseId: course.id,
+      courseSlug: slug,
+      providerSlug: course.provider.slug,
     });
 
     return NextResponse.redirect(destination, 302);

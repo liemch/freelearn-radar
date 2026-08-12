@@ -7,6 +7,11 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import type { Category, Provider } from "@/db/schema";
+import {
+  CERTIFICATE_TYPE_LABELS,
+  COURSE_STATUS_LABELS,
+  PRICE_TYPE_LABELS,
+} from "@/domain/course/labels";
 import { slugify } from "@/lib/slug";
 
 type CourseFormProps = {
@@ -304,13 +309,16 @@ export function CourseForm({
             onChange={(event) => updateField("priceType", event.target.value)}
             className="border-input bg-background flex h-9 w-full rounded-md border px-3 text-sm"
           >
-            <option value="FREE_FULL">FREE_FULL</option>
-            <option value="FREE_AUDIT">FREE_AUDIT</option>
-            <option value="FREE_WITH_COUPON">FREE_WITH_COUPON</option>
-            <option value="TEMPORARILY_FREE">TEMPORARILY_FREE</option>
-            <option value="FREE_TRIAL">FREE_TRIAL</option>
-            <option value="PAID">PAID</option>
-            <option value="UNKNOWN">UNKNOWN</option>
+            {(
+              Object.entries(PRICE_TYPE_LABELS) as [
+                keyof typeof PRICE_TYPE_LABELS,
+                { label: string },
+              ][]
+            ).map(([value, meta]) => (
+              <option key={value} value={value}>
+                {meta.label}
+              </option>
+            ))}
           </select>
         </div>
 
@@ -324,10 +332,16 @@ export function CourseForm({
             }
             className="border-input bg-background flex h-9 w-full rounded-md border px-3 text-sm"
           >
-            <option value="FREE_CERTIFICATE">FREE_CERTIFICATE</option>
-            <option value="PAID_CERTIFICATE">PAID_CERTIFICATE</option>
-            <option value="NO_CERTIFICATE">NO_CERTIFICATE</option>
-            <option value="UNKNOWN">UNKNOWN</option>
+            {(
+              Object.entries(CERTIFICATE_TYPE_LABELS) as [
+                keyof typeof CERTIFICATE_TYPE_LABELS,
+                string,
+              ][]
+            ).map(([value, label]) => (
+              <option key={value} value={value}>
+                {label}
+              </option>
+            ))}
           </select>
         </div>
 
@@ -363,11 +377,16 @@ export function CourseForm({
             onChange={(event) => updateField("status", event.target.value)}
             className="border-input bg-background flex h-9 w-full rounded-md border px-3 text-sm"
           >
-            <option value="DRAFT">DRAFT</option>
-            <option value="PUBLISHED">PUBLISHED</option>
-            <option value="EXPIRED">EXPIRED</option>
-            <option value="UNAVAILABLE">UNAVAILABLE</option>
-            <option value="ARCHIVED">ARCHIVED</option>
+            {(
+              Object.entries(COURSE_STATUS_LABELS) as [
+                keyof typeof COURSE_STATUS_LABELS,
+                string,
+              ][]
+            ).map(([value, label]) => (
+              <option key={value} value={value}>
+                {label}
+              </option>
+            ))}
           </select>
         </div>
       </div>

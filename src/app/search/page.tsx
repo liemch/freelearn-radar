@@ -6,20 +6,46 @@ import { EmptyState } from "@/components/public/empty-state";
 import { Pagination } from "@/components/public/pagination";
 import { SiteFooter } from "@/components/public/site-footer";
 import { SiteHeader } from "@/components/public/site-header";
+import { PageShell } from "@/components/layout/page-shell";
 import { listCategories } from "@/db/repositories/category-repository";
 import { queryCatalog } from "@/db/repositories/course-repository";
 import { listProviders } from "@/db/repositories/provider-repository";
-import { buildCatalogQuery } from "@/domain/course/catalog-query";
+import { trackProductEvent } from "@/domain/analytics/product-events";
+import {
+  buildCatalogQuery,
+  catalogFiltersToQuery,
+} from "@/domain/course/catalog-query";
 import { withDb } from "@/lib/db-safe";
-
-export const metadata: Metadata = {
-  title: "Search Free Courses | FreeLearn Radar",
-  description: "Search curated free online courses by keyword, provider, and level.",
-};
 
 type SearchPageProps = {
   searchParams: Promise<Record<string, string | string[] | undefined>>;
 };
+
+export async function generateMetadata({
+  searchParams,
+}: SearchPageProps): Promise<Metadata> {
+  const raw = await searchParams;
+  const hasFilters = Object.keys(raw).some(
+    (key) => key !== "page" && raw[key],
+  );
+
+  return {
+    title: "Search Free Courses | FreeLearn Radar",
+    description:
+      "Search curated free online courses by keyword, provider, level, free type, and certificate.",
+    alternates: { canonical: "/search" },
+    // Filtered search URLs are shareable but should not explode the index.
+    robots: hasFilters
+      ? { index: false, follow: true }
+      : { index: true, follow: true },
+    openGraph: {
+      title: "Search Free Courses",
+      description: "Find curated free courses on FreeLearn Radar.",
+      url: "/search",
+      type: "website",
+    },
+  };
+}
 
 export default async function SearchPage({ searchParams }: SearchPageProps) {
   const raw = await searchParams;
@@ -49,14 +75,23 @@ export default async function SearchPage({ searchParams }: SearchPageProps) {
     withDb("search.categories", (db) => listCategories(db), []),
   ]);
 
+  trackProductEvent({
+    event: "search",
+    path: "/search",
+    query: filters.q,
+    resultCount: catalog.total,
+  });
+
   return (
     <main className="min-h-screen bg-background">
       <SiteHeader />
-      <div className="mx-auto w-full max-w-6xl space-y-8 px-6 py-10">
+      <PageShell className="space-y-8 py-10">
         <div className="space-y-2">
-          <h1 className="text-3xl font-bold tracking-tight">Search courses</h1>
+          <h1 className="font-display text-3xl font-semibold tracking-tight">
+            Search courses
+          </h1>
           <p className="text-muted-foreground">
-            Filter by provider, level, price type, and sort order.
+            Filter by provider, level, free type, certificate, and duration.
           </p>
           <p className="text-sm text-muted-foreground">
             {catalog.total} result{catalog.total === 1 ? "" : "s"}
@@ -75,9 +110,9 @@ export default async function SearchPage({ searchParams }: SearchPageProps) {
         {catalog.items.length === 0 ? (
           <EmptyState
             title="No courses found"
-            description="Try a broader keyword or clear filters."
-            actionHref="/"
-            actionLabel="Back to home"
+            description="Try a broader keyword, clear filters, or browse topics."
+            actionHref="/free-courses/ai"
+            actionLabel="Browse AI topics"
           />
         ) : (
           <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
@@ -91,15 +126,9 @@ export default async function SearchPage({ searchParams }: SearchPageProps) {
           page={catalog.page}
           totalPages={catalog.totalPages}
           basePath="/search"
-          query={{
-            q: filters.q,
-            provider: filters.providerSlug,
-            level: filters.level,
-            price: filters.priceType,
-            sort: filters.sort,
-          }}
+          query={catalogFiltersToQuery(filters)}
         />
-      </div>
+      </PageShell>
       <SiteFooter />
     </main>
   );

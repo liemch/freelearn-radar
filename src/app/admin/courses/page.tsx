@@ -6,6 +6,10 @@ import { CourseStatusActions } from "@/components/admin/course-status-actions";
 import { Button } from "@/components/ui/button";
 import { getDb } from "@/db";
 import { listCourses } from "@/db/repositories/course-repository";
+import {
+  getCourseStatusLabel,
+  getPriceTypeLabel,
+} from "@/domain/course/labels";
 import { getSession } from "@/lib/auth/guards";
 
 export const dynamic = "force-dynamic";
@@ -78,10 +82,14 @@ export default async function AdminCoursesPage() {
                     <p className="text-xs text-muted-foreground">{course.slug}</p>
                   </td>
                   <td className="px-4 py-3">{course.provider.name}</td>
-                  <td className="px-4 py-3">{course.priceType}</td>
-                  <td className="px-4 py-3">{course.status}</td>
                   <td className="px-4 py-3">
-                    <div className="flex flex-col gap-2">
+                    {getPriceTypeLabel(course.priceType).label}
+                  </td>
+                  <td className="px-4 py-3">
+                    {getCourseStatusLabel(course.status)}
+                  </td>
+                  <td className="px-4 py-3">
+                    <div className="flex flex-wrap gap-2">
                       <Button asChild size="sm" variant="outline">
                         <Link href={`/admin/courses/${course.id}`}>Edit</Link>
                       </Button>

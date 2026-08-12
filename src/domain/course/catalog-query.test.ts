@@ -2,6 +2,8 @@ import { describe, expect, it } from "vitest";
 
 import {
   buildCatalogQuery,
+  catalogFiltersToQuery,
+  normalizeSearchQuery,
   parseCatalogSort,
   parsePositiveInt,
 } from "@/domain/course/catalog-query";
@@ -18,9 +20,14 @@ describe("catalog query helpers", () => {
     expect(parsePositiveInt(undefined, 1)).toBe(1);
   });
 
-  it("builds filters from search params", () => {
+  it("normalizes search queries", () => {
+    expect(normalizeSearchQuery("  Python\tAI  ")).toBe("Python AI");
+    expect(normalizeSearchQuery("")).toBeUndefined();
+  });
+
+  it("builds filters from search params including certificate and duration", () => {
     const params = new URLSearchParams(
-      "q=python&provider=coursera&level=BEGINNER&price=FREE_FULL&sort=newest&page=2",
+      "q=python&provider=coursera&level=BEGINNER&price=FREE_FULL&certificate=FREE_CERTIFICATE&durationMax=60&sort=newest&page=2",
     );
 
     expect(buildCatalogQuery(params)).toEqual({
@@ -28,11 +35,28 @@ describe("catalog query helpers", () => {
       providerSlug: "coursera",
       level: "BEGINNER",
       language: undefined,
-      certificateType: undefined,
+      certificateType: "FREE_CERTIFICATE",
       priceType: "FREE_FULL",
+      durationMaxMinutes: 60,
       sort: "newest",
       page: 2,
       pageSize: 12,
+    });
+  });
+
+  it("serializes shareable query params", () => {
+    expect(
+      catalogFiltersToQuery({
+        q: "ai",
+        certificateType: "FREE_CERTIFICATE",
+        durationMaxMinutes: 60,
+        sort: "recommended",
+      }),
+    ).toMatchObject({
+      q: "ai",
+      certificate: "FREE_CERTIFICATE",
+      durationMax: "60",
+      sort: undefined,
     });
   });
 });

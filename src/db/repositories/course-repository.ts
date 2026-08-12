@@ -4,7 +4,6 @@ import {
   desc,
   eq,
   ilike,
-  inArray,
   isNotNull,
   or,
   sql,
@@ -97,6 +96,15 @@ function buildCatalogConditions(
 
   if (filters.priceType) {
     conditions.push(eq(courses.priceType, filters.priceType));
+  }
+
+  if (filters.durationMaxMinutes != null) {
+    conditions.push(
+      and(
+        isNotNull(courses.durationMinutes),
+        sql`${courses.durationMinutes} <= ${filters.durationMaxMinutes}`,
+      )!,
+    );
   }
 
   if (options?.categorySlug) {
@@ -452,10 +460,77 @@ export async function findRelatedCourses(
   categoryIds: string[],
   limit = 4,
 ): Promise<CourseWithProvider[]> {
-  if (categoryIds.length === 0) {
-    return listPublishedCoursesWithProvider(db, limit);
+  // Compatibility wrapper — prefer listRelatedCoursesFor when source fields available.
+  return listRelatedCoursesFor(
+    db,
+    {
+      id: courseId,
+      providerId: "",
+      level: "UNKNOWN",
+      language: null,
+      priceType: "UNKNOWN",
+      categoryIds,
+    },
+    limit,
+  );
+}
+
+export async function listRelatedCoursesFor(
+  db: Db,
+  source: {
+    id: string;
+    providerId: string;
+    level: string;
+    language: string | null;
+    priceType: string;
+    categoryIds: string[];
+  },
+  limit = 4,
+): Promise<CourseWithProvider[]> {
+  const poolLimit = Math.max(limit * 10, 30);
+  const rows = await db
+    .select({
+      course: courses,
+      provider: providers,
+      categoryId: courseCategories.categoryId,
+    })
+    .from(courses)
+    .innerJoin(providers, eq(courses.providerId, providers.id))
+    .leftJoin(courseCategories, eq(courseCategories.courseId, courses.id))
+    .where(and(eq(courses.status, "PUBLISHED"), sql`${courses.id} <> ${source.id}`))
+    .orderBy(desc(courses.qualityScore))
+    .limit(poolLimit * 3);
+
+  const byId = new Map<string, CourseWithProvider & { categoryIds: string[] }>();
+  for (const row of rows) {
+    const existing = byId.get(row.course.id);
+    if (existing) {
+      if (row.categoryId) existing.categoryIds.push(row.categoryId);
+    } else {
+      byId.set(row.course.id, {
+        ...row.course,
+        provider: row.provider,
+        categoryIds: row.categoryId ? [row.categoryId] : [],
+      });
+    }
   }
 
+  const { selectRelatedCourses } = await import(
+    "@/domain/discovery/related-courses"
+  );
+
+  return selectRelatedCourses(
+    source,
+    Array.from(byId.values()),
+    limit,
+  );
+}
+
+export async function listCoursesByProviderSlug(
+  db: Db,
+  providerSlug: string,
+  limit = 24,
+): Promise<CourseWithProvider[]> {
   const rows = await db
     .select({
       course: courses,
@@ -463,19 +538,28 @@ export async function findRelatedCourses(
     })
     .from(courses)
     .innerJoin(providers, eq(courses.providerId, providers.id))
-    .innerJoin(courseCategories, eq(courseCategories.courseId, courses.id))
     .where(
-      and(
-        eq(courses.status, "PUBLISHED"),
-        inArray(courseCategories.categoryId, categoryIds),
-        sql`${courses.id} <> ${courseId}`,
-      ),
+      and(eq(courses.status, "PUBLISHED"), eq(providers.slug, providerSlug)),
     )
-    .orderBy(desc(courses.qualityScore))
+    .orderBy(desc(courses.lastVerifiedAt), desc(courses.qualityScore))
     .limit(limit);
 
   return rows.map((row) => ({
     ...row.course,
     provider: row.provider,
   }));
+}
+
+export async function countPublishedByProviderSlug(
+  db: Db,
+  providerSlug: string,
+): Promise<number> {
+  const rows = await db
+    .select({ count: sql<number>`count(*)::int` })
+    .from(courses)
+    .innerJoin(providers, eq(courses.providerId, providers.id))
+    .where(
+      and(eq(courses.status, "PUBLISHED"), eq(providers.slug, providerSlug)),
+    );
+  return rows[0]?.count ?? 0;
 }

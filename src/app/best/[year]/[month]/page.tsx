@@ -6,33 +6,16 @@ import { CourseCard } from "@/components/public/course-card";
 import { EmptyState } from "@/components/public/empty-state";
 import { SiteFooter } from "@/components/public/site-footer";
 import { SiteHeader } from "@/components/public/site-header";
+import { JsonLd } from "@/components/seo/json-ld";
 import { listPublishedCoursesWithProvider } from "@/db/repositories/course-repository";
-import { rankCourses } from "@/domain/ranking/ranking";
+import { selectMonthlyCollection } from "@/domain/discovery/monthly-collection";
+import { buildItemListJsonLd } from "@/domain/seo/json-ld";
 import { withDb } from "@/lib/db-safe";
+import { getServerEnv } from "@/lib/env";
 
 type BestPageProps = {
   params: Promise<{ year: string; month: string }>;
 };
-
-export async function generateMetadata({
-  params,
-}: BestPageProps): Promise<Metadata> {
-  const { year, month } = await params;
-  const monthNumber = Number(month);
-  const title = `Best Free Online Courses — ${monthName(monthNumber)} ${year}`;
-
-  return {
-    title: `${title} | FreeLearn Radar`,
-    description: `Curated best free online courses for ${monthName(monthNumber)} ${year}.`,
-    alternates: { canonical: `/best/${year}/${month}` },
-    openGraph: {
-      title,
-      description: `Top free courses curated for ${monthName(monthNumber)} ${year}.`,
-      url: `/best/${year}/${month}`,
-      type: "website",
-    },
-  };
-}
 
 function monthName(month: number) {
   return (
@@ -53,6 +36,31 @@ function monthName(month: number) {
   );
 }
 
+export async function generateMetadata({
+  params,
+}: BestPageProps): Promise<Metadata> {
+  const { year, month } = await params;
+  const monthNumber = Number(month);
+  const title = `Best Free Online Courses — ${monthName(monthNumber)} ${year}`;
+
+  return {
+    title: `${title} | FreeLearn Radar`,
+    description: `Curated best free online courses for ${monthName(monthNumber)} ${year}, ranked by quality, trust, and freshness.`,
+    alternates: { canonical: `/best/${year}/${month}` },
+    openGraph: {
+      title,
+      description: `Top free courses curated for ${monthName(monthNumber)} ${year}.`,
+      url: `/best/${year}/${month}`,
+      type: "website",
+    },
+    twitter: {
+      card: "summary",
+      title,
+      description: `Best free courses for ${monthName(monthNumber)} ${year}.`,
+    },
+  };
+}
+
 export default async function BestCoursesPage({ params }: BestPageProps) {
   const { year, month } = await params;
   const yearNumber = Number(year);
@@ -62,7 +70,9 @@ export default async function BestCoursesPage({ params }: BestPageProps) {
     !Number.isInteger(yearNumber) ||
     !Number.isInteger(monthNumber) ||
     monthNumber < 1 ||
-    monthNumber > 12
+    monthNumber > 12 ||
+    yearNumber < 2020 ||
+    yearNumber > 2100
   ) {
     notFound();
   }
@@ -73,39 +83,51 @@ export default async function BestCoursesPage({ params }: BestPageProps) {
     [],
   );
 
-  const start = new Date(Date.UTC(yearNumber, monthNumber - 1, 1));
-  const end = new Date(Date.UTC(yearNumber, monthNumber, 1));
-
-  const inMonth = published.filter((course) => {
-    if (!course.publishedAt) return false;
-    const ts = course.publishedAt.getTime();
-    return ts >= start.getTime() && ts < end.getTime();
-  });
-
-  const ranked = rankCourses(inMonth.length > 0 ? inMonth : published).slice(
-    0,
+  const collection = selectMonthlyCollection(
+    published,
+    yearNumber,
+    monthNumber,
     20,
   );
 
+  let appUrl = "http://localhost:3000";
+  try {
+    appUrl = getServerEnv().APP_URL;
+  } catch {
+    appUrl = process.env.APP_URL || appUrl;
+  }
+
+  const title = `Best Free Online Courses — ${monthName(monthNumber)} ${year}`;
+
   return (
     <main className="min-h-screen bg-background">
+      <JsonLd
+        data={buildItemListJsonLd({
+          name: title,
+          description: `Monthly free course collection for ${monthName(monthNumber)} ${year}.`,
+          url: `${appUrl}/best/${year}/${month}`,
+          courses: collection.items,
+          appUrl,
+        })}
+      />
       <SiteHeader />
-      <div className="mx-auto w-full max-w-6xl space-y-8 px-6 py-10">
+      <div className="mx-auto w-full max-w-6xl space-y-8 px-4 py-10 sm:px-6">
         <div className="space-y-2">
-          <h1 className="text-3xl font-bold tracking-tight">
-            Best Free Online Courses — {monthName(monthNumber)} {year}
+          <h1 className="font-display text-3xl font-semibold tracking-tight">
+            {title}
           </h1>
           <p className="text-muted-foreground">
-            Ranked by quality, freshness, free value, and editorial signals.
+            Ranked by quality, freshness, trust, free value, and editorial
+            signals — not publish date alone.
           </p>
           <p className="text-sm text-muted-foreground">
-            {inMonth.length > 0
-              ? `${inMonth.length} courses published this month`
+            {collection.mode === "in_month"
+              ? `${collection.inMonthCount} courses published this month · showing top ${collection.items.length}`
               : "No courses published this month yet — showing overall top ranked courses."}
           </p>
         </div>
 
-        {ranked.length === 0 ? (
+        {collection.items.length === 0 ? (
           <EmptyState
             title="No ranked courses yet"
             description="Publish free courses to populate this monthly ranking."
@@ -114,16 +136,23 @@ export default async function BestCoursesPage({ params }: BestPageProps) {
           />
         ) : (
           <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-            {ranked.map((course) => (
+            {collection.items.map((course) => (
               <CourseCard key={course.id} course={course} />
             ))}
           </div>
         )}
 
         <p className="text-sm text-muted-foreground">
-          Browse all courses on{" "}
+          Browse{" "}
           <Link href="/search" className="text-primary hover:underline">
             Search
+          </Link>{" "}
+          or{" "}
+          <Link
+            href="/free-certificate-courses"
+            className="text-primary hover:underline"
+          >
+            free certificate courses
           </Link>
           .
         </p>

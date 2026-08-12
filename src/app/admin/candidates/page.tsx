@@ -3,9 +3,11 @@ import { redirect } from "next/navigation";
 
 import { CandidateActions } from "@/components/admin/candidate-actions";
 import { AdminLogoutButton } from "@/components/admin/logout-button";
+import { EmptyState } from "@/components/public/empty-state";
 import { Button } from "@/components/ui/button";
 import { getDb } from "@/db";
 import { listCandidates } from "@/db/repositories/candidate-repository";
+import { getDiscoveryStatusLabel } from "@/domain/course/labels";
 import { getSession } from "@/lib/auth/guards";
 
 export const dynamic = "force-dynamic";
@@ -59,7 +61,7 @@ export default async function AdminCandidatesPage() {
                 </Link>
                 <p className="text-sm text-muted-foreground">
                   {candidate.provider || "Unknown provider"} ·{" "}
-                  {candidate.discoveryStatus}
+                  {getDiscoveryStatusLabel(candidate.discoveryStatus)}
                 </p>
                 <a
                   href={candidate.canonicalUrl}
@@ -87,9 +89,12 @@ export default async function AdminCandidatesPage() {
         ))}
 
         {candidates.length === 0 ? (
-          <p className="rounded-xl border border-dashed border-border p-8 text-center text-sm text-muted-foreground">
-            No candidates yet. Run discovery from the admin discovery page.
-          </p>
+          <EmptyState
+            title="No candidates yet"
+            description="Run discovery to collect course candidates for review."
+            actionHref="/admin/discovery"
+            actionLabel="Open discovery"
+          />
         ) : null}
       </main>
     </div>

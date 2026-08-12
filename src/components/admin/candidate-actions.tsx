@@ -56,7 +56,7 @@ export function CandidateActions({
         ) : null}
         <Button
           size="sm"
-          variant="outline"
+          variant="destructive"
           disabled={busy}
           onClick={() => run("reject")}
         >
