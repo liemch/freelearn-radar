@@ -2,7 +2,9 @@ import type { Metadata } from "next";
 
 import { CatalogFiltersForm } from "@/components/public/catalog-filters";
 import { CourseCard } from "@/components/public/course-card";
+import { EmptyState } from "@/components/public/empty-state";
 import { Pagination } from "@/components/public/pagination";
+import { SiteFooter } from "@/components/public/site-footer";
 import { SiteHeader } from "@/components/public/site-header";
 import { listCategories } from "@/db/repositories/category-repository";
 import { queryCatalog } from "@/db/repositories/course-repository";
@@ -71,9 +73,12 @@ export default async function SearchPage({ searchParams }: SearchPageProps) {
         />
 
         {catalog.items.length === 0 ? (
-          <p className="rounded-xl border border-dashed border-border p-8 text-center text-sm text-muted-foreground">
-            No courses found. Try a broader keyword or clear filters.
-          </p>
+          <EmptyState
+            title="No courses found"
+            description="Try a broader keyword or clear filters."
+            actionHref="/"
+            actionLabel="Back to home"
+          />
         ) : (
           <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
             {catalog.items.map((course) => (
@@ -95,6 +100,7 @@ export default async function SearchPage({ searchParams }: SearchPageProps) {
           }}
         />
       </div>
+      <SiteFooter />
     </main>
   );
 }

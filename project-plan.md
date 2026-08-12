@@ -1942,6 +1942,14 @@ Smoke test.
 
 ---
 
+## M16 — Course Intelligence & Data Quality (implemented)
+
+Architecture reference: `docs/COURSE_VERIFICATION_ENGINE.md`
+
+Activated `course_verifications` with evidence history, deterministic free/certificate classifiers, trust/freshness/recheck priority, `/api/cron/verify`, ranking trust penalties, discovery prefilter + AI confidence routing. AI assists classification only; human approval remains the publish gate.
+
+---
+
 # 50. Test Strategy
 
 ## Unit

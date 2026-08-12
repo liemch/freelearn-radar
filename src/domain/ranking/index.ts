@@ -1,2 +1,1 @@
-// WP9+: ranking domain
-export {};
+export * from "@/domain/ranking/ranking";

@@ -1,5 +1,21 @@
 import { z } from "zod";
 
+import { isValidHttpUrl } from "@/lib/url";
+
+const httpUrl = z
+  .string()
+  .url()
+  .refine((value) => isValidHttpUrl(value), {
+    message: "URL must use http or https",
+  });
+
+const optionalHttpUrl = z
+  .string()
+  .default("")
+  .refine((value) => value === "" || isValidHttpUrl(value), {
+    message: "URL must use http or https",
+  });
+
 export const courseFormSchema = z.object({
   title: z.string().min(3).max(200),
   slug: z
@@ -11,9 +27,9 @@ export const courseFormSchema = z.object({
   description: z.string().max(5000).optional().or(z.literal("")),
   providerId: z.string().uuid(),
   categoryIds: z.array(z.string().uuid()).default([]),
-  canonicalUrl: z.string().url(),
-  outboundUrl: z.string().url().optional().or(z.literal("")),
-  affiliateUrl: z.string().url().optional().or(z.literal("")),
+  canonicalUrl: httpUrl,
+  outboundUrl: optionalHttpUrl,
+  affiliateUrl: optionalHttpUrl,
   instructor: z.string().max(200).optional().or(z.literal("")),
   language: z.string().max(50).optional().or(z.literal("")),
   level: z.enum([

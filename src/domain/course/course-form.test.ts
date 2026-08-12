@@ -34,4 +34,19 @@ describe("courseFormSchema", () => {
 
     expect(result.success).toBe(false);
   });
+
+  it("rejects javascript URLs", () => {
+    const result = courseFormSchema.safeParse({
+      title: "Python Basics",
+      slug: "python-basics",
+      providerId: "550e8400-e29b-41d4-a716-446655440000",
+      categoryIds: [],
+      canonicalUrl: "javascript:alert(1)",
+      level: "BEGINNER",
+      priceType: "FREE_FULL",
+      certificateType: "FREE_CERTIFICATE",
+    });
+
+    expect(result.success).toBe(false);
+  });
 });

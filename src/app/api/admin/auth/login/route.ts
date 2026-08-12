@@ -6,13 +6,33 @@ import { findUserByEmail } from "@/db/repositories/user-repository";
 import { verifyPassword } from "@/lib/auth/password";
 import { setSessionCookie, unauthorizedResponse } from "@/lib/auth/guards";
 import { logger } from "@/lib/logger";
+import { checkRateLimit } from "@/lib/rate-limit";
 
 const loginSchema = z.object({
   email: z.string().email(),
   password: z.string().min(8),
 });
 
+function clientKey(request: Request): string {
+  const forwarded = request.headers.get("x-forwarded-for");
+  if (forwarded) {
+    return forwarded.split(",")[0]?.trim() || "unknown";
+  }
+  return request.headers.get("x-real-ip") || "unknown";
+}
+
 export async function POST(request: Request) {
+  const rate = checkRateLimit(`login:${clientKey(request)}`, 10, 60_000);
+  if (!rate.allowed) {
+    return NextResponse.json(
+      { error: "Too many login attempts. Try again shortly." },
+      {
+        status: 429,
+        headers: { "Retry-After": String(Math.ceil(rate.retryAfterMs / 1000) || 60) },
+      },
+    );
+  }
+
   try {
     const body = loginSchema.parse(await request.json());
     const db = getDb();

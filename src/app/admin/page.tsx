@@ -107,9 +107,10 @@ export default async function AdminDashboardPage() {
         ) : null}
 
         <section className="mt-8 rounded-xl border border-border bg-card p-6">
-          <h2 className="text-lg font-semibold">Course management</h2>
+          <h2 className="text-lg font-semibold">Operations</h2>
           <p className="mt-2 text-sm text-muted-foreground">
-            Create, edit, publish, unpublish, and archive courses without AI.
+            Manage catalog manually, review discovery candidates, and inspect
+            outbound click analytics.
           </p>
           <div className="mt-4 flex flex-wrap gap-3">
             <Button asChild>
@@ -117,6 +118,15 @@ export default async function AdminDashboardPage() {
             </Button>
             <Button asChild variant="outline">
               <Link href="/admin/courses/new">New course</Link>
+            </Button>
+            <Button asChild variant="outline">
+              <Link href="/admin/candidates">Candidates</Link>
+            </Button>
+            <Button asChild variant="outline">
+              <Link href="/admin/discovery">Discovery</Link>
+            </Button>
+            <Button asChild variant="outline">
+              <Link href="/admin/analytics">Analytics</Link>
             </Button>
             <Button asChild variant="ghost">
               <Link href="/">View public site</Link>

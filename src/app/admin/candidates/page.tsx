@@ -1,0 +1,97 @@
+import Link from "next/link";
+import { redirect } from "next/navigation";
+
+import { CandidateActions } from "@/components/admin/candidate-actions";
+import { AdminLogoutButton } from "@/components/admin/logout-button";
+import { Button } from "@/components/ui/button";
+import { getDb } from "@/db";
+import { listCandidates } from "@/db/repositories/candidate-repository";
+import { getSession } from "@/lib/auth/guards";
+
+export const dynamic = "force-dynamic";
+
+export default async function AdminCandidatesPage() {
+  const session = await getSession();
+  if (!session) redirect("/admin/login");
+
+  let candidates: Awaited<ReturnType<typeof listCandidates>> = [];
+  try {
+    candidates = await listCandidates(getDb(), { limit: 100 });
+  } catch {
+    candidates = [];
+  }
+
+  return (
+    <div className="min-h-screen bg-background">
+      <header className="border-b border-border/60">
+        <div className="mx-auto flex max-w-6xl items-center justify-between px-6 py-4">
+          <div>
+            <p className="text-sm text-muted-foreground">
+              <Link href="/admin" className="hover:underline">
+                Admin
+              </Link>{" "}
+              / Candidates
+            </p>
+            <h1 className="text-xl font-semibold">Candidate review</h1>
+          </div>
+          <div className="flex items-center gap-3">
+            <Button asChild variant="outline">
+              <Link href="/admin/discovery">Discovery</Link>
+            </Button>
+            <AdminLogoutButton />
+          </div>
+        </div>
+      </header>
+
+      <main className="mx-auto max-w-6xl space-y-4 px-6 py-8">
+        {candidates.map((candidate) => (
+          <article
+            key={candidate.id}
+            className="rounded-xl border border-border bg-card p-5 shadow-sm"
+          >
+            <div className="flex flex-wrap items-start justify-between gap-4">
+              <div className="space-y-1">
+                <Link
+                  href={`/admin/candidates/${candidate.id}`}
+                  className="text-lg font-semibold hover:text-primary"
+                >
+                  {candidate.rawTitle || candidate.canonicalUrl}
+                </Link>
+                <p className="text-sm text-muted-foreground">
+                  {candidate.provider || "Unknown provider"} ·{" "}
+                  {candidate.discoveryStatus}
+                </p>
+                <a
+                  href={candidate.canonicalUrl}
+                  target="_blank"
+                  rel="noreferrer"
+                  className="text-xs text-primary break-all"
+                >
+                  {candidate.canonicalUrl}
+                </a>
+                {candidate.rawDescription ? (
+                  <p className="mt-2 max-w-3xl text-sm text-muted-foreground">
+                    {candidate.rawDescription.slice(0, 240)}
+                  </p>
+                ) : null}
+              </div>
+              <CandidateActions
+                candidateId={candidate.id}
+                canApprove={
+                  candidate.discoveryStatus === "READY_FOR_REVIEW" ||
+                  candidate.discoveryStatus === "ANALYZED"
+                }
+              />
+            </div>
+          </article>
+        ))}
+
+        {candidates.length === 0 ? (
+          <p className="rounded-xl border border-dashed border-border p-8 text-center text-sm text-muted-foreground">
+            No candidates yet. Run discovery from the admin discovery page.
+          </p>
+        ) : null}
+      </main>
+    </div>
+  );
+}

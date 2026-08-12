@@ -6,6 +6,7 @@ import {
   findCourseById,
   updateCourse,
 } from "@/db/repositories/course-repository";
+import { assertCourseStatusTransition } from "@/domain/course/transitions";
 import {
   forbiddenResponse,
   getSession,
@@ -42,6 +43,8 @@ export async function POST(request: Request, context: RouteContext) {
       return NextResponse.json({ error: "Course not found" }, { status: 404 });
     }
 
+    assertCourseStatusTransition(existing.status, body.status);
+
     const now = new Date();
     const course = await updateCourse(db, id, {
       status: body.status,
@@ -50,9 +53,7 @@ export async function POST(request: Request, context: RouteContext) {
           ? existing.publishedAt ?? now
           : existing.publishedAt,
       lastVerifiedAt:
-        body.status === "PUBLISHED"
-          ? now
-          : existing.lastVerifiedAt,
+        body.status === "PUBLISHED" ? now : existing.lastVerifiedAt,
     });
 
     logger.info("admin.courses.status", {
@@ -65,6 +66,13 @@ export async function POST(request: Request, context: RouteContext) {
   } catch (error) {
     if (error instanceof z.ZodError) {
       return NextResponse.json({ error: "Invalid status" }, { status: 400 });
+    }
+
+    if (
+      error instanceof Error &&
+      error.message.startsWith("Invalid course status transition")
+    ) {
+      return NextResponse.json({ error: error.message }, { status: 422 });
     }
 
     logger.error("admin.courses.status", {

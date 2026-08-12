@@ -1,22 +1,30 @@
 import type { Metadata } from "next";
-import { Geist, Geist_Mono } from "next/font/google";
+import { Fraunces, Manrope } from "next/font/google";
 
 import "./globals.css";
 
-const geistSans = Geist({
-  variable: "--font-geist-sans",
+const display = Fraunces({
+  variable: "--font-display",
   subsets: ["latin"],
+  display: "swap",
 });
 
-const geistMono = Geist_Mono({
-  variable: "--font-geist-mono",
+const body = Manrope({
+  variable: "--font-body",
   subsets: ["latin"],
+  display: "swap",
 });
 
 export const metadata: Metadata = {
-  title: "FreeLearn Radar",
+  title: {
+    default: "FreeLearn Radar",
+    template: "%s | FreeLearn Radar",
+  },
   description:
     "Discover the best free online courses from top learning platforms — curated and verified in one place.",
+  metadataBase: new URL(
+    process.env.APP_URL || "http://localhost:3000",
+  ),
 };
 
 export default function RootLayout({
@@ -27,7 +35,7 @@ export default function RootLayout({
   return (
     <html lang="en">
       <body
-        className={`${geistSans.variable} ${geistMono.variable} min-h-screen font-sans antialiased`}
+        className={`${display.variable} ${body.variable} min-h-screen font-sans antialiased`}
       >
         {children}
       </body>

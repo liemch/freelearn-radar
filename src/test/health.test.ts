@@ -12,4 +12,16 @@ describe("health endpoint contract", () => {
     expect(payload.service).toBe("freelearn-radar");
     expect(() => new Date(payload.timestamp)).not.toThrow();
   });
+
+  it("defines deep health degraded shape", () => {
+    const payload = {
+      status: "degraded" as const,
+      service: "freelearn-radar",
+      timestamp: new Date().toISOString(),
+      database: "error" as const,
+    };
+
+    expect(payload.status).toBe("degraded");
+    expect(payload.database).toBe("error");
+  });
 });

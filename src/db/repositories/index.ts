@@ -4,3 +4,4 @@ export * from "@/db/repositories/category-repository";
 export * from "@/db/repositories/course-repository";
 export * from "@/db/repositories/candidate-repository";
 export * from "@/db/repositories/discovery-query-repository";
+export * from "@/db/repositories/outbound-click-repository";

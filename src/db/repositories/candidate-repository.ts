@@ -21,6 +21,19 @@ export async function findCandidateByCanonicalUrl(
   return rows[0] ?? null;
 }
 
+export async function findCandidateById(
+  db: Db,
+  id: string,
+): Promise<CourseCandidate | null> {
+  const rows = await db
+    .select()
+    .from(courseCandidates)
+    .where(eq(courseCandidates.id, id))
+    .limit(1);
+
+  return rows[0] ?? null;
+}
+
 export async function createCandidate(
   db: Db,
   input: NewCourseCandidate,
@@ -33,6 +46,40 @@ export async function createCandidate(
   }
 
   return candidate;
+}
+
+export async function updateCandidate(
+  db: Db,
+  id: string,
+  input: Partial<NewCourseCandidate>,
+): Promise<CourseCandidate> {
+  const rows = await db
+    .update(courseCandidates)
+    .set(input)
+    .where(eq(courseCandidates.id, id))
+    .returning();
+
+  const candidate = rows[0];
+  if (!candidate) {
+    throw new Error("Candidate not found");
+  }
+
+  return candidate;
+}
+
+export async function listCandidates(
+  db: Db,
+  options?: { status?: DiscoveryStatus; limit?: number },
+): Promise<CourseCandidate[]> {
+  if (options?.status) {
+    return listCandidatesByStatus(db, options.status, options.limit ?? 100);
+  }
+
+  return db
+    .select()
+    .from(courseCandidates)
+    .orderBy(desc(courseCandidates.discoveredAt))
+    .limit(options?.limit ?? 100);
 }
 
 export async function listCandidatesByStatus(
