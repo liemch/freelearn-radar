@@ -24,6 +24,7 @@ export default async function AdminDashboardPage() {
   let stats = [
     { label: "Pending Review", value: 0 },
     { label: "Published Courses", value: 0 },
+    { label: "Draft Courses", value: 0 },
     { label: "Providers", value: 0 },
     { label: "Categories", value: 0 },
     { label: "Discovery Errors", value: 0 },
@@ -34,12 +35,14 @@ export default async function AdminDashboardPage() {
     const [
       pendingReview,
       publishedCourses,
+      draftCourses,
       providers,
       categories,
       discoveryErrors,
     ] = await Promise.all([
       countCandidatesByStatus(db, "READY_FOR_REVIEW"),
       countCoursesByStatus(db, "PUBLISHED"),
+      countCoursesByStatus(db, "DRAFT"),
       listProviders(db, false),
       listCategories(db),
       countCandidatesByStatus(db, "ERROR"),
@@ -48,6 +51,7 @@ export default async function AdminDashboardPage() {
     stats = [
       { label: "Pending Review", value: pendingReview },
       { label: "Published Courses", value: publishedCourses },
+      { label: "Draft Courses", value: draftCourses },
       { label: "Providers", value: providers.length },
       { label: "Categories", value: categories.length },
       { label: "Discovery Errors", value: discoveryErrors },
@@ -103,13 +107,18 @@ export default async function AdminDashboardPage() {
         ) : null}
 
         <section className="mt-8 rounded-xl border border-border bg-card p-6">
-          <h2 className="text-lg font-semibold">Next steps</h2>
+          <h2 className="text-lg font-semibold">Course management</h2>
           <p className="mt-2 text-sm text-muted-foreground">
-            WP3 will add the public catalog. WP4 will add manual course
-            management. Discovery and AI review arrive in later work packages.
+            Create, edit, publish, unpublish, and archive courses without AI.
           </p>
           <div className="mt-4 flex flex-wrap gap-3">
+            <Button asChild>
+              <Link href="/admin/courses">Manage courses</Link>
+            </Button>
             <Button asChild variant="outline">
+              <Link href="/admin/courses/new">New course</Link>
+            </Button>
+            <Button asChild variant="ghost">
               <Link href="/">View public site</Link>
             </Button>
           </div>

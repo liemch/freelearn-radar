@@ -67,6 +67,7 @@ const SEED_DISCOVERY_QUERIES = [
 ] as const;
 
 export { SEED_CATEGORIES, SEED_DISCOVERY_QUERIES, SEED_PROVIDERS };
+export { SEED_COURSES } from "@/db/seed/courses";
 
 export function parseAdminEmails(raw: string | undefined): string[] {
   if (!raw) {

@@ -2,6 +2,11 @@ import { eq } from "drizzle-orm";
 
 import { closeDb, getDb } from "@/db";
 import { createCategory } from "@/db/repositories/category-repository";
+import {
+  createCourse,
+  findCourseBySlug,
+  setCourseCategories,
+} from "@/db/repositories/course-repository";
 import { createDiscoveryQuery } from "@/db/repositories/discovery-query-repository";
 import { createProvider } from "@/db/repositories/provider-repository";
 import { createUser, findUserByEmail } from "@/db/repositories/user-repository";
@@ -14,6 +19,7 @@ import {
   SEED_DISCOVERY_QUERIES,
   SEED_PROVIDERS,
 } from "@/db/seed/data";
+import { SEED_COURSES } from "@/db/seed/courses";
 import { hashPassword } from "@/lib/auth/password";
 
 async function seedProviders(db: ReturnType<typeof getDb>) {
@@ -100,6 +106,62 @@ async function seedAdminUsers(db: ReturnType<typeof getDb>) {
   }
 }
 
+async function seedCourses(db: ReturnType<typeof getDb>) {
+  const allProviders = await db.select().from(providers);
+  const allCategories = await db.select().from(categories);
+
+  const providerBySlug = new Map(
+    allProviders.map((provider) => [provider.slug, provider]),
+  );
+  const categoryBySlug = new Map(
+    allCategories.map((category) => [category.slug, category]),
+  );
+
+  for (const seedCourse of SEED_COURSES) {
+    const existing = await findCourseBySlug(db, seedCourse.slug);
+    if (existing) {
+      continue;
+    }
+
+    const provider = providerBySlug.get(seedCourse.providerSlug);
+    if (!provider) {
+      console.warn(
+        `Skipping course ${seedCourse.slug}: provider ${seedCourse.providerSlug} missing`,
+      );
+      continue;
+    }
+
+    const now = new Date();
+    const course = await createCourse(db, {
+      slug: seedCourse.slug,
+      title: seedCourse.title,
+      shortDescription: seedCourse.shortDescription,
+      description: `${seedCourse.description}\n\nWhy learn this: ${seedCourse.whyLearn}`,
+      providerId: provider.id,
+      canonicalUrl: seedCourse.canonicalUrl,
+      outboundUrl: seedCourse.canonicalUrl,
+      instructor: seedCourse.instructor,
+      language: seedCourse.language,
+      level: seedCourse.level,
+      durationMinutes: seedCourse.durationMinutes,
+      priceType: seedCourse.priceType,
+      certificateType: seedCourse.certificateType,
+      qualityScore: seedCourse.qualityScore,
+      aiScore: seedCourse.aiScore,
+      editorScore: seedCourse.editorScore,
+      status: "PUBLISHED",
+      publishedAt: now,
+      lastVerifiedAt: now,
+    });
+
+    const categoryIds = seedCourse.categorySlugs
+      .map((slug) => categoryBySlug.get(slug)?.id)
+      .filter((id): id is string => Boolean(id));
+
+    await setCourseCategories(db, course.id, categoryIds);
+  }
+}
+
 async function seed() {
   const db = getDb();
 
@@ -107,6 +169,7 @@ async function seed() {
   await seedCategories(db);
   await seedDiscoveryQueries(db);
   await seedAdminUsers(db);
+  await seedCourses(db);
 
   await closeDb();
 }
