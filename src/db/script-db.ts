@@ -35,13 +35,16 @@ export function resolveScriptDatabaseUrl(): string {
   return databaseUrl;
 }
 
-/** Use Neon HTTP driver (port 443) instead of PostgreSQL TCP (port 5432). */
-export function shouldUseNeonHttp(): boolean {
+/** Explicit opt-in for Neon HTTP (port 443). Required for local migrate when 5432 is blocked. */
+export function shouldUseNeonHttpExplicit(): boolean {
   return (
-    process.env.USE_NEON_HTTP === "1" ||
-    process.env.USE_NEON_HTTP === "true" ||
-    process.env.VERCEL === "1"
+    process.env.USE_NEON_HTTP === "1" || process.env.USE_NEON_HTTP === "true"
   );
+}
+
+/** Seed uses ORM queries (one statement each) — HTTP is safe on Vercel builds. */
+export function shouldUseNeonHttpForSeed(): boolean {
+  return shouldUseNeonHttpExplicit() || process.env.VERCEL === "1";
 }
 
 export type ScriptDbHandle = {
@@ -52,7 +55,7 @@ export type ScriptDbHandle = {
 export function createScriptDb(): ScriptDbHandle {
   const databaseUrl = resolveScriptDatabaseUrl();
 
-  if (shouldUseNeonHttp()) {
+  if (shouldUseNeonHttpForSeed()) {
     const client = neon(databaseUrl);
     const db = drizzleHttp({ client, schema }) as Db;
     return {
