@@ -51,6 +51,8 @@ export type VerificationResult = {
   certificateType: CertificateType;
   nextCourseStatus: CourseStatus;
   updateCourse: boolean;
+  /** False when the evidence was inconclusive: keep the previous last_verified_at. */
+  refreshLastVerifiedAt: boolean;
   evidence: EvidenceRecord[];
   changeSummary: string | null;
   notes: string;
@@ -80,6 +82,7 @@ export function produceVerificationResult(
       certificateType: course.certificateType,
       nextCourseStatus: course.status,
       updateCourse: false,
+      refreshLastVerifiedAt: false,
       evidence: [],
       changeSummary: null,
       notes: "No evidence retrieved",
@@ -216,7 +219,16 @@ export function produceVerificationResult(
     finalCert !== course.certificateType ||
     nextStatus !== course.status;
 
-  let status: VerificationResult["status"] = "VERIFIED";
+  /**
+   * A recheck only counts as a verification when the evidence actually said something:
+   * a usable price classification, or a definitive availability signal.
+   * Otherwise the course keeps its previous last_verified_at so that stale pricing
+   * is never presented as freshly verified (project plan §44, §58 Principle 4).
+   */
+  const conclusive =
+    price.priceType !== "UNKNOWN" || availability === "UNAVAILABLE";
+
+  let status: VerificationResult["status"] = conclusive ? "VERIFIED" : "FAILED";
   if (nextStatus === "EXPIRED") {
     status = "EXPIRED";
   }
@@ -226,7 +238,8 @@ export function produceVerificationResult(
     priceType: finalPrice,
     certificateType: finalCert,
     nextCourseStatus: nextStatus,
-    updateCourse: shouldUpdateFields || true, // always refresh lastVerifiedAt on success
+    updateCourse: shouldUpdateFields || conclusive,
+    refreshLastVerifiedAt: conclusive,
     evidence,
     changeSummary: summarizeChanges(changes),
     notes: [
@@ -234,7 +247,10 @@ export function produceVerificationResult(
       certificate.rationale,
       expiration.reason,
       `Resolved ${finalPrice}/${finalCert}`,
-    ].join(" | "),
+      conclusive ? null : "Inconclusive evidence — last_verified_at not refreshed",
+    ]
+      .filter(Boolean)
+      .join(" | "),
     pricingConfidence: price.confidence,
     certificateConfidence: certificate.confidence,
     verificationMethod: mapEvidenceMethodToDb(method),

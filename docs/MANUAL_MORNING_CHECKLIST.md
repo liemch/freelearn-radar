@@ -22,6 +22,8 @@ npm run db:migrate:run
 ```bash
 npm run db:seed
 ```
+Reference data only. To also load the local sample courses, run it with
+`SEED_SAMPLE_COURSES=true`; the flag is ignored on production runtimes.
 
 ## 5. Configure Tavily
 - [ ] Add `TAVILY_API_KEY`

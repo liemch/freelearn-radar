@@ -106,6 +106,11 @@ export function classifyCertificateFromText(
   };
 }
 
+/**
+ * Project plan §13: certificate status must not be inferred without evidence.
+ * A weak mention ("earn a certificate") is a deliberate refusal, not a gap, so AI
+ * cannot upgrade it. AI may only speak when the text carried no certificate signal at all.
+ */
 export function resolveCertificateType(input: {
   evidenceText: string;
   aiSuggestion?: CertificateType | null;
@@ -119,6 +124,19 @@ export function resolveCertificateType(input: {
 
   const ai = input.aiSuggestion;
   const aiConf = input.aiConfidence ?? 0;
+
+  if (
+    ai &&
+    ai !== "UNKNOWN" &&
+    aiConf >= 0.7 &&
+    deterministic.certificateType === "UNKNOWN" &&
+    deterministic.matchedSignals.length > 0
+  ) {
+    return {
+      ...deterministic,
+      rationale: `${deterministic.rationale} (AI suggested ${ai}; rejected because deterministic evidence already refused this classification)`,
+    };
+  }
 
   if (
     ai &&

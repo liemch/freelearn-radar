@@ -10,22 +10,31 @@ import { getServerEnv } from "@/lib/env";
 export async function listDueDiscoveryQueries(
   db: Db,
   limit?: number,
+  scope?: { provider?: string; category?: string },
 ): Promise<DiscoveryQuery[]> {
   const queryLimit = limit ?? getServerEnv().DISCOVERY_QUERY_LIMIT;
   const now = new Date();
 
+  const conditions = [
+    eq(discoveryQueries.enabled, true),
+    or(
+      isNull(discoveryQueries.nextRunAt),
+      lte(discoveryQueries.nextRunAt, now),
+    )!,
+  ];
+
+  if (scope?.provider) {
+    conditions.push(eq(discoveryQueries.provider, scope.provider));
+  }
+
+  if (scope?.category) {
+    conditions.push(eq(discoveryQueries.category, scope.category));
+  }
+
   return db
     .select()
     .from(discoveryQueries)
-    .where(
-      and(
-        eq(discoveryQueries.enabled, true),
-        or(
-          isNull(discoveryQueries.nextRunAt),
-          lte(discoveryQueries.nextRunAt, now),
-        ),
-      ),
-    )
+    .where(and(...conditions))
     .orderBy(
       sql`${discoveryQueries.lastRunAt} ASC NULLS FIRST`,
       asc(discoveryQueries.successCount),

@@ -38,11 +38,15 @@ Never prefix secrets with `NEXT_PUBLIC_`.
 npm run db:migrate:run
 ```
 
-4. Seed providers/categories/queries/admin + mock courses:
+4. Seed reference data (providers, categories, discovery queries, admin users):
 
 ```bash
 npm run db:seed
 ```
+
+The sample courses bundled with the seed are development fixtures. They are refused on any
+production runtime and require `SEED_SAMPLE_COURSES=true` locally, so a production catalog only
+ever contains courses a human approved (project plan Rule 9).
 
 ## Local smoke
 

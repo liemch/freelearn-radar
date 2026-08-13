@@ -7,7 +7,10 @@ import {
   formatLevelLabel,
   getCertificateTypeLabel,
 } from "@/domain/course/labels";
-import { formatDuration } from "@/domain/course/recommendation";
+import {
+  formatDuration,
+  getRecommendationLabel,
+} from "@/domain/course/recommendation";
 import { verificationAgeLabel } from "@/domain/verification/freshness-policy";
 import { isStaleForPublicWarning } from "@/domain/verification/freshness-policy";
 
@@ -26,6 +29,11 @@ export function CourseCard({ course }: CourseCardProps) {
     course.lastVerifiedAt,
     course.priceType,
   );
+  // Project plan §19/§23: qualitative label only — never a raw numeric score.
+  const recommendation =
+    course.qualityScore == null
+      ? null
+      : getRecommendationLabel(course.qualityScore);
 
   return (
     <article className="group flex h-full flex-col rounded-xl border border-border/80 bg-card p-5 shadow-sm transition hover:border-primary/25 hover:shadow-md">
@@ -71,6 +79,12 @@ export function CourseCard({ course }: CourseCardProps) {
         </span>
         <span>{duration ?? "Duration unknown"}</span>
       </p>
+
+      {recommendation ? (
+        <p className="mt-3 text-xs font-medium text-muted-foreground">
+          {recommendation}
+        </p>
+      ) : null}
 
       <p className="mt-1 text-xs text-muted-foreground">
         {stale ? (

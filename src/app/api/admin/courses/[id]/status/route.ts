@@ -52,8 +52,12 @@ export async function POST(request: Request, context: RouteContext) {
         body.status === "PUBLISHED"
           ? existing.publishedAt ?? now
           : existing.publishedAt,
+      // Re-publishing is not a verification: only stamp the clock on first publication,
+      // otherwise a course last checked months ago would advertise itself as fresh.
       lastVerifiedAt:
-        body.status === "PUBLISHED" ? now : existing.lastVerifiedAt,
+        body.status === "PUBLISHED"
+          ? existing.lastVerifiedAt ?? now
+          : existing.lastVerifiedAt,
     });
 
     logger.info("admin.courses.status", {

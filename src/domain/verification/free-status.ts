@@ -221,6 +221,10 @@ export function classifyFreeStatusFromText(
 /**
  * Merge deterministic text classification with optional AI suggestion.
  * Explicit evidence always wins over AI.
+ *
+ * An UNKNOWN with matched signals is a deliberate refusal (ambiguous marketing copy,
+ * free preview only, conflicting signals). AI may only fill a true evidence gap —
+ * it may never upgrade a refusal into a free claim.
  */
 export function resolvePriceType(input: {
   evidenceText: string;
@@ -235,6 +239,19 @@ export function resolvePriceType(input: {
 
   const ai = input.aiSuggestion;
   const aiConf = input.aiConfidence ?? 0;
+
+  if (
+    ai &&
+    ai !== "UNKNOWN" &&
+    aiConf >= 0.7 &&
+    deterministic.priceType === "UNKNOWN" &&
+    deterministic.matchedSignals.length > 0
+  ) {
+    return {
+      ...deterministic,
+      rationale: `${deterministic.rationale} (AI suggested ${ai}; rejected because deterministic evidence already refused this classification)`,
+    };
+  }
 
   if (
     ai &&

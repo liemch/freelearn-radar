@@ -35,13 +35,22 @@ function inferDomain(providerSlug: string): string | undefined {
 export async function runDiscoveryBatch(
   db: Db,
   searchProvider: SearchProvider,
-  options?: { queryLimit?: number; resultLimit?: number },
+  options?: {
+    queryLimit?: number;
+    resultLimit?: number;
+    /** Optional admin scoping (project plan §31): restrict the run to one provider/topic. */
+    provider?: string;
+    category?: string;
+  },
 ): Promise<DiscoveryRunSummary> {
   const env = getServerEnv();
   const queryLimit = options?.queryLimit ?? env.DISCOVERY_QUERY_LIMIT;
   const resultLimit = options?.resultLimit ?? env.DISCOVERY_RESULT_LIMIT;
 
-  const queries = await listDueDiscoveryQueries(db, queryLimit);
+  const queries = await listDueDiscoveryQueries(db, queryLimit, {
+    provider: options?.provider,
+    category: options?.category,
+  });
   const summary: DiscoveryRunSummary = {
     queriesProcessed: 0,
     created: 0,

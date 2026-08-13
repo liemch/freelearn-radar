@@ -116,6 +116,49 @@ describe("approveCandidate", () => {
     ).rejects.toThrow(/cannot be approved/);
   });
 
+  // P2-01 regression: the marking used to run inside the transaction that then threw,
+  // so the rollback discarded it and the candidate stayed in the review queue forever.
+  it("persists the DUPLICATE marking after the transaction rolls back", async () => {
+    findCandidateById.mockResolvedValue(baseCandidate());
+    findCourseBySlug.mockResolvedValue(null);
+    findCourseByCanonicalUrl.mockResolvedValue({ id: "course-existing" });
+    listProviders.mockResolvedValue([
+      { id: "p1", slug: "coursera", name: "Coursera" },
+    ]);
+    listCategories.mockResolvedValue([]);
+    createCourse.mockClear();
+    updateCandidate.mockClear();
+    updateCandidate.mockResolvedValue({ id: "cand-1" });
+
+    let transactionRolledBack = false;
+    const db = {
+      transaction: async (fn: (tx: unknown) => Promise<unknown>) => {
+        try {
+          return await fn({});
+        } catch (error) {
+          transactionRolledBack = true;
+          throw error;
+        }
+      },
+    };
+
+    const { approveCandidate } = await import(
+      "@/domain/candidate/approve-candidate"
+    );
+
+    await expect(
+      approveCandidate(db as never, { candidateId: "cand-1" }),
+    ).rejects.toThrow(/already published/);
+
+    expect(transactionRolledBack).toBe(true);
+    expect(createCourse).not.toHaveBeenCalled();
+    expect(updateCandidate).toHaveBeenCalledWith(
+      db,
+      "cand-1",
+      expect.objectContaining({ discoveryStatus: "DUPLICATE" }),
+    );
+  });
+
   it("rejects unresolved providers instead of falling back", async () => {
     findCandidateById.mockResolvedValue(
       baseCandidate({

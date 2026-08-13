@@ -93,4 +93,47 @@ export function deriveCategoryDescription(name: string): string {
   return `Free ${name.toLowerCase()} courses curated by FreeLearn Radar.`;
 }
 
+export type SeedEnv = {
+  NODE_ENV?: string;
+  VERCEL?: string;
+  VERCEL_ENV?: string;
+  SEED_SAMPLE_COURSES?: string;
+};
+
+export type SampleCourseSeedDecision = {
+  allowed: boolean;
+  reason: string;
+};
+
+function isProductionSeedTarget(env: SeedEnv): boolean {
+  return (
+    env.NODE_ENV === "production" ||
+    env.VERCEL === "1" ||
+    env.VERCEL_ENV === "production"
+  );
+}
+
+/**
+ * Project plan Rule 9: never seed fake course data into production.
+ * Sample courses require an explicit local opt-in and are refused on production runtimes.
+ */
+export function decideSampleCourseSeeding(env: SeedEnv): SampleCourseSeedDecision {
+  if (isProductionSeedTarget(env)) {
+    return {
+      allowed: false,
+      reason:
+        "Production runtime detected — sample courses are never seeded (project plan Rule 9)",
+    };
+  }
+
+  if (env.SEED_SAMPLE_COURSES !== "true") {
+    return {
+      allowed: false,
+      reason: "SEED_SAMPLE_COURSES is not 'true' — skipping sample course seed",
+    };
+  }
+
+  return { allowed: true, reason: "Explicit local opt-in via SEED_SAMPLE_COURSES=true" };
+}
+
 export { slugify };

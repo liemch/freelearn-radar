@@ -169,6 +169,26 @@ describe("runDiscoveryBatch", () => {
     expect(markDiscoveryQuerySuccess).toHaveBeenCalledWith({}, "q1");
   });
 
+  // P1-04 regression: the admin discovery API accepted provider/category and dropped them.
+  it("scopes the run to the requested provider and topic", async () => {
+    listDueDiscoveryQueries.mockResolvedValue([]);
+
+    const { runDiscoveryBatch } = await import(
+      "@/domain/discovery/discovery-engine"
+    );
+
+    await runDiscoveryBatch(
+      {} as never,
+      { search: async () => [] },
+      { queryLimit: 3, provider: "coursera", category: "ai" },
+    );
+
+    expect(listDueDiscoveryQueries).toHaveBeenCalledWith({}, 3, {
+      provider: "coursera",
+      category: "ai",
+    });
+  });
+
   it("records query failures without crashing the batch", async () => {
     listDueDiscoveryQueries.mockResolvedValue([
       {

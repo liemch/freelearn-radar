@@ -47,11 +47,15 @@ export async function POST(request: Request) {
     const summary = await runDiscoveryBatch(db, searchProvider, {
       queryLimit: body.limit ?? 5,
       resultLimit: body.resultLimit ?? env.DISCOVERY_RESULT_LIMIT,
+      provider: body.provider,
+      category: body.category,
     });
 
     logger.info("admin.discovery.run", {
       status: "success",
       userId: session.userId,
+      provider: body.provider ?? null,
+      category: body.category ?? null,
       ...summary,
     });
 

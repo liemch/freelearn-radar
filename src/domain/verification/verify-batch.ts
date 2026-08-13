@@ -129,7 +129,11 @@ export async function runVerificationBatch(
       const evidence = await evidenceProvider.gather(course);
       const result = produceVerificationResult(course, evidence, now);
       await persistVerification(db, course.id, result);
-      summary.verified += 1;
+      if (result.status === "FAILED") {
+        summary.failed += 1;
+      } else {
+        summary.verified += 1;
+      }
       if (result.updateCourse) {
         summary.updated += 1;
       }
@@ -182,7 +186,9 @@ export async function persistVerification(
       priceType: result.priceType,
       certificateType: result.certificateType,
       status: result.nextCourseStatus,
-      lastVerifiedAt: result.observedAt,
+      ...(result.refreshLastVerifiedAt
+        ? { lastVerifiedAt: result.observedAt }
+        : {}),
     });
   }
 }

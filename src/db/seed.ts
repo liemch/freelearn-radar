@@ -12,6 +12,7 @@ import { createProvider } from "@/db/repositories/provider-repository";
 import { createUser, findUserByEmail } from "@/db/repositories/user-repository";
 import { categories, discoveryQueries, providers } from "@/db/schema";
 import {
+  decideSampleCourseSeeding,
   deriveAdminName,
   deriveCategoryDescription,
   parseAdminEmails,
@@ -107,6 +108,12 @@ async function seedAdminUsers(db: ReturnType<typeof getDb>) {
 }
 
 async function seedCourses(db: ReturnType<typeof getDb>) {
+  const decision = decideSampleCourseSeeding(process.env);
+  if (!decision.allowed) {
+    console.warn(`Skipping sample course seed: ${decision.reason}`);
+    return;
+  }
+
   const allProviders = await db.select().from(providers);
   const allCategories = await db.select().from(categories);
 

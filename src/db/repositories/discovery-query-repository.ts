@@ -17,6 +17,29 @@ export async function listEnabledDiscoveryQueries(
     .orderBy(asc(discoveryQueries.lastRunAt));
 }
 
+export type DiscoveryQueryFacets = {
+  providers: string[];
+  categories: string[];
+};
+
+/** Distinct provider/category values available for scoping a manual discovery run (§31). */
+export async function listDiscoveryQueryFacets(
+  db: Db,
+): Promise<DiscoveryQueryFacets> {
+  const rows = await db
+    .select({
+      provider: discoveryQueries.provider,
+      category: discoveryQueries.category,
+    })
+    .from(discoveryQueries)
+    .where(eq(discoveryQueries.enabled, true));
+
+  return {
+    providers: [...new Set(rows.map((row) => row.provider))].sort(),
+    categories: [...new Set(rows.map((row) => row.category))].sort(),
+  };
+}
+
 export async function createDiscoveryQuery(
   db: Db,
   input: NewDiscoveryQuery,

@@ -1,4 +1,6 @@
+import { sql } from "drizzle-orm";
 import {
+  index,
   integer,
   numeric,
   pgTable,
@@ -59,6 +61,14 @@ export const courses = pgTable(
   (table) => [
     uniqueIndex("courses_slug_unique").on(table.slug),
     uniqueIndex("courses_canonical_url_unique").on(table.canonicalUrl),
+    index("courses_status_published_at_idx").on(
+      table.status,
+      sql`${table.publishedAt} DESC NULLS LAST`,
+    ),
+    index("courses_status_quality_score_idx").on(
+      table.status,
+      sql`${table.qualityScore} DESC NULLS LAST`,
+    ),
   ],
 );
 

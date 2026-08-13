@@ -1,6 +1,5 @@
 import {
   and,
-  asc,
   desc,
   eq,
   ilike,
@@ -41,21 +40,40 @@ export type CatalogResult = {
   totalPages: number;
 };
 
-function sortExpression(sort: CatalogSort = "recommended") {
+/**
+ * Postgres orders DESC as NULLS FIRST by default, which would float unscored courses
+ * to the top of every catalog page. Every sort is explicitly NULLS LAST with a
+ * deterministic tiebreaker so pagination is stable.
+ */
+export function sortExpression(sort: CatalogSort = "recommended"): SQL[] {
   switch (sort) {
     case "newest":
-      return desc(courses.publishedAt);
+      return [
+        sql`${courses.publishedAt} DESC NULLS LAST`,
+        sql`${courses.createdAt} DESC`,
+      ];
     case "shortest":
-      return asc(courses.durationMinutes);
+      return [
+        sql`${courses.durationMinutes} ASC NULLS LAST`,
+        sql`${courses.title} ASC`,
+      ];
     case "popular":
-      return desc(courses.ratingCount);
+      return [
+        sql`${courses.ratingCount} DESC NULLS LAST`,
+        sql`${courses.qualityScore} DESC NULLS LAST`,
+        sql`${courses.publishedAt} DESC NULLS LAST`,
+      ];
     case "recommended":
     default:
-      return desc(courses.qualityScore);
+      return [
+        sql`${courses.qualityScore} DESC NULLS LAST`,
+        sql`${courses.lastVerifiedAt} DESC NULLS LAST`,
+        sql`${courses.publishedAt} DESC NULLS LAST`,
+      ];
   }
 }
 
-function buildCatalogConditions(
+export function buildCatalogConditions(
   filters: CatalogFilters,
   options?: { categorySlug?: string; publishedOnly?: boolean },
 ): SQL[] {
@@ -67,13 +85,21 @@ function buildCatalogConditions(
   }
 
   if (filters.q) {
-    const pattern = `%${filters.q}%`;
+    // Escape LIKE wildcards so a query of "%" does not match the whole catalog.
+    const pattern = `%${filters.q.replace(/[\\%_]/g, (char) => `\\${char}`)}%`;
     conditions.push(
       or(
         ilike(courses.title, pattern),
         ilike(courses.description, pattern),
         ilike(courses.shortDescription, pattern),
         ilike(providers.name, pattern),
+        // Project plan §26 lists categories as a search field.
+        sql`exists (
+          select 1
+          from ${courseCategories} sc
+          join ${categories} scat on scat.id = sc.category_id
+          where sc.course_id = ${courses.id} and scat.name ilike ${pattern}
+        )`,
       )!,
     );
   }
@@ -366,7 +392,7 @@ export async function queryCatalog(
   const [countRows, itemRows] = await Promise.all([
     whereClause ? countJoined.where(whereClause) : countJoined,
     (whereClause ? joined.where(whereClause) : joined)
-      .orderBy(sortExpression(filters.sort))
+      .orderBy(...sortExpression(filters.sort))
       .limit(pageSize)
       .offset(offset),
   ]);

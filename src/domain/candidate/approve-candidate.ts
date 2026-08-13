@@ -48,6 +48,13 @@ export type ApproveCandidateInput = {
   };
 };
 
+export class DuplicateCourseError extends Error {
+  constructor(readonly courseId: string) {
+    super("Canonical URL already published as a course");
+    this.name = "DuplicateCourseError";
+  }
+}
+
 function parseStoredAnalysis(value: unknown): CourseAnalysis | null {
   const parsed = courseAnalysisSchema.safeParse(value);
   return parsed.success ? parsed.data : null;
@@ -162,12 +169,8 @@ export async function approveCandidate(db: Db, input: ApproveCandidateInput) {
         candidate.canonicalUrl,
       );
       if (existingCourse) {
-        await updateCandidate(txDb, candidate.id, {
-          discoveryStatus: "DUPLICATE",
-          errorMessage: `Duplicate of course ${existingCourse.id}`,
-          rejectedAt: now,
-        });
-        throw new Error("Canonical URL already published as a course");
+        // Marking must happen after the rollback — see the catch block below.
+        throw new DuplicateCourseError(existingCourse.id);
       }
 
       const fresh = await findCandidateById(txDb, candidate.id);
@@ -253,14 +256,15 @@ export async function approveCandidate(db: Db, input: ApproveCandidateInput) {
 
     return course;
   } catch (error) {
-    const message = error instanceof Error ? error.message : "";
-    if (
-      message.includes("unique") ||
-      message.includes("duplicate") ||
-      message.includes("Canonical URL already")
-    ) {
-      throw error;
+    if (error instanceof DuplicateCourseError) {
+      // The transaction rolled back, so the DUPLICATE marking is written separately.
+      await updateCandidate(db, candidate.id, {
+        discoveryStatus: "DUPLICATE",
+        errorMessage: `Duplicate of course ${error.courseId}`,
+        rejectedAt: now,
+      });
     }
+
     throw error;
   }
 }
