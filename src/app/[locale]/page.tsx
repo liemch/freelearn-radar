@@ -147,7 +147,7 @@ export default async function HomePage({ params }: HomePageProps) {
     <main className="flex min-h-screen flex-col">
       <LocaleHtmlLang locale={locale} />
       <SiteHeader locale={locale} />
-      <HomeHero locale={locale} dict={dict} topics={topics} />
+      <HomeHero hero={dict.hero} topics={topics} />
 
       <PageShell>
         <PageStack className="gap-8 sm:gap-10">

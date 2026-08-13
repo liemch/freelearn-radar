@@ -5,17 +5,15 @@ import { Search } from "lucide-react";
 import { LocalizedLink } from "@/components/public/localized-link";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import type { Locale } from "@/lib/i18n/config";
 import type { Dictionary } from "@/lib/i18n/types";
 import { useLocalizedPath } from "@/lib/i18n/use-locale";
 
 type HomeHeroProps = {
-  locale: Locale;
-  dict: Dictionary;
+  hero: Dictionary["hero"];
   topics: { href: string; label: string }[];
 };
 
-export function HomeHero({ dict, topics }: HomeHeroProps) {
+export function HomeHero({ hero, topics }: HomeHeroProps) {
   const searchAction = useLocalizedPath("/search");
 
   return (
@@ -23,13 +21,13 @@ export function HomeHero({ dict, topics }: HomeHeroProps) {
       <div className="mx-auto grid w-full max-w-6xl gap-6 px-4 py-8 sm:px-6 sm:py-10 lg:grid-cols-[1fr_minmax(0,420px)] lg:items-end lg:gap-10">
         <div className="space-y-3">
           <p className="text-xs font-semibold uppercase tracking-[0.14em] text-primary">
-            {dict.hero.eyebrow}
+            {hero.eyebrow}
           </p>
           <h1 className="font-display text-3xl font-semibold leading-tight text-balance sm:text-4xl">
-            {dict.hero.headline}
+            {hero.headline}
           </h1>
           <p className="max-w-xl text-base leading-relaxed text-muted-foreground text-pretty">
-            {dict.hero.subhead}
+            {hero.subhead}
           </p>
         </div>
 
@@ -41,7 +39,7 @@ export function HomeHero({ dict, topics }: HomeHeroProps) {
             role="search"
           >
             <label className="sr-only" htmlFor="home-search">
-              {dict.hero.searchPlaceholder}
+              {hero.searchPlaceholder}
             </label>
             <Search
               className="ml-2 size-5 shrink-0 text-muted-foreground"
@@ -50,17 +48,17 @@ export function HomeHero({ dict, topics }: HomeHeroProps) {
             <Input
               id="home-search"
               name="q"
-              placeholder={dict.hero.searchPlaceholder}
+              placeholder={hero.searchPlaceholder}
               className="h-10 flex-1 border-0 bg-transparent text-base shadow-none focus-visible:ring-0"
             />
             <Button type="submit" className="h-10 shrink-0 px-5">
-              {dict.hero.searchButton}
+              {hero.searchButton}
             </Button>
           </form>
 
           <div className="flex flex-wrap items-center gap-x-2 gap-y-1 text-sm">
             <span className="font-medium text-muted-foreground">
-              {dict.hero.trending}:
+              {hero.trending}:
             </span>
             {topics.map((topic, index) => (
               <span key={topic.href} className="inline-flex items-center">
