@@ -28,9 +28,9 @@ export function CourseSection({
   const viewAll = viewAllLabel ?? getDictionary(locale).sections.viewAll;
 
   return (
-    <section className="space-y-4">
-      <div className="flex items-end justify-between gap-4">
-        <div>
+    <section className="space-y-3 sm:space-y-4">
+      <div className="flex flex-col gap-1 sm:flex-row sm:items-end sm:justify-between sm:gap-4">
+        <div className="min-w-0">
           <h2 className="text-xl font-semibold tracking-tight sm:text-2xl">
             {title}
           </h2>
@@ -41,13 +41,13 @@ export function CourseSection({
         {viewAllHref ? (
           <LocalizedLink
             href={viewAllHref}
-            className="shrink-0 text-sm font-medium text-primary hover:underline"
+            className="shrink-0 self-start text-sm font-medium text-primary hover:underline sm:self-auto"
           >
             {viewAll}
           </LocalizedLink>
         ) : null}
       </div>
-      <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+      <div className="grid gap-3 sm:grid-cols-2 sm:gap-4 lg:grid-cols-3">
         {courses.map((course) => (
           <CourseCard key={course.id} course={course} locale={locale} />
         ))}

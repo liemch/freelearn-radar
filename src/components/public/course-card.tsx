@@ -36,12 +36,12 @@ export function CourseCard({ course, locale }: CourseCardProps) {
   const courseHref = localePath(locale, `/course/${course.slug}`);
 
   return (
-    <article className="group flex h-full flex-col overflow-hidden rounded-xl bg-card ring-1 ring-border/70 transition hover:-translate-y-0.5 hover:ring-primary/30 hover:shadow-md motion-reduce:transition-none motion-reduce:hover:translate-y-0">
+    <article className="group flex h-full flex-col overflow-hidden rounded-xl bg-card ring-1 ring-border/70 transition hover:ring-primary/30 hover:shadow-md sm:hover:-translate-y-0.5 motion-reduce:transition-none motion-reduce:hover:translate-y-0">
       <LocalizedLink href={courseHref} className="block shrink-0">
         <CourseCardVisual course={course} locale={locale} />
       </LocalizedLink>
 
-      <div className="flex flex-1 flex-col p-4 pt-3">
+      <div className="flex flex-1 flex-col p-3.5 pt-3 sm:p-4">
         <div className="flex flex-wrap items-center gap-2">
           <FreeStatusBadge
             priceType={course.priceType}
@@ -111,7 +111,7 @@ export function CourseCard({ course, locale }: CourseCardProps) {
         </p>
 
         <div className="mt-4">
-          <Button asChild className="w-full" size="sm">
+          <Button asChild className="h-11 w-full sm:h-8" size="sm">
             <LocalizedLink href={courseHref}>
               {dict.course.openCourse}
             </LocalizedLink>

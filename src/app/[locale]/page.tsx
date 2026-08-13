@@ -191,12 +191,12 @@ export default async function HomePage({ params }: HomePageProps) {
               <h2 className="text-xl font-semibold tracking-tight sm:text-2xl">
                 {dict.sections.browseTopic}
               </h2>
-              <div className="flex flex-wrap gap-2">
+              <div className="-mx-1 flex gap-2 overflow-x-auto px-1 pb-1 sm:flex-wrap sm:overflow-visible">
                 {categories.map((category) => (
                   <Link
                     key={category.id}
                     href={localePath(locale, `/category/${category.slug}`)}
-                    className="rounded-full bg-secondary px-3.5 py-1.5 text-sm font-medium text-secondary-foreground transition hover:bg-accent"
+                    className="shrink-0 rounded-full bg-secondary px-3.5 py-2 text-sm font-medium text-secondary-foreground transition hover:bg-accent sm:py-1.5"
                   >
                     {category.name}
                   </Link>

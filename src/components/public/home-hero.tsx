@@ -18,15 +18,15 @@ export function HomeHero({ hero, topics }: HomeHeroProps) {
 
   return (
     <section className="border-b border-border/50 bg-surface">
-      <div className="mx-auto grid w-full max-w-6xl gap-6 px-4 py-8 sm:px-6 sm:py-10 lg:grid-cols-[1fr_minmax(0,420px)] lg:items-end lg:gap-10">
-        <div className="space-y-3">
-          <p className="text-xs font-semibold uppercase tracking-[0.14em] text-primary">
+      <div className="mx-auto grid w-full max-w-6xl gap-5 px-4 py-7 sm:gap-6 sm:px-6 sm:py-10 lg:grid-cols-[1fr_minmax(0,420px)] lg:items-end lg:gap-10">
+        <div className="space-y-2.5 sm:space-y-3">
+          <p className="text-[11px] font-semibold uppercase tracking-[0.14em] text-primary sm:text-xs">
             {hero.eyebrow}
           </p>
-          <h1 className="font-display text-3xl font-semibold leading-tight text-balance sm:text-4xl">
+          <h1 className="font-display text-[1.75rem] font-semibold leading-[1.15] text-balance sm:text-4xl">
             {hero.headline}
           </h1>
-          <p className="max-w-xl text-base leading-relaxed text-muted-foreground text-pretty">
+          <p className="max-w-xl text-[0.9375rem] leading-relaxed text-muted-foreground text-pretty sm:text-base">
             {hero.subhead}
           </p>
         </div>
@@ -35,45 +35,44 @@ export function HomeHero({ hero, topics }: HomeHeroProps) {
           <form
             action={searchAction}
             method="get"
-            className="flex items-center gap-2 rounded-xl border border-border bg-card p-1.5 shadow-sm"
+            className="flex flex-col gap-2 rounded-xl border border-border bg-card p-2 shadow-sm sm:flex-row sm:items-center sm:gap-2 sm:p-1.5"
             role="search"
           >
-            <label className="sr-only" htmlFor="home-search">
-              {hero.searchPlaceholder}
-            </label>
-            <Search
-              className="ml-2 size-5 shrink-0 text-muted-foreground"
-              aria-hidden="true"
-            />
-            <Input
-              id="home-search"
-              name="q"
-              placeholder={hero.searchPlaceholder}
-              className="h-10 flex-1 border-0 bg-transparent text-base shadow-none focus-visible:ring-0"
-            />
-            <Button type="submit" className="h-10 shrink-0 px-5">
+            <div className="flex min-w-0 flex-1 items-center gap-2">
+              <label className="sr-only" htmlFor="home-search">
+                {hero.searchPlaceholder}
+              </label>
+              <Search
+                className="ml-1.5 size-5 shrink-0 text-muted-foreground sm:ml-2"
+                aria-hidden="true"
+              />
+              <Input
+                id="home-search"
+                name="q"
+                placeholder={hero.searchPlaceholder}
+                className="h-11 flex-1 border-0 bg-transparent text-base shadow-none focus-visible:ring-0 sm:h-10"
+              />
+            </div>
+            <Button
+              type="submit"
+              className="h-11 w-full shrink-0 px-5 sm:h-10 sm:w-auto"
+            >
               {hero.searchButton}
             </Button>
           </form>
 
-          <div className="flex flex-wrap items-center gap-x-2 gap-y-1 text-sm">
-            <span className="font-medium text-muted-foreground">
+          <div className="flex flex-wrap items-center gap-x-1 gap-y-1.5 text-sm">
+            <span className="mr-1 font-medium text-muted-foreground">
               {hero.trending}:
             </span>
-            {topics.map((topic, index) => (
-              <span key={topic.href} className="inline-flex items-center">
-                {index > 0 ? (
-                  <span aria-hidden="true" className="mx-1.5 text-border">
-                    ·
-                  </span>
-                ) : null}
-                <LocalizedLink
-                  href={topic.href}
-                  className="font-medium text-foreground underline-offset-4 hover:text-primary hover:underline"
-                >
-                  {topic.label}
-                </LocalizedLink>
-              </span>
+            {topics.map((topic) => (
+              <LocalizedLink
+                key={topic.href}
+                href={topic.href}
+                className="rounded-full bg-secondary px-2.5 py-1 text-sm font-medium text-secondary-foreground transition hover:bg-accent hover:text-accent-foreground"
+              >
+                {topic.label}
+              </LocalizedLink>
             ))}
           </div>
         </div>

@@ -109,12 +109,14 @@ export default async function SearchPage({
     <main className="min-h-screen bg-background">
       <LocaleHtmlLang locale={locale} />
       <SiteHeader locale={locale} />
-      <PageShell className="space-y-8 py-10">
+      <PageShell className="space-y-6 py-7 sm:space-y-8 sm:py-10">
         <div className="space-y-2">
-          <h1 className="font-display text-3xl font-semibold tracking-tight">
+          <h1 className="font-display text-[1.75rem] font-semibold tracking-tight sm:text-3xl">
             {dict.search.title}
           </h1>
-          <p className="text-muted-foreground">{dict.search.description}</p>
+          <p className="text-[0.9375rem] text-muted-foreground sm:text-base">
+            {dict.search.description}
+          </p>
           <p className="text-sm text-muted-foreground">
             {dict.search.results(catalog.total, filters.q)}
           </p>
@@ -137,7 +139,7 @@ export default async function SearchPage({
             actionLabel={dict.empty.searchAction}
           />
         ) : (
-          <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+          <div className="grid gap-3 sm:grid-cols-2 sm:gap-4 lg:grid-cols-3">
             {catalog.items.map((course) => (
               <CourseCard key={course.id} course={course} locale={locale} />
             ))}

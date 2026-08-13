@@ -30,8 +30,8 @@ export function SiteHeader({ locale }: SiteHeaderProps) {
       menuCloseLabel={dict.nav.close}
       brand={
         <>
-          <BrandMark className="size-6 text-primary sm:size-7" />
-          <span className="font-display text-base font-semibold tracking-tight sm:text-lg">
+          <BrandMark className="size-6 shrink-0 text-primary sm:size-7" />
+          <span className="truncate font-display text-base font-semibold tracking-tight sm:text-lg">
             FreeLearn Radar
           </span>
         </>

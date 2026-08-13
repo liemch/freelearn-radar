@@ -45,7 +45,7 @@ export function LanguageSwitcher({
               setLocalePreferenceCookie(code);
             }}
             className={cn(
-              "rounded-md px-2 py-1 text-xs font-semibold uppercase tracking-wide transition",
+              "inline-flex min-h-9 min-w-9 items-center justify-center rounded-md px-2.5 py-1.5 text-xs font-semibold uppercase tracking-wide transition",
               active
                 ? "bg-primary text-primary-foreground"
                 : "text-muted-foreground hover:bg-muted hover:text-foreground",

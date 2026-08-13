@@ -144,7 +144,7 @@ export default async function ProviderPage({
         data={buildProviderJsonLd({ provider, appUrl })}
       />
       <SiteHeader locale={locale} />
-      <PageShell className="space-y-8 py-10">
+      <PageShell className="space-y-6 py-7 sm:space-y-8 sm:py-10">
         <div className="space-y-3">
           <p className="text-sm text-muted-foreground">
             <LocalizedLink href="/" className="hover:underline">
@@ -152,7 +152,7 @@ export default async function ProviderPage({
             </LocalizedLink>{" "}
             / {dict.common.providers} / {provider.name}
           </p>
-          <h1 className="font-display text-3xl font-semibold tracking-tight sm:text-4xl">
+          <h1 className="font-display text-[1.75rem] font-semibold tracking-tight sm:text-4xl">
             {dict.pages.providerHeading(provider.name)}
           </h1>
           <p className="max-w-3xl text-muted-foreground">
@@ -182,7 +182,7 @@ export default async function ProviderPage({
             actionLabel={dict.common.searchCatalog}
           />
         ) : (
-          <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+          <div className="grid gap-3 sm:grid-cols-2 sm:gap-4 lg:grid-cols-3">
             {catalog.items.map((course) => (
               <CourseCard key={course.id} course={course} locale={locale} />
             ))}

@@ -30,7 +30,12 @@ export function PageStack({
   className?: string;
 }) {
   return (
-    <div className={cn("flex flex-col gap-10 py-10 sm:gap-12 sm:py-12", className)}>
+    <div
+      className={cn(
+        "flex flex-col gap-8 py-7 sm:gap-10 sm:py-10 lg:gap-12 lg:py-12",
+        className,
+      )}
+    >
       {children}
     </div>
   );
@@ -46,9 +51,11 @@ export function SectionHeading({
   action?: React.ReactNode;
 }) {
   return (
-    <div className="flex flex-wrap items-end justify-between gap-3">
-      <div className="space-y-1">
-        <h2 className="text-2xl font-semibold tracking-tight">{title}</h2>
+    <div className="flex flex-col gap-2 sm:flex-row sm:flex-wrap sm:items-end sm:justify-between sm:gap-3">
+      <div className="min-w-0 space-y-1">
+        <h2 className="text-xl font-semibold tracking-tight sm:text-2xl">
+          {title}
+        </h2>
         {subtitle ? (
           <p className="text-sm text-muted-foreground">{subtitle}</p>
         ) : null}

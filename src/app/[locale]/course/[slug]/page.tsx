@@ -177,9 +177,9 @@ export default async function CourseDetailPage({ params }: CoursePageProps) {
       />
       <SiteHeader locale={locale} />
       <PageShell>
-        <div className="grid gap-10 py-10 lg:grid-cols-[minmax(0,2fr)_minmax(16rem,1fr)]">
-          <article className="space-y-8">
-            <header className="space-y-4">
+        <div className="grid gap-6 py-6 sm:gap-8 sm:py-8 lg:grid-cols-[minmax(0,2fr)_minmax(16rem,1fr)] lg:gap-10 lg:py-10">
+          <div className="contents">
+            <header className="order-1 space-y-3 sm:space-y-4 lg:col-start-1">
               <p className="text-sm font-medium text-muted-foreground">
                 <LocalizedLink
                   href={`/provider/${course.provider.slug}`}
@@ -188,10 +188,10 @@ export default async function CourseDetailPage({ params }: CoursePageProps) {
                   {course.provider.name}
                 </LocalizedLink>
               </p>
-              <h1 className="font-display text-3xl font-semibold tracking-tight text-balance sm:text-4xl">
+              <h1 className="font-display text-[1.75rem] font-semibold leading-tight tracking-tight text-balance sm:text-4xl">
                 {course.title}
               </h1>
-              <p className="max-w-2xl text-muted-foreground text-pretty">
+              <p className="max-w-2xl text-[0.9375rem] text-muted-foreground text-pretty sm:text-base">
                 {course.shortDescription ?? dict.courseDetail.fallbackSummary}
               </p>
 
@@ -221,120 +221,122 @@ export default async function CourseDetailPage({ params }: CoursePageProps) {
               </div>
             </header>
 
-            <section aria-labelledby="facts-heading" className="space-y-3">
-              <h2 id="facts-heading" className="text-lg font-semibold">
-                {dict.courseDetail.keyFacts}
+            <aside className="order-2 h-fit space-y-3 rounded-xl border border-border bg-card p-4 shadow-sm sm:space-y-4 sm:p-5 lg:sticky lg:top-20 lg:col-start-2 lg:row-span-2 lg:self-start">
+              <h2 className="text-base font-semibold sm:text-lg">
+                {dict.courseDetail.viewCourseHeading}
               </h2>
-              <dl className="grid gap-x-8 gap-y-3 sm:grid-cols-2">
-                <Fact
-                  label={dict.courseDetail.whatIsFree}
-                  value={price.label}
-                  hint={price.shortHint}
-                />
-                <Fact label={dict.courseDetail.certificate} value={certificate} />
-                <Fact
-                  label={dict.courseDetail.level}
-                  value={formatLevelLabel(course.level, locale)}
-                />
-                <Fact
-                  label={dict.courseDetail.duration}
-                  value={duration ?? dict.courseDetail.unknown}
-                />
-                <Fact
-                  label={dict.courseDetail.language}
-                  value={course.language ?? dict.courseDetail.unknown}
-                />
-                <Fact
-                  label={dict.courseDetail.instructor}
-                  value={course.instructor ?? dict.courseDetail.notListed}
-                />
-                <Fact
-                  label={dict.courseDetail.lastVerified}
-                  value={
-                    course.lastVerifiedAt
-                      ? course.lastVerifiedAt.toLocaleDateString(locale)
-                      : dict.courseDetail.notVerified
-                  }
-                />
-                <Fact
-                  label={dict.courseDetail.provider}
-                  value={course.provider.name}
-                />
-              </dl>
-            </section>
-
-            <section className="space-y-2" aria-labelledby="why-heading">
-              <h2 id="why-heading" className="text-lg font-semibold">
-                {dict.courseDetail.whyLearn}
-              </h2>
-              <p className="max-w-prose text-sm leading-relaxed text-muted-foreground whitespace-pre-line">
-                {course.description || dict.courseDetail.noSummary}
+              <p className="text-sm text-muted-foreground">
+                {dict.courseDetail.continuesOn(course.provider.name)}
               </p>
-            </section>
+              <Button
+                asChild
+                className="h-11 w-full sm:h-10"
+                size="lg"
+                variant={inactive ? "outline" : "default"}
+              >
+                <a href={`/course/${course.slug}/go`}>
+                  {dict.courseDetail.viewCourseOn(course.provider.name)}
+                </a>
+              </Button>
+              <ShareCourseButton
+                title={course.title}
+                url={shareUrl}
+                shareLabel={dict.share.action}
+                copiedLabel={dict.share.copied}
+              />
+              <p className="sr-only">Source URL: {course.canonicalUrl}</p>
+            </aside>
 
-            <nav
-              className="flex flex-wrap gap-2"
-              aria-label={dict.a11y.exploreRelated}
-            >
-              {course.categories.map((category) => (
+            <div className="order-3 space-y-8 lg:col-start-1">
+              <section aria-labelledby="facts-heading" className="space-y-3">
+                <h2 id="facts-heading" className="text-lg font-semibold">
+                  {dict.courseDetail.keyFacts}
+                </h2>
+                <dl className="grid gap-x-8 gap-y-3 sm:grid-cols-2">
+                  <Fact
+                    label={dict.courseDetail.whatIsFree}
+                    value={price.label}
+                    hint={price.shortHint}
+                  />
+                  <Fact label={dict.courseDetail.certificate} value={certificate} />
+                  <Fact
+                    label={dict.courseDetail.level}
+                    value={formatLevelLabel(course.level, locale)}
+                  />
+                  <Fact
+                    label={dict.courseDetail.duration}
+                    value={duration ?? dict.courseDetail.unknown}
+                  />
+                  <Fact
+                    label={dict.courseDetail.language}
+                    value={course.language ?? dict.courseDetail.unknown}
+                  />
+                  <Fact
+                    label={dict.courseDetail.instructor}
+                    value={course.instructor ?? dict.courseDetail.notListed}
+                  />
+                  <Fact
+                    label={dict.courseDetail.lastVerified}
+                    value={
+                      course.lastVerifiedAt
+                        ? course.lastVerifiedAt.toLocaleDateString(locale)
+                        : dict.courseDetail.notVerified
+                    }
+                  />
+                  <Fact
+                    label={dict.courseDetail.provider}
+                    value={course.provider.name}
+                  />
+                </dl>
+              </section>
+
+              <section className="space-y-2" aria-labelledby="why-heading">
+                <h2 id="why-heading" className="text-lg font-semibold">
+                  {dict.courseDetail.whyLearn}
+                </h2>
+                <p className="max-w-prose text-sm leading-relaxed text-muted-foreground whitespace-pre-line">
+                  {course.description || dict.courseDetail.noSummary}
+                </p>
+              </section>
+
+              <nav
+                className="-mx-1 flex gap-2 overflow-x-auto px-1 pb-1 sm:flex-wrap sm:overflow-visible"
+                aria-label={dict.a11y.exploreRelated}
+              >
+                {course.categories.map((category) => (
+                  <LocalizedLink
+                    key={category.id}
+                    href={`/category/${category.slug}`}
+                    className="shrink-0 rounded-full border border-border px-3 py-2 text-sm hover:bg-accent focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring sm:py-1.5"
+                  >
+                    {category.name}
+                  </LocalizedLink>
+                ))}
                 <LocalizedLink
-                  key={category.id}
-                  href={`/category/${category.slug}`}
-                  className="rounded-full border border-border px-3 py-1.5 text-sm hover:bg-accent focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+                  href={`/provider/${course.provider.slug}`}
+                  className="shrink-0 rounded-full border border-border px-3 py-2 text-sm hover:bg-accent sm:py-1.5"
                 >
-                  {category.name}
+                  {dict.courseDetail.moreFrom(course.provider.name)}
                 </LocalizedLink>
-              ))}
-              <LocalizedLink
-                href={`/provider/${course.provider.slug}`}
-                className="rounded-full border border-border px-3 py-1.5 text-sm hover:bg-accent"
-              >
-                {dict.courseDetail.moreFrom(course.provider.name)}
-              </LocalizedLink>
-              <LocalizedLink
-                href={bestHref}
-                className="rounded-full border border-border px-3 py-1.5 text-sm hover:bg-accent"
-              >
-                {dict.courseDetail.monthlyBest}
-              </LocalizedLink>
-            </nav>
+                <LocalizedLink
+                  href={bestHref}
+                  className="shrink-0 rounded-full border border-border px-3 py-2 text-sm hover:bg-accent sm:py-1.5"
+                >
+                  {dict.courseDetail.monthlyBest}
+                </LocalizedLink>
+              </nav>
 
-            <CourseSection
-              locale={locale}
-              title={
-                inactive
-                  ? dict.courseDetail.relatedAlternatives
-                  : dict.courseDetail.relatedCourses
-              }
-              courses={related}
-            />
-          </article>
-
-          <aside className="h-fit space-y-4 rounded-xl border border-border bg-card p-5 shadow-sm lg:sticky lg:top-20">
-            <h2 className="text-lg font-semibold">
-              {dict.courseDetail.viewCourseHeading}
-            </h2>
-            <p className="text-sm text-muted-foreground">
-              {dict.courseDetail.continuesOn(course.provider.name)}
-            </p>
-            <Button
-              asChild
-              className="w-full"
-              size="lg"
-              variant={inactive ? "outline" : "default"}
-            >
-              <a href={`/course/${course.slug}/go`}>
-                {dict.courseDetail.viewCourseOn(course.provider.name)}
-              </a>
-            </Button>
-            <ShareCourseButton
-              title={course.title}
-              url={shareUrl}
-              shareLabel={dict.share.action}
-              copiedLabel={dict.share.copied}
-            />
-            <p className="sr-only">Source URL: {course.canonicalUrl}</p>
-          </aside>
+              <CourseSection
+                locale={locale}
+                title={
+                  inactive
+                    ? dict.courseDetail.relatedAlternatives
+                    : dict.courseDetail.relatedCourses
+                }
+                courses={related}
+              />
+            </div>
+          </div>
         </div>
       </PageShell>
       <SiteFooter locale={locale} />

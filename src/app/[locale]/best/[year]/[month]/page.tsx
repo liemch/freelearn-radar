@@ -129,9 +129,9 @@ export default async function BestCoursesPage({ params }: BestPageProps) {
         })}
       />
       <SiteHeader locale={locale} />
-      <div className="mx-auto w-full max-w-6xl space-y-8 px-4 py-10 sm:px-6">
+      <div className="mx-auto w-full max-w-6xl space-y-6 px-4 py-7 sm:space-y-8 sm:py-10 sm:px-6">
         <div className="space-y-2">
-          <h1 className="font-display text-3xl font-semibold tracking-tight">
+          <h1 className="font-display text-[1.75rem] font-semibold tracking-tight sm:text-3xl">
             {title}
           </h1>
           <p className="text-muted-foreground">{dict.pages.bestIntro}</p>
@@ -150,7 +150,7 @@ export default async function BestCoursesPage({ params }: BestPageProps) {
             actionLabel={dict.common.browseAll}
           />
         ) : (
-          <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+          <div className="grid gap-3 sm:grid-cols-2 sm:gap-4 lg:grid-cols-3">
             {collection.items.map((course) => (
               <CourseCard key={course.id} course={course} locale={locale} />
             ))}

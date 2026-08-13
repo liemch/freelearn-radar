@@ -39,7 +39,12 @@ export function ShareCourseButton({
   }
 
   return (
-    <Button type="button" variant="outline" className="w-full" onClick={onShare}>
+    <Button
+      type="button"
+      variant="outline"
+      className="h-11 w-full sm:h-9"
+      onClick={onShare}
+    >
       {copied ? copiedLabel : shareLabel}
     </Button>
   );

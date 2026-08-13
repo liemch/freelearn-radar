@@ -15,7 +15,7 @@ export function EmptyState({
   actionLabel,
 }: EmptyStateProps) {
   return (
-    <div className="rounded-xl bg-surface-muted/80 px-6 py-12 text-center">
+    <div className="rounded-xl bg-surface-muted/80 px-4 py-10 text-center sm:px-6 sm:py-12">
       <h2 className="font-display text-xl font-semibold tracking-tight">
         {title}
       </h2>
@@ -24,7 +24,7 @@ export function EmptyState({
       </p>
       {actionHref && actionLabel ? (
         <div className="mt-6">
-          <Button asChild>
+          <Button asChild className="min-h-11 w-full sm:min-h-9 sm:w-auto">
             <LocalizedLink href={actionHref}>{actionLabel}</LocalizedLink>
           </Button>
         </div>

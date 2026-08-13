@@ -116,7 +116,7 @@ export default async function DurationCollectionPage({
     <main className="min-h-screen bg-background">
       <LocaleHtmlLang locale={locale} />
       <SiteHeader locale={locale} />
-      <div className="mx-auto w-full max-w-6xl space-y-8 px-4 py-10 sm:px-6">
+      <div className="mx-auto w-full max-w-6xl space-y-6 px-4 py-7 sm:space-y-8 sm:py-10 sm:px-6">
         <div className="space-y-3">
           <p className="text-sm text-muted-foreground">
             <LocalizedLink href="/" className="hover:underline">
@@ -124,7 +124,7 @@ export default async function DurationCollectionPage({
             </LocalizedLink>{" "}
             / {dict.common.collections} / {bucketLabel}
           </p>
-          <h1 className="font-display text-3xl font-semibold tracking-tight">
+          <h1 className="font-display text-[1.75rem] font-semibold tracking-tight sm:text-3xl">
             {bucketLabel}
           </h1>
           <p className="max-w-3xl text-muted-foreground">
@@ -164,7 +164,7 @@ export default async function DurationCollectionPage({
             actionLabel={dict.common.searchCatalog}
           />
         ) : (
-          <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+          <div className="grid gap-3 sm:grid-cols-2 sm:gap-4 lg:grid-cols-3">
             {catalog.items.map((course) => (
               <CourseCard key={course.id} course={course} locale={locale} />
             ))}

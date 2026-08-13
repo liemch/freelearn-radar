@@ -62,8 +62,13 @@
     @apply border-border outline-ring/50;
   }
 
+  html {
+    -webkit-text-size-adjust: 100%;
+    text-size-adjust: 100%;
+  }
+
   body {
-    @apply bg-background text-foreground antialiased;
+    @apply overflow-x-hidden bg-background text-foreground antialiased;
   }
 
   h1,
@@ -75,6 +80,13 @@
 
   :focus-visible {
     @apply outline-none ring-2 ring-ring ring-offset-2 ring-offset-background;
+  }
+
+  img,
+  video,
+  svg {
+    max-width: 100%;
+    height: auto;
   }
 }
 

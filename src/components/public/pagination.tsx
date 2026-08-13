@@ -52,20 +52,22 @@ export function Pagination({
 
   return (
     <nav
-      className="flex items-center justify-between gap-4 pt-2"
+      className="flex flex-col gap-3 pt-2 sm:flex-row sm:items-center sm:justify-between sm:gap-4"
       aria-label="Pagination"
     >
       <p className="text-sm text-muted-foreground">{pageOf}</p>
-      <div className="flex gap-2">
+      <div className="grid grid-cols-2 gap-2 sm:flex">
         {page > 1 ? (
-          <Button asChild variant="outline" size="sm">
+          <Button asChild variant="outline" size="sm" className="min-h-11 sm:min-h-8">
             <LocalizedLink href={buildHref(basePath, page - 1, query)}>
               {previous}
             </LocalizedLink>
           </Button>
-        ) : null}
+        ) : (
+          <span className="sm:hidden" aria-hidden="true" />
+        )}
         {page < totalPages ? (
-          <Button asChild variant="outline" size="sm">
+          <Button asChild variant="outline" size="sm" className="min-h-11 sm:min-h-8">
             <LocalizedLink href={buildHref(basePath, page + 1, query)}>
               {next}
             </LocalizedLink>
