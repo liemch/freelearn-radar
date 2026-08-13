@@ -160,6 +160,42 @@ export default async function AdminCandidateDetailPage({ params }: PageProps) {
               {candidate.canonicalUrl}
             </a>
           </div>
+          {candidate.sourceFinalUrl ? (
+            <div className="sm:col-span-2">
+              <p className="text-sm text-muted-foreground">
+                {t.candidates.finalSourceUrl}
+              </p>
+              <a
+                href={candidate.sourceFinalUrl}
+                className="break-all text-sm text-primary"
+                target="_blank"
+                rel="noreferrer"
+              >
+                {candidate.sourceFinalUrl}
+              </a>
+              {candidate.sourceFetchedAt ? (
+                <p className="mt-1 text-xs text-muted-foreground">
+                  {t.candidates.fetchedAt}:{" "}
+                  {candidate.sourceFetchedAt.toISOString()}
+                </p>
+              ) : null}
+            </div>
+          ) : null}
+          {candidate.sourceImageUrl ? (
+            <div className="sm:col-span-2">
+              <p className="text-sm text-muted-foreground">
+                {t.candidates.imageSource}
+              </p>
+              <a
+                href={candidate.sourceImageUrl}
+                className="break-all text-sm text-primary"
+                target="_blank"
+                rel="noreferrer"
+              >
+                {candidate.sourceImageUrl}
+              </a>
+            </div>
+          ) : null}
           {candidate.errorMessage ? (
             <p className="sm:col-span-2 text-sm text-destructive">
               {candidate.errorMessage}
@@ -224,9 +260,14 @@ export default async function AdminCandidateDetailPage({ params }: PageProps) {
             {t.candidates.technicalDetails}
           </summary>
           <pre className="mt-3 overflow-x-auto rounded-md bg-muted p-3 text-xs">
-            {analysis
-              ? JSON.stringify(analysis, null, 2)
-              : t.candidates.noAnalysis}
+            {JSON.stringify(
+              {
+                sourceFetch: candidate.sourceEvidenceJson ?? null,
+                aiAnalysis: analysis,
+              },
+              null,
+              2,
+            )}
           </pre>
         </details>
       </main>

@@ -28,6 +28,14 @@ const baseEnvSchema = z.object({
   DISCOVERY_RESULT_LIMIT: z.coerce.number().int().positive().default(5),
   AI_ANALYSIS_LIMIT: z.coerce.number().int().positive().default(30),
   MAX_VERIFICATIONS_PER_RUN: z.coerce.number().int().positive().default(25),
+  MAX_SOURCE_FETCHES_PER_RUN: z.coerce.number().int().positive().default(20),
+  SOURCE_FETCH_TIMEOUT_MS: z.coerce.number().int().positive().default(10_000),
+  SOURCE_MAX_RESPONSE_BYTES: z.coerce
+    .number()
+    .int()
+    .positive()
+    .default(512 * 1024),
+  SOURCE_MAX_REDIRECTS: z.coerce.number().int().positive().default(5),
 });
 
 export type ServerEnv = z.infer<typeof baseEnvSchema>;

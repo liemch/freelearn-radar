@@ -36,6 +36,11 @@ export const courseCandidates = pgTable(
     approvedAt: timestamp("approved_at", { withTimezone: true }),
     rejectedAt: timestamp("rejected_at", { withTimezone: true }),
     errorMessage: text("error_message"),
+    /** Structured CourseSourceResult snapshot (evidence, warnings, images). */
+    sourceEvidenceJson: jsonb("source_evidence_json"),
+    sourceFetchedAt: timestamp("source_fetched_at", { withTimezone: true }),
+    sourceFinalUrl: text("source_final_url"),
+    sourceImageUrl: text("source_image_url"),
   },
   (table) => [
     uniqueIndex("course_candidates_canonical_url_unique").on(table.canonicalUrl),

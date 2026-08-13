@@ -29,6 +29,7 @@ import { getServerEnv } from "@/lib/env";
 import { getDictionary } from "@/lib/i18n/get-dictionary";
 import { resolveLocaleParam } from "@/lib/i18n/page";
 import { localePath } from "@/lib/i18n/path";
+import { buildLocaleAlternates } from "@/lib/i18n/seo";
 
 type TopicPageProps = {
   params: Promise<{ locale: string; topic: string }>;
@@ -53,10 +54,17 @@ export async function generateMetadata({
   const copy = topicCopy(landing, locale);
   const path = localePath(locale, `/free-courses/${landing.slug}`);
 
+  let appUrl = "http://localhost:3000";
+  try {
+    appUrl = getServerEnv().APP_URL;
+  } catch {
+    appUrl = process.env.APP_URL || appUrl;
+  }
+
   return {
     title: `${copy.title} | FreeLearn Radar`,
     description: copy.description,
-    alternates: { canonical: path },
+    alternates: buildLocaleAlternates(appUrl, locale, `/free-courses/${landing.slug}`),
     openGraph: {
       title: copy.title,
       description: copy.description,

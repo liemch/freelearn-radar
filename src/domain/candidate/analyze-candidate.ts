@@ -23,6 +23,13 @@ export async function analyzeCandidate(
     throw new Error("Candidate not found");
   }
 
+  if (
+    candidate.discoveryStatus !== "DISCOVERED" &&
+    candidate.discoveryStatus !== "FETCHED"
+  ) {
+    return candidate;
+  }
+
   const prefilter = prefilterCandidate({
     url: candidate.canonicalUrl,
     title: candidate.rawTitle,
@@ -123,8 +130,14 @@ export async function analyzePendingCandidates(
     "@/db/repositories/candidate-repository"
   );
   const max = limit ?? getServerEnv().AI_ANALYSIS_LIMIT;
-  const pending = await listCandidatesByStatus(db, "DISCOVERED", max);
+  const fetched = await listCandidatesByStatus(db, "FETCHED", max);
+  const remaining = Math.max(0, max - fetched.length);
+  const discovered =
+    remaining > 0
+      ? await listCandidatesByStatus(db, "DISCOVERED", remaining)
+      : [];
 
+  const pending = [...fetched, ...discovered];
   const results = [];
   for (const candidate of pending) {
     results.push(await analyzeCandidate(db, ai, candidate.id));

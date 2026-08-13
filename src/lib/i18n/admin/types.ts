@@ -142,6 +142,9 @@ export type AdminDictionary = {
     noRawContent: string;
     technicalDetails: string;
     noAnalysis: string;
+    finalSourceUrl: string;
+    fetchedAt: string;
+    imageSource: string;
     query: string;
     evidence: string;
     /** Placeholders: {price}, {certificate} */

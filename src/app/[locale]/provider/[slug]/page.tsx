@@ -31,6 +31,7 @@ import { getServerEnv } from "@/lib/env";
 import { getDictionary } from "@/lib/i18n/get-dictionary";
 import { resolveLocaleParam } from "@/lib/i18n/page";
 import { localePath } from "@/lib/i18n/path";
+import { buildLocaleAlternates } from "@/lib/i18n/seo";
 
 type ProviderPageProps = {
   params: Promise<{ locale: string; slug: string }>;
@@ -54,10 +55,17 @@ export async function generateMetadata({
 
   const path = localePath(locale, `/provider/${provider.slug}`);
 
+  let appUrl = "http://localhost:3000";
+  try {
+    appUrl = getServerEnv().APP_URL;
+  } catch {
+    appUrl = process.env.APP_URL || appUrl;
+  }
+
   return {
     title: `Free ${provider.name} Courses | FreeLearn Radar`,
     description: `Browse curated free courses from ${provider.name} (${provider.domain}) with clear free-status labels.`,
-    alternates: { canonical: path },
+    alternates: buildLocaleAlternates(appUrl, locale, `/provider/${provider.slug}`),
     openGraph: {
       title: `Free ${provider.name} courses`,
       description: `Free courses from ${provider.name} on FreeLearn Radar.`,

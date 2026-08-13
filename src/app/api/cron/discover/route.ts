@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 
 import { getDb } from "@/db";
 import { runDiscoveryBatch } from "@/domain/discovery/discovery-engine";
+import { fetchPendingCandidates } from "@/domain/candidate/fetch-candidate-source";
 import { analyzePendingCandidates } from "@/domain/candidate/analyze-candidate";
 import { verifyCronAuth } from "@/lib/cron-auth";
 import { getServerEnv } from "@/lib/env";
@@ -38,6 +39,16 @@ export async function GET(request: Request) {
       resultLimit: env.DISCOVERY_RESULT_LIMIT,
     });
 
+    const fetched = await fetchPendingCandidates(
+      db,
+      env.MAX_SOURCE_FETCHES_PER_RUN,
+      {
+        timeoutMs: env.SOURCE_FETCH_TIMEOUT_MS,
+        maxRedirects: env.SOURCE_MAX_REDIRECTS,
+        maxBytes: env.SOURCE_MAX_RESPONSE_BYTES,
+      },
+    );
+
     let analyzed = 0;
     if (env.NVIDIA_API_KEY) {
       const ai = createAIProvider();
@@ -52,12 +63,14 @@ export async function GET(request: Request) {
     logger.info("cron.discover", {
       status: "success",
       ...summary,
+      sourceFetched: fetched.length,
       analyzed,
     });
 
     return NextResponse.json({
       ok: true,
       discovery: summary,
+      sourceFetched: fetched.length,
       analyzed,
       pendingManualIntegrationTest: !env.NVIDIA_API_KEY,
     });

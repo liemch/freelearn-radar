@@ -16,6 +16,7 @@ import { getServerEnv } from "@/lib/env";
 import { getDictionary } from "@/lib/i18n/get-dictionary";
 import { resolveLocaleParam } from "@/lib/i18n/page";
 import { localePath } from "@/lib/i18n/path";
+import { buildLocaleAlternates } from "@/lib/i18n/seo";
 
 type BestPageProps = {
   params: Promise<{ locale: string; year: string; month: string }>;
@@ -49,10 +50,17 @@ export async function generateMetadata({
   const title = `Best Free Online Courses — ${monthName(monthNumber)} ${year}`;
   const path = localePath(locale, `/best/${year}/${month}`);
 
+  let appUrl = "http://localhost:3000";
+  try {
+    appUrl = getServerEnv().APP_URL;
+  } catch {
+    appUrl = process.env.APP_URL || appUrl;
+  }
+
   return {
     title: `${title} | FreeLearn Radar`,
     description: `Curated best free online courses for ${monthName(monthNumber)} ${year}, ranked by quality, trust, and freshness.`,
-    alternates: { canonical: path },
+    alternates: buildLocaleAlternates(appUrl, locale, `/best/${year}/${month}`),
     openGraph: {
       title,
       description: `Top free courses curated for ${monthName(monthNumber)} ${year}.`,

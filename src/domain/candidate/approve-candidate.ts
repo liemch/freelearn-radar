@@ -208,6 +208,9 @@ export async function approveCandidate(db: Db, input: ApproveCandidateInput) {
         status: "PUBLISHED",
         publishedAt: now,
         lastVerifiedAt: now,
+        imageSourceUrl: candidate.sourceImageUrl ?? null,
+        imageLastVerifiedAt: candidate.sourceImageUrl ? now : null,
+        imagePolicy: "REMOTE_ONLY",
       });
 
       await setCourseCategories(txDb, created.id, matchedCategoryIds);

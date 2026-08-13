@@ -19,9 +19,11 @@ import {
   catalogFiltersToQuery,
 } from "@/domain/course/catalog-query";
 import { withDb } from "@/lib/db-safe";
+import { getServerEnv } from "@/lib/env";
 import { getDictionary } from "@/lib/i18n/get-dictionary";
 import { resolveLocaleParam } from "@/lib/i18n/page";
 import { localePath } from "@/lib/i18n/path";
+import { buildLocaleAlternates } from "@/lib/i18n/seo";
 
 type CategoryPageProps = {
   params: Promise<{ locale: string; slug: string }>;
@@ -48,12 +50,21 @@ export async function generateMetadata({
     ? localePath(locale, `/category/${category.slug}`)
     : undefined;
 
+  let appUrl = "http://localhost:3000";
+  try {
+    appUrl = getServerEnv().APP_URL;
+  } catch {
+    appUrl = process.env.APP_URL || appUrl;
+  }
+
   return {
     title: category
       ? `${category.name} Free Courses | FreeLearn Radar`
       : dict.meta.categoryNotFound,
     description: category?.description ?? undefined,
-    alternates: category ? { canonical: path } : undefined,
+    alternates: category
+      ? buildLocaleAlternates(appUrl, locale, `/category/${category.slug}`)
+      : undefined,
     robots: hasFilters
       ? { index: false, follow: true }
       : { index: true, follow: true },

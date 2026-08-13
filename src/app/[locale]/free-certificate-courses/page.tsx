@@ -24,6 +24,7 @@ import { getServerEnv } from "@/lib/env";
 import { getDictionary } from "@/lib/i18n/get-dictionary";
 import { resolveLocaleParam } from "@/lib/i18n/page";
 import { localePath } from "@/lib/i18n/path";
+import { buildLocaleAlternates } from "@/lib/i18n/seo";
 
 type PageProps = {
   params: Promise<{ locale: string }>;
@@ -35,11 +36,18 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
   const dict = getDictionary(locale);
   const path = localePath(locale, "/free-certificate-courses");
 
+  let appUrl = "http://localhost:3000";
+  try {
+    appUrl = getServerEnv().APP_URL;
+  } catch {
+    appUrl = process.env.APP_URL || appUrl;
+  }
+
   return {
     title: "Free Certificate Courses | FreeLearn Radar",
     description:
       "Browse courses with a free certificate — not paid-only or unknown certificate status. Confirm free status on the provider before enrolling.",
-    alternates: { canonical: path },
+    alternates: buildLocaleAlternates(appUrl, locale, "/free-certificate-courses"),
     openGraph: {
       title: dict.meta.certificatesTitle,
       description: "Courses with free certificate status on FreeLearn Radar.",

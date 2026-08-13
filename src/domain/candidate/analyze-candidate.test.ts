@@ -17,6 +17,7 @@ describe("analyzeCandidate", () => {
   it("marks candidate ready for review on successful analysis", async () => {
     findCandidateById.mockResolvedValue({
       id: "c1",
+      discoveryStatus: "FETCHED",
       canonicalUrl: "https://coursera.org/learn/python",
       rawTitle: "Python",
       rawDescription: "d",
@@ -64,6 +65,7 @@ describe("analyzeCandidate", () => {
   it("routes low-confidence analysis to ANALYZED for extra review", async () => {
     findCandidateById.mockResolvedValue({
       id: "c3",
+      discoveryStatus: "DISCOVERED",
       canonicalUrl: "https://coursera.org/learn/low",
       rawTitle: "Low",
       rawDescription: "d",
@@ -112,6 +114,7 @@ describe("analyzeCandidate", () => {
   it("does not crash discovery when AI fails", async () => {
     findCandidateById.mockResolvedValue({
       id: "c2",
+      discoveryStatus: "DISCOVERED",
       canonicalUrl: "https://coursera.org/learn/x",
       rawTitle: "X",
       rawDescription: null,

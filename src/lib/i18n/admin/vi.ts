@@ -149,6 +149,9 @@ export const adminVi: AdminDictionary = {
     noRawContent: "Chưa thu thập được nội dung gốc.",
     technicalDetails: "Chi tiết kỹ thuật (AI JSON)",
     noAnalysis: "Chưa có phân tích",
+    finalSourceUrl: "URL nguồn cuối",
+    fetchedAt: "Thời điểm lấy",
+    imageSource: "Nguồn ảnh",
     query: "Từ khóa",
     evidence: "Bằng chứng",
     aiSuggestionNote:

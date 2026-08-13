@@ -21,9 +21,11 @@ import {
   durationBucketLabel,
 } from "@/domain/course/catalog-query";
 import { withDb } from "@/lib/db-safe";
+import { getServerEnv } from "@/lib/env";
 import { getDictionary } from "@/lib/i18n/get-dictionary";
 import { resolveLocaleParam } from "@/lib/i18n/page";
 import { localePath } from "@/lib/i18n/path";
+import { buildLocaleAlternates } from "@/lib/i18n/seo";
 
 type CollectionPageProps = {
   params: Promise<{ locale: string; slug: string }>;
@@ -48,10 +50,22 @@ export async function generateMetadata({
   }
   const bucket = DURATION_BUCKETS[bucketKey];
   const bucketLabel = durationBucketLabel(bucket, locale);
+
+  let appUrl = "http://localhost:3000";
+  try {
+    appUrl = getServerEnv().APP_URL;
+  } catch {
+    appUrl = process.env.APP_URL || appUrl;
+  }
+
   return {
     title: `${bucketLabel} Free Courses | FreeLearn Radar`,
     description: `Deterministic collection of free courses lasting up to ${bucket.maxMinutes} minutes.`,
-    alternates: { canonical: localePath(locale, `/collections/${bucket.slug}`) },
+    alternates: buildLocaleAlternates(
+      appUrl,
+      locale,
+      `/collections/${bucket.slug}`,
+    ),
   };
 }
 

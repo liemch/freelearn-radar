@@ -146,6 +146,9 @@ export const adminEn: AdminDictionary = {
     noRawContent: "No raw content captured.",
     technicalDetails: "Technical details (AI JSON)",
     noAnalysis: "No analysis yet",
+    finalSourceUrl: "Final source URL",
+    fetchedAt: "Fetched at",
+    imageSource: "Image source",
     query: "Query",
     evidence: "Evidence",
     aiSuggestionNote:

@@ -104,7 +104,11 @@ CREATE TABLE IF NOT EXISTS "course_candidates" (
   "analyzed_at" timestamp with time zone,
   "approved_at" timestamp with time zone,
   "rejected_at" timestamp with time zone,
-  "error_message" text
+  "error_message" text,
+  "source_evidence_json" jsonb,
+  "source_fetched_at" timestamp with time zone,
+  "source_final_url" text,
+  "source_image_url" text
 );
 
 CREATE TABLE IF NOT EXISTS "course_verifications" (

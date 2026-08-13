@@ -37,7 +37,7 @@ Centralized contract:
 | `useLocalizedPath` | Forms (search, filters) bind `action` to live locale |
 | `switchLocalePath` | Preserves path + **query** + hash |
 | Language switcher | Sets `flr_locale` cookie on click + keeps query params |
-| `buildLocaleAlternates` | Canonical + hreflang (`en`, `vi`, `x-default`) |
+| `buildLocaleAlternates` | Canonical + hreflang (`en`, `vi`, `x-default`) on homepage, search, course, **category, provider, topic, collections, certificates, best** |
 
 Server Components may still pass `localePath(...)` or bare `/search` —
 `LocalizedLink` / `useLocalizedPath` normalize either form.
