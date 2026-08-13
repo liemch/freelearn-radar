@@ -39,5 +39,5 @@ yarn-error.log*
 *.tsbuildinfo
 next-env.d.ts
 
-# drizzle
-drizzle/meta
+# drizzle-kit local snapshots (journal is committed for migrate:run)
+drizzle/meta/*_snapshot.json

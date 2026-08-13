@@ -1,22 +1,60 @@
 import path from "node:path";
 
-import { drizzle } from "drizzle-orm/postgres-js";
-import { migrate } from "drizzle-orm/postgres-js/migrator";
-import postgres from "postgres";
+import "@/lib/load-env";
 
-async function runMigrations() {
-  const databaseUrl = process.env.DATABASE_URL;
+import {
+  createScriptDb,
+  resolveScriptDatabaseUrl,
+  shouldUseNeonHttp,
+} from "@/db/script-db";
 
-  if (!databaseUrl) {
-    throw new Error("DATABASE_URL is required to run migrations");
-  }
+async function runMigrationsOverHttp() {
+  const { drizzle } = await import("drizzle-orm/neon-http");
+  const { migrate } = await import("drizzle-orm/neon-http/migrator");
+  const { neon } = await import("@neondatabase/serverless");
 
-  const client = postgres(databaseUrl, { max: 1 });
-  const db = drizzle(client);
+  const databaseUrl = resolveScriptDatabaseUrl();
+  const client = neon(databaseUrl);
+  const db = drizzle({ client });
   const migrationsFolder = path.join(process.cwd(), "drizzle");
 
+  if (process.env.VERCEL === "1") {
+    console.log("Using Neon HTTP driver on Vercel build");
+  } else {
+    console.log("Using Neon HTTP driver (port 443) — works behind firewalls/proxy");
+  }
+
   await migrate(db, { migrationsFolder });
-  await client.end();
+}
+
+async function runMigrationsOverTcp() {
+  const { migrate } = await import("drizzle-orm/postgres-js/migrator");
+  const { db, close } = createScriptDb();
+  const migrationsFolder = path.join(process.cwd(), "drizzle");
+
+  console.log("Using PostgreSQL TCP driver (port 5432)");
+  await migrate(db, { migrationsFolder });
+  await close();
+}
+
+async function runMigrations() {
+  if (shouldUseNeonHttp()) {
+    await runMigrationsOverHttp();
+    return;
+  }
+
+  await runMigrationsOverTcp();
+}
+
+function isTimeoutError(error: unknown): boolean {
+  if (!(error instanceof Error)) {
+    return false;
+  }
+
+  return (
+    error.message.includes("ETIMEDOUT") ||
+    String(error.cause ?? "").includes("ETIMEDOUT")
+  );
 }
 
 runMigrations()
@@ -25,5 +63,11 @@ runMigrations()
   })
   .catch((error: unknown) => {
     console.error("Migration failed", error);
+    if (!shouldUseNeonHttp() && isTimeoutError(error)) {
+      console.error("");
+      console.error("Tip: port 5432 may be blocked. Retry with:");
+      console.error("  USE_NEON_HTTP=1 npm run db:migrate:run");
+      console.error("Or paste scripts/neon-bootstrap.sql into Neon SQL Editor.");
+    }
     process.exit(1);
   });

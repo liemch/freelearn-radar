@@ -1,6 +1,9 @@
+import "@/lib/load-env";
+
 import { eq } from "drizzle-orm";
 
-import { closeDb, getDb } from "@/db";
+import type { Db } from "@/db";
+import { createScriptDb } from "@/db/script-db";
 import { createCategory } from "@/db/repositories/category-repository";
 import {
   createCourse,
@@ -23,7 +26,7 @@ import {
 import { SEED_COURSES } from "@/db/seed/courses";
 import { hashPassword } from "@/lib/auth/password";
 
-async function seedProviders(db: ReturnType<typeof getDb>) {
+async function seedProviders(db: Db) {
   for (const provider of SEED_PROVIDERS) {
     const existing = await db
       .select()
@@ -39,7 +42,7 @@ async function seedProviders(db: ReturnType<typeof getDb>) {
   }
 }
 
-async function seedCategories(db: ReturnType<typeof getDb>) {
+async function seedCategories(db: Db) {
   for (const category of SEED_CATEGORIES) {
     const existing = await db
       .select()
@@ -58,7 +61,7 @@ async function seedCategories(db: ReturnType<typeof getDb>) {
   }
 }
 
-async function seedDiscoveryQueries(db: ReturnType<typeof getDb>) {
+async function seedDiscoveryQueries(db: Db) {
   for (const query of SEED_DISCOVERY_QUERIES) {
     const existing = await db
       .select()
@@ -74,7 +77,7 @@ async function seedDiscoveryQueries(db: ReturnType<typeof getDb>) {
   }
 }
 
-async function seedAdminUsers(db: ReturnType<typeof getDb>) {
+async function seedAdminUsers(db: Db) {
   const adminEmails = parseAdminEmails(process.env.ADMIN_EMAILS);
   const bootstrapPassword = process.env.ADMIN_BOOTSTRAP_PASSWORD;
 
@@ -107,7 +110,7 @@ async function seedAdminUsers(db: ReturnType<typeof getDb>) {
   }
 }
 
-async function seedCourses(db: ReturnType<typeof getDb>) {
+async function seedCourses(db: Db) {
   const decision = decideSampleCourseSeeding(process.env);
   if (!decision.allowed) {
     console.warn(`Skipping sample course seed: ${decision.reason}`);
@@ -169,16 +172,25 @@ async function seedCourses(db: ReturnType<typeof getDb>) {
   }
 }
 
-async function seed() {
-  const db = getDb();
-
+export async function runSeed(db: Db) {
   await seedProviders(db);
   await seedCategories(db);
   await seedDiscoveryQueries(db);
   await seedAdminUsers(db);
   await seedCourses(db);
+}
 
-  await closeDb();
+async function seed() {
+  const { db, close } = createScriptDb();
+
+  if (process.env.USE_NEON_HTTP === "1" || process.env.USE_NEON_HTTP === "true") {
+    console.log("Using Neon HTTP driver (port 443) — works behind firewalls/proxy");
+  } else if (process.env.VERCEL === "1") {
+    console.log("Using Neon HTTP driver on Vercel build");
+  }
+
+  await runSeed(db);
+  await close();
 }
 
 seed()
@@ -187,5 +199,14 @@ seed()
   })
   .catch((error: unknown) => {
     console.error("Seed failed", error);
+    if (
+      !(process.env.USE_NEON_HTTP === "1" || process.env.USE_NEON_HTTP === "true") &&
+      error instanceof Error &&
+      String(error.cause ?? error.message).includes("ETIMEDOUT")
+    ) {
+      console.error("");
+      console.error("Tip: port 5432 may be blocked. Retry with:");
+      console.error("  USE_NEON_HTTP=1 npm run db:seed");
+    }
     process.exit(1);
   });

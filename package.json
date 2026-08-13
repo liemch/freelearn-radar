@@ -2,9 +2,13 @@
   "name": "freelearn-radar",
   "version": "0.1.0",
   "private": true,
+  "engines": {
+    "node": ">=22"
+  },
   "scripts": {
     "dev": "next dev --turbopack",
     "build": "next build",
+    "vercel-build": "npm run db:migrate:run && npm run db:seed && npm run build",
     "start": "next start",
     "lint": "eslint .",
     "typecheck": "tsc --noEmit",
@@ -13,10 +17,14 @@
     "db:generate": "drizzle-kit generate",
     "db:migrate": "drizzle-kit migrate",
     "db:migrate:run": "tsx src/db/migrate.ts",
+    "db:migrate:http": "USE_NEON_HTTP=1 tsx src/db/migrate.ts",
     "db:seed": "tsx src/db/seed.ts",
+    "db:seed:http": "USE_NEON_HTTP=1 tsx src/db/seed.ts",
+    "db:check": "bash scripts/db-check.sh",
     "db:studio": "drizzle-kit studio"
   },
   "dependencies": {
+    "@neondatabase/serverless": "^0.10.4",
     "@radix-ui/react-slot": "^1.2.3",
     "bcryptjs": "^3.0.2",
     "class-variance-authority": "^0.7.1",
