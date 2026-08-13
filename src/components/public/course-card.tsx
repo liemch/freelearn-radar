@@ -71,12 +71,12 @@ export function CourseCard({ course, locale }: CourseCardProps) {
               {course.provider.name}
             </LocalizedLink>
           ) : (
-            course.provider?.name || "Unknown provider"
+            course.provider?.name || dict.common.unknown
           )}
         </p>
 
         <p className="mt-2 line-clamp-2 flex-1 text-sm leading-relaxed text-muted-foreground">
-          {course.shortDescription ?? "Curated free course worth exploring."}
+          {course.shortDescription ?? dict.courseDetail.fallbackSummary}
         </p>
 
         <p className="mt-3 text-xs text-muted-foreground">
@@ -95,10 +95,18 @@ export function CourseCard({ course, locale }: CourseCardProps) {
           {stale ? (
             <span className="text-amber-800 dark:text-amber-200">
               {dict.course.staleVerification} ·{" "}
-              {verificationAgeLabel(course.lastVerifiedAt)}
+              {verificationAgeLabel(
+                course.lastVerifiedAt,
+                undefined,
+                dict.verification,
+              )}
             </span>
           ) : (
-            verificationAgeLabel(course.lastVerifiedAt)
+            verificationAgeLabel(
+              course.lastVerifiedAt,
+              undefined,
+              dict.verification,
+            )
           )}
         </p>
 

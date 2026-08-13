@@ -85,6 +85,7 @@ export type Dictionary = {
     pageOf: (page: number, total: number) => string;
   };
   errors: {
+    reference: string;
     notFoundTitle: string;
     notFoundDescription: string;
     goHome: string;
@@ -92,6 +93,98 @@ export type Dictionary = {
     genericTitle: string;
     genericDescription: string;
     tryAgain: string;
+  };
+  common: {
+    home: string;
+    courseCount: (count: number) => string;
+    resultCount: (count: number) => string;
+    providers: string;
+    collections: string;
+    freeCourses: string;
+    topicGuide: string;
+    freeCertificates: string;
+    browseAll: string;
+    searchCatalog: string;
+    openCategory: string;
+    relatedTopics: string;
+    unknown: string;
+  };
+  pages: {
+    categoryFallbackDescription: (name: string) => string;
+    categoryEmptyTitle: string;
+    categoryEmptyDescription: string;
+    topicEmptyTitle: string;
+    topicEmptyDescription: string;
+    topicFullCategory: (name: string) => string;
+    providerHeading: (name: string) => string;
+    providerIntro: string;
+    providerNotHosted: string;
+    providerListed: (count: number) => string;
+    providerEmptyTitle: (name: string) => string;
+    providerEmptyDescription: string;
+    providerRecentlyVerified: string;
+    collectionIntro: (minutes: number) => string;
+    collectionEmptyTitle: string;
+    collectionEmptyDescription: string;
+    certificatesHeading: string;
+    certificatesIntro: string;
+    certificatesEmptyTitle: string;
+    certificatesEmptyDescription: string;
+    bestHeading: (month: string) => string;
+    bestIntro: string;
+    bestFallbackNotice: string;
+    bestEmptyTitle: string;
+    bestEmptyDescription: string;
+  };
+  courseDetail: {
+    keyFacts: string;
+    whyLearn: string;
+    noSummary: string;
+    whatIsFree: string;
+    certificate: string;
+    level: string;
+    duration: string;
+    language: string;
+    instructor: string;
+    lastVerified: string;
+    provider: string;
+    notListed: string;
+    notVerified: string;
+    unknown: string;
+    inactiveNotice: string;
+    relatedCourses: string;
+    relatedAlternatives: string;
+    viewCourseHeading: string;
+    continuesOn: (provider: string) => string;
+    viewCourseOn: (provider: string) => string;
+    moreFrom: (provider: string) => string;
+    monthlyBest: string;
+    fallbackSummary: string;
+  };
+  meta: {
+    categoryNotFound: string;
+    providerNotFound: string;
+    courseNotFound: string;
+    collectionNotFound: string;
+    topicNotFound: string;
+    certificatesTitle: string;
+  };
+  a11y: {
+    freeStatusAndCertificate: string;
+    exploreRelated: string;
+  };
+  verification: {
+    never: string;
+    today: string;
+    yesterday: string;
+    daysAgo: (days: number) => string;
+    recently: string;
+    notVerifiedNotice: string;
+    staleNotice: (days: number) => string;
+  };
+  share: {
+    action: string;
+    copied: string;
   };
   footer: {
     tagline: string;

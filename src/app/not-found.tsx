@@ -4,11 +4,13 @@ import { SiteFooter } from "@/components/public/site-footer";
 import { SiteHeader } from "@/components/public/site-header";
 import { PageShell } from "@/components/layout/page-shell";
 import { Button } from "@/components/ui/button";
-import { defaultLocale } from "@/lib/i18n/config";
 import { getDictionary } from "@/lib/i18n/get-dictionary";
+import { getPreferredLocale } from "@/lib/i18n/server-locale";
 
-export default function NotFound() {
-  const locale = defaultLocale;
+export default async function NotFound() {
+  // Root-level 404 has no locale param; the middleware-managed preference
+  // cookie is the only locale signal available here.
+  const locale = await getPreferredLocale();
   const dict = getDictionary(locale);
 
   return (

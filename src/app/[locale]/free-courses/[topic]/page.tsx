@@ -21,6 +21,7 @@ import {
 import {
   findTopicLanding,
   listTopicSlugs,
+  topicCopy,
 } from "@/domain/discovery/topic-landings";
 import { buildItemListJsonLd } from "@/domain/seo/json-ld";
 import { withDb } from "@/lib/db-safe";
@@ -42,21 +43,23 @@ export async function generateMetadata({
   params,
 }: TopicPageProps): Promise<Metadata> {
   const locale = await resolveLocaleParam(params);
+  const dict = getDictionary(locale);
   const { topic } = await params;
   const landing = findTopicLanding(topic);
   if (!landing) {
-    return { title: "Topic not found", robots: { index: false } };
+    return { title: dict.meta.topicNotFound, robots: { index: false } };
   }
 
+  const copy = topicCopy(landing, locale);
   const path = localePath(locale, `/free-courses/${landing.slug}`);
 
   return {
-    title: `${landing.title} | FreeLearn Radar`,
-    description: landing.description,
+    title: `${copy.title} | FreeLearn Radar`,
+    description: copy.description,
     alternates: { canonical: path },
     openGraph: {
-      title: landing.title,
-      description: landing.description,
+      title: copy.title,
+      description: copy.description,
       url: path,
       type: "website",
     },
@@ -72,6 +75,8 @@ export default async function FreeCoursesTopicPage({
   const { topic } = await params;
   const landing = findTopicLanding(topic);
   if (!landing) notFound();
+
+  const copy = topicCopy(landing, locale);
 
   const raw = await searchParams;
   const urlParams = new URLSearchParams();
@@ -128,8 +133,8 @@ export default async function FreeCoursesTopicPage({
       <LocaleHtmlLang locale={locale} />
       <JsonLd
         data={buildItemListJsonLd({
-          name: landing.heading,
-          description: landing.description,
+          name: copy.heading,
+          description: copy.description,
           url: `${appUrl}/free-courses/${landing.slug}`,
           courses: catalog.items,
           appUrl,
@@ -140,16 +145,16 @@ export default async function FreeCoursesTopicPage({
         <div className="space-y-3">
           <p className="text-sm text-muted-foreground">
             <LocalizedLink href="/" className="hover:underline">
-              Home
+              {dict.common.home}
             </LocalizedLink>{" "}
-            / Free courses / {landing.slug}
+            / {dict.common.freeCourses} / {landing.slug}
           </p>
           <h1 className="font-display text-3xl font-semibold tracking-tight sm:text-4xl">
-            {landing.heading}
+            {copy.heading}
           </h1>
-          <p className="max-w-3xl text-muted-foreground">{landing.description}</p>
+          <p className="max-w-3xl text-muted-foreground">{copy.description}</p>
           <p className="text-sm text-muted-foreground">
-            {catalog.total} course{catalog.total === 1 ? "" : "s"}
+            {dict.common.courseCount(catalog.total)}
           </p>
         </div>
 
@@ -163,10 +168,10 @@ export default async function FreeCoursesTopicPage({
 
         {catalog.items.length === 0 ? (
           <EmptyState
-            title="No courses match these filters"
-            description="Try clearing filters or browse a related topic."
+            title={dict.pages.topicEmptyTitle}
+            description={dict.pages.topicEmptyDescription}
             actionHref={localePath(locale, `/category/${landing.categorySlug}`)}
-            actionLabel="Open category"
+            actionLabel={dict.common.openCategory}
           />
         ) : (
           <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
@@ -181,10 +186,11 @@ export default async function FreeCoursesTopicPage({
           totalPages={catalog.totalPages}
           basePath={localePath(locale, `/free-courses/${landing.slug}`)}
           query={catalogFiltersToQuery(filters)}
+          labels={dict.pagination}
         />
 
         <section className="space-y-3 border-t border-border pt-8">
-          <h2 className="text-lg font-semibold">Related topics</h2>
+          <h2 className="text-lg font-semibold">{dict.common.relatedTopics}</h2>
           <div className="flex flex-wrap gap-2">
             {landing.relatedTopics.map((related) => (
               <LocalizedLink
@@ -199,7 +205,7 @@ export default async function FreeCoursesTopicPage({
               href={`/category/${landing.categorySlug}`}
               className="rounded-full border border-border px-3 py-1 text-sm hover:bg-accent"
             >
-              Full {category.name} category
+              {dict.pages.topicFullCategory(category.name)}
             </LocalizedLink>
           </div>
         </section>

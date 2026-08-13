@@ -5,14 +5,23 @@ import { useState } from "react";
 
 import { Button } from "@/components/ui/button";
 
+type CandidateActionsLabels = {
+  approve: string;
+  reject: string;
+  reanalyze: string;
+  actionFailed: string;
+};
+
 type CandidateActionsProps = {
   candidateId: string;
   canApprove?: boolean;
+  labels: CandidateActionsLabels;
 };
 
 export function CandidateActions({
   candidateId,
   canApprove = true,
+  labels,
 }: CandidateActionsProps) {
   const router = useRouter();
   const [busy, setBusy] = useState(false);
@@ -32,7 +41,7 @@ export function CandidateActions({
       });
       const payload = (await response.json()) as { error?: string };
       if (!response.ok) {
-        setError(payload.error ?? "Action failed");
+        setError(payload.error ?? labels.actionFailed);
         return;
       }
       router.refresh();
@@ -40,7 +49,7 @@ export function CandidateActions({
         router.push("/admin/courses");
       }
     } catch {
-      setError("Action failed");
+      setError(labels.actionFailed);
     } finally {
       setBusy(false);
     }
@@ -51,7 +60,7 @@ export function CandidateActions({
       <div className="flex flex-wrap gap-2">
         {canApprove ? (
           <Button size="sm" disabled={busy} onClick={() => run("approve")}>
-            Approve
+            {labels.approve}
           </Button>
         ) : null}
         <Button
@@ -60,7 +69,7 @@ export function CandidateActions({
           disabled={busy}
           onClick={() => run("reject")}
         >
-          Reject
+          {labels.reject}
         </Button>
         <Button
           size="sm"
@@ -68,7 +77,7 @@ export function CandidateActions({
           disabled={busy}
           onClick={() => run("reanalyze")}
         >
-          Re-analyze
+          {labels.reanalyze}
         </Button>
       </div>
       {error ? <p className="text-xs text-destructive">{error}</p> : null}

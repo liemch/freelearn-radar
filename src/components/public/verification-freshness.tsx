@@ -1,22 +1,27 @@
 import {
+  daysSince,
   isStaleForPublicWarning,
   verificationAgeLabel,
 } from "@/domain/verification/freshness-policy";
 import type { PriceType } from "@/domain/course/types";
-import { daysSince } from "@/domain/verification/freshness-policy";
+import { defaultLocale, type Locale } from "@/lib/i18n/config";
+import { getDictionary } from "@/lib/i18n/get-dictionary";
 
 type VerificationFreshnessProps = {
   lastVerifiedAt: Date | null | undefined;
   priceType: PriceType;
+  locale?: Locale;
   now?: Date;
 };
 
 export function VerificationFreshnessNotice({
   lastVerifiedAt,
   priceType,
+  locale = defaultLocale,
   now = new Date(),
 }: VerificationFreshnessProps) {
-  const label = verificationAgeLabel(lastVerifiedAt, now);
+  const dict = getDictionary(locale);
+  const label = verificationAgeLabel(lastVerifiedAt, now, dict.verification);
   const stale = isStaleForPublicWarning(lastVerifiedAt, priceType, now);
   const days = lastVerifiedAt ? Math.floor(daysSince(lastVerifiedAt, now)) : null;
 
@@ -26,7 +31,7 @@ export function VerificationFreshnessNotice({
         className="rounded-lg border border-amber-200 bg-amber-50 px-3 py-2 text-sm text-amber-950"
         role="status"
       >
-        Free status has not been verified yet. Details may be incomplete.
+        {dict.verification.notVerifiedNotice}
       </p>
     );
   }
@@ -37,8 +42,7 @@ export function VerificationFreshnessNotice({
         className="rounded-lg border border-amber-200 bg-amber-50 px-3 py-2 text-sm text-amber-950"
         role="status"
       >
-        Free status last verified {days} day{days === 1 ? "" : "s"} ago. The offer
-        may have changed — confirm on the provider site before enrolling.
+        {dict.verification.staleNotice(days ?? 0)}
       </p>
     );
   }
@@ -46,7 +50,7 @@ export function VerificationFreshnessNotice({
   if (days !== null && days <= 7) {
     return (
       <p className="text-sm text-muted-foreground" role="status">
-        Verified recently · {label}
+        {dict.verification.recently} · {label}
       </p>
     );
   }

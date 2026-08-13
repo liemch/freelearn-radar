@@ -14,11 +14,44 @@ import {
 } from "@/domain/course/labels";
 import { slugify } from "@/lib/slug";
 
+export type CourseFormLabels = {
+  title: string;
+  slug: string;
+  provider: string;
+  canonicalUrl: string;
+  outboundUrl: string;
+  affiliateUrl: string;
+  shortDescription: string;
+  fullDescription: string;
+  instructor: string;
+  courseLanguage: string;
+  level: string;
+  duration: string;
+  priceType: string;
+  certificate: string;
+  qualityScore: string;
+  editorScore: string;
+  status: string;
+  categories: string;
+  saving: string;
+  createCourse: string;
+  saveChanges: string;
+  cancel: string;
+  saveFailed: string;
+  unableToSave: string;
+  levelBeginner: string;
+  levelIntermediate: string;
+  levelAdvanced: string;
+  levelAllLevels: string;
+  levelUnknown: string;
+};
+
 type CourseFormProps = {
   mode: "create" | "edit";
   courseId?: string;
   providers: Provider[];
   categories: Category[];
+  labels: CourseFormLabels;
   initialValues?: {
     title: string;
     slug: string;
@@ -67,6 +100,7 @@ export function CourseForm({
   courseId,
   providers,
   categories,
+  labels,
   initialValues,
 }: CourseFormProps) {
   const router = useRouter();
@@ -131,7 +165,7 @@ export function CourseForm({
       };
 
       if (!response.ok) {
-        setError(body.error ?? "Save failed");
+        setError(body.error ?? labels.saveFailed);
         return;
       }
 
@@ -142,7 +176,7 @@ export function CourseForm({
       }
       router.refresh();
     } catch {
-      setError("Unable to save course");
+      setError(labels.unableToSave);
     } finally {
       setIsSubmitting(false);
     }
@@ -152,7 +186,7 @@ export function CourseForm({
     <form onSubmit={handleSubmit} className="space-y-6">
       <div className="grid gap-4 md:grid-cols-2">
         <div className="space-y-2 md:col-span-2">
-          <Label htmlFor="title">Title</Label>
+          <Label htmlFor="title">{labels.title}</Label>
           <Input
             id="title"
             required
@@ -168,7 +202,7 @@ export function CourseForm({
         </div>
 
         <div className="space-y-2">
-          <Label htmlFor="slug">Slug</Label>
+          <Label htmlFor="slug">{labels.slug}</Label>
           <Input
             id="slug"
             required
@@ -181,7 +215,7 @@ export function CourseForm({
         </div>
 
         <div className="space-y-2">
-          <Label htmlFor="providerId">Provider</Label>
+          <Label htmlFor="providerId">{labels.provider}</Label>
           <select
             id="providerId"
             required
@@ -198,7 +232,7 @@ export function CourseForm({
         </div>
 
         <div className="space-y-2 md:col-span-2">
-          <Label htmlFor="canonicalUrl">Canonical URL</Label>
+          <Label htmlFor="canonicalUrl">{labels.canonicalUrl}</Label>
           <Input
             id="canonicalUrl"
             type="url"
@@ -214,7 +248,7 @@ export function CourseForm({
         </div>
 
         <div className="space-y-2">
-          <Label htmlFor="outboundUrl">Outbound URL</Label>
+          <Label htmlFor="outboundUrl">{labels.outboundUrl}</Label>
           <Input
             id="outboundUrl"
             type="url"
@@ -224,7 +258,7 @@ export function CourseForm({
         </div>
 
         <div className="space-y-2">
-          <Label htmlFor="affiliateUrl">Affiliate URL</Label>
+          <Label htmlFor="affiliateUrl">{labels.affiliateUrl}</Label>
           <Input
             id="affiliateUrl"
             type="url"
@@ -234,7 +268,7 @@ export function CourseForm({
         </div>
 
         <div className="space-y-2 md:col-span-2">
-          <Label htmlFor="shortDescription">Short description</Label>
+          <Label htmlFor="shortDescription">{labels.shortDescription}</Label>
           <Input
             id="shortDescription"
             value={values.shortDescription}
@@ -245,7 +279,7 @@ export function CourseForm({
         </div>
 
         <div className="space-y-2 md:col-span-2">
-          <Label htmlFor="description">Description</Label>
+          <Label htmlFor="description">{labels.fullDescription}</Label>
           <textarea
             id="description"
             value={values.description}
@@ -255,7 +289,7 @@ export function CourseForm({
         </div>
 
         <div className="space-y-2">
-          <Label htmlFor="instructor">Instructor</Label>
+          <Label htmlFor="instructor">{labels.instructor}</Label>
           <Input
             id="instructor"
             value={values.instructor}
@@ -264,7 +298,7 @@ export function CourseForm({
         </div>
 
         <div className="space-y-2">
-          <Label htmlFor="language">Language</Label>
+          <Label htmlFor="language">{labels.courseLanguage}</Label>
           <Input
             id="language"
             value={values.language}
@@ -273,23 +307,23 @@ export function CourseForm({
         </div>
 
         <div className="space-y-2">
-          <Label htmlFor="level">Level</Label>
+          <Label htmlFor="level">{labels.level}</Label>
           <select
             id="level"
             value={values.level}
             onChange={(event) => updateField("level", event.target.value)}
             className="border-input bg-background flex h-9 w-full rounded-md border px-3 text-sm"
           >
-            <option value="BEGINNER">Beginner</option>
-            <option value="INTERMEDIATE">Intermediate</option>
-            <option value="ADVANCED">Advanced</option>
-            <option value="ALL_LEVELS">All levels</option>
-            <option value="UNKNOWN">Unknown</option>
+            <option value="BEGINNER">{labels.levelBeginner}</option>
+            <option value="INTERMEDIATE">{labels.levelIntermediate}</option>
+            <option value="ADVANCED">{labels.levelAdvanced}</option>
+            <option value="ALL_LEVELS">{labels.levelAllLevels}</option>
+            <option value="UNKNOWN">{labels.levelUnknown}</option>
           </select>
         </div>
 
         <div className="space-y-2">
-          <Label htmlFor="durationMinutes">Duration (minutes)</Label>
+          <Label htmlFor="durationMinutes">{labels.duration}</Label>
           <Input
             id="durationMinutes"
             type="number"
@@ -302,7 +336,7 @@ export function CourseForm({
         </div>
 
         <div className="space-y-2">
-          <Label htmlFor="priceType">Price type</Label>
+          <Label htmlFor="priceType">{labels.priceType}</Label>
           <select
             id="priceType"
             value={values.priceType}
@@ -323,7 +357,7 @@ export function CourseForm({
         </div>
 
         <div className="space-y-2">
-          <Label htmlFor="certificateType">Certificate</Label>
+          <Label htmlFor="certificateType">{labels.certificate}</Label>
           <select
             id="certificateType"
             value={values.certificateType}
@@ -346,7 +380,7 @@ export function CourseForm({
         </div>
 
         <div className="space-y-2">
-          <Label htmlFor="qualityScore">Quality score</Label>
+          <Label htmlFor="qualityScore">{labels.qualityScore}</Label>
           <Input
             id="qualityScore"
             type="number"
@@ -358,7 +392,7 @@ export function CourseForm({
         </div>
 
         <div className="space-y-2">
-          <Label htmlFor="editorScore">Editor score</Label>
+          <Label htmlFor="editorScore">{labels.editorScore}</Label>
           <Input
             id="editorScore"
             type="number"
@@ -370,7 +404,7 @@ export function CourseForm({
         </div>
 
         <div className="space-y-2">
-          <Label htmlFor="status">Status</Label>
+          <Label htmlFor="status">{labels.status}</Label>
           <select
             id="status"
             value={values.status}
@@ -392,7 +426,7 @@ export function CourseForm({
       </div>
 
       <div className="space-y-2">
-        <Label>Categories</Label>
+        <Label>{labels.categories}</Label>
         <div className="flex flex-wrap gap-2">
           {categories.map((category) => {
             const active = selectedCategoryIds.has(category.id);
@@ -423,17 +457,17 @@ export function CourseForm({
       <div className="flex gap-3">
         <Button type="submit" disabled={isSubmitting}>
           {isSubmitting
-            ? "Saving..."
+            ? labels.saving
             : mode === "create"
-              ? "Create course"
-              : "Save changes"}
+              ? labels.createCourse
+              : labels.saveChanges}
         </Button>
         <Button
           type="button"
           variant="outline"
           onClick={() => router.push("/admin/courses")}
         >
-          Cancel
+          {labels.cancel}
         </Button>
       </div>
     </form>

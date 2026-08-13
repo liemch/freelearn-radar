@@ -9,12 +9,17 @@ import { getDb } from "@/db";
 import { listCandidates } from "@/db/repositories/candidate-repository";
 import { getDiscoveryStatusLabel } from "@/domain/course/labels";
 import { getSession } from "@/lib/auth/guards";
+import { getAdminDictionary } from "@/lib/i18n/admin";
+import { getAdminLocale } from "@/lib/i18n/admin-locale";
 
 export const dynamic = "force-dynamic";
 
 export default async function AdminCandidatesPage() {
   const session = await getSession();
   if (!session) redirect("/admin/login");
+
+  const locale = await getAdminLocale();
+  const t = getAdminDictionary(locale);
 
   let candidates: Awaited<ReturnType<typeof listCandidates>> = [];
   try {
@@ -23,6 +28,13 @@ export default async function AdminCandidatesPage() {
     candidates = [];
   }
 
+  const actionLabels = {
+    approve: t.candidates.approve,
+    reject: t.candidates.reject,
+    reanalyze: t.candidates.reanalyze,
+    actionFailed: t.candidates.actionFailed,
+  };
+
   return (
     <div className="min-h-screen bg-background">
       <header className="border-b border-border/60">
@@ -30,17 +42,20 @@ export default async function AdminCandidatesPage() {
           <div>
             <p className="text-sm text-muted-foreground">
               <Link href="/admin" className="hover:underline">
-                Admin
+                {t.common.admin}
               </Link>{" "}
-              / Candidates
+              / {t.nav.candidates}
             </p>
-            <h1 className="text-xl font-semibold">Candidate review</h1>
+            <h1 className="text-xl font-semibold">{t.candidates.review}</h1>
           </div>
           <div className="flex items-center gap-3">
             <Button asChild variant="outline">
-              <Link href="/admin/discovery">Discovery</Link>
+              <Link href="/admin/discovery">{t.nav.discovery}</Link>
             </Button>
-            <AdminLogoutButton />
+            <AdminLogoutButton
+              label={t.common.signOut}
+              signingOutLabel={t.common.signingOut}
+            />
           </div>
         </div>
       </header>
@@ -60,7 +75,7 @@ export default async function AdminCandidatesPage() {
                   {candidate.rawTitle || candidate.canonicalUrl}
                 </Link>
                 <p className="text-sm text-muted-foreground">
-                  {candidate.provider || "Unknown provider"} ·{" "}
+                  {candidate.provider || t.candidates.unknownProvider} ·{" "}
                   {getDiscoveryStatusLabel(candidate.discoveryStatus)}
                 </p>
                 <a
@@ -83,6 +98,7 @@ export default async function AdminCandidatesPage() {
                   candidate.discoveryStatus === "READY_FOR_REVIEW" ||
                   candidate.discoveryStatus === "ANALYZED"
                 }
+                labels={actionLabels}
               />
             </div>
           </article>
@@ -90,10 +106,10 @@ export default async function AdminCandidatesPage() {
 
         {candidates.length === 0 ? (
           <EmptyState
-            title="No candidates yet"
-            description="Run discovery to collect course candidates for review."
+            title={t.candidates.emptyTitle}
+            description={t.candidates.emptyDescription}
             actionHref="/admin/discovery"
-            actionLabel="Open discovery"
+            actionLabel={t.candidates.openDiscovery}
           />
         ) : null}
       </main>

@@ -11,6 +11,8 @@ import {
 } from "@/db/repositories/course-repository";
 import { listProviders } from "@/db/repositories/provider-repository";
 import { getSession } from "@/lib/auth/guards";
+import { getAdminDictionary } from "@/lib/i18n/admin";
+import { getAdminLocale } from "@/lib/i18n/admin-locale";
 
 export const dynamic = "force-dynamic";
 
@@ -26,6 +28,8 @@ export default async function AdminEditCoursePage({
     redirect("/admin/login");
   }
 
+  const locale = await getAdminLocale();
+  const t = getAdminDictionary(locale);
   const { id } = await params;
 
   let course: Awaited<ReturnType<typeof findCourseById>> = null;
@@ -49,6 +53,46 @@ export default async function AdminEditCoursePage({
     notFound();
   }
 
+  const formLabels = {
+    title: t.courses.title,
+    slug: t.courses.slug,
+    provider: t.courses.provider,
+    canonicalUrl: t.courses.canonicalUrl,
+    outboundUrl: t.courses.outboundUrl,
+    affiliateUrl: t.courses.affiliateUrl,
+    shortDescription: t.courses.shortDescription,
+    fullDescription: t.courses.fullDescription,
+    instructor: t.courses.instructor,
+    courseLanguage: t.courses.courseLanguage,
+    level: t.courses.level,
+    duration: t.courses.duration,
+    priceType: t.courses.priceType,
+    certificate: t.courses.certificate,
+    qualityScore: t.courses.qualityScore,
+    editorScore: t.courses.editorScore,
+    status: t.common.status,
+    categories: t.courses.categories,
+    saving: t.common.saving,
+    createCourse: t.courses.createCourse,
+    saveChanges: t.courses.saveChanges,
+    cancel: t.common.cancel,
+    saveFailed: t.courses.saveFailed,
+    unableToSave: t.courses.unableToSave,
+    levelBeginner: t.courses.levelBeginner,
+    levelIntermediate: t.courses.levelIntermediate,
+    levelAdvanced: t.courses.levelAdvanced,
+    levelAllLevels: t.courses.levelAllLevels,
+    levelUnknown: t.courses.levelUnknown,
+  };
+
+  const statusLabels = {
+    publish: t.courses.publish,
+    unpublish: t.courses.unpublish,
+    archive: t.courses.archive,
+    statusUpdateFailed: t.courses.statusUpdateFailed,
+    unableToUpdateStatus: t.courses.unableToUpdateStatus,
+  };
+
   return (
     <div className="min-h-screen bg-background">
       <header className="border-b border-border/60">
@@ -56,13 +100,17 @@ export default async function AdminEditCoursePage({
           <div>
             <p className="text-sm text-muted-foreground">
               <Link href="/admin/courses" className="hover:underline">
-                Courses
+                {t.courses.heading}
               </Link>{" "}
-              / Edit
+              / {t.courses.breadcrumbEdit}
             </p>
             <h1 className="text-xl font-semibold">{course.title}</h1>
           </div>
-          <CourseStatusActions courseId={course.id} status={course.status} />
+          <CourseStatusActions
+            courseId={course.id}
+            status={course.status}
+            labels={statusLabels}
+          />
         </div>
       </header>
 
@@ -72,6 +120,7 @@ export default async function AdminEditCoursePage({
           courseId={course.id}
           providers={providers}
           categories={categories}
+          labels={formLabels}
           initialValues={{
             title: course.title,
             slug: course.slug,

@@ -32,6 +32,7 @@ type PageProps = {
 
 export async function generateMetadata({ params }: PageProps): Promise<Metadata> {
   const locale = await resolveLocaleParam(params);
+  const dict = getDictionary(locale);
   const path = localePath(locale, "/free-certificate-courses");
 
   return {
@@ -40,7 +41,7 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
       "Browse courses with a free certificate — not paid-only or unknown certificate status. Confirm free status on the provider before enrolling.",
     alternates: { canonical: path },
     openGraph: {
-      title: "Free Certificate Courses",
+      title: dict.meta.certificatesTitle,
       description: "Courses with free certificate status on FreeLearn Radar.",
       url: path,
       type: "website",
@@ -96,8 +97,8 @@ export default async function FreeCertificateCoursesPage({
       <LocaleHtmlLang locale={locale} />
       <JsonLd
         data={buildItemListJsonLd({
-          name: "Free Certificate Courses",
-          description: "Courses with free certificate status.",
+          name: dict.pages.certificatesHeading,
+          description: dict.pages.certificatesIntro,
           url: `${appUrl}/free-certificate-courses`,
           courses: catalog.items,
           appUrl,
@@ -108,19 +109,19 @@ export default async function FreeCertificateCoursesPage({
         <div className="space-y-3">
           <p className="text-sm text-muted-foreground">
             <LocalizedLink href="/" className="hover:underline">
-              Home
+              {dict.common.home}
             </LocalizedLink>{" "}
-            / Free certificate courses
+            / {dict.pages.certificatesHeading}
           </p>
           <h1 className="font-display text-3xl font-semibold tracking-tight">
-            Free certificate courses
+            {dict.pages.certificatesHeading}
           </h1>
           <p className="max-w-3xl text-muted-foreground">
-            Only courses with a verified free certificate label. Unknown or
-            paid-certificate offers are excluded. Always confirm on the provider
-            site before enrolling.
+            {dict.pages.certificatesIntro}
           </p>
-          <p className="text-sm text-muted-foreground">{catalog.total} courses</p>
+          <p className="text-sm text-muted-foreground">
+            {dict.common.courseCount(catalog.total)}
+          </p>
         </div>
 
         <CatalogFiltersForm
@@ -134,10 +135,10 @@ export default async function FreeCertificateCoursesPage({
 
         {catalog.items.length === 0 ? (
           <EmptyState
-            title="No free-certificate courses yet"
-            description="Browse all free courses or try a topic landing page."
+            title={dict.pages.certificatesEmptyTitle}
+            description={dict.pages.certificatesEmptyDescription}
             actionHref={localePath(locale, "/search")}
-            actionLabel="Search catalog"
+            actionLabel={dict.common.browseAll}
           />
         ) : (
           <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
@@ -155,6 +156,7 @@ export default async function FreeCertificateCoursesPage({
             ...filters,
             certificateType: undefined,
           })}
+          labels={dict.pagination}
         />
       </PageShell>
       <SiteFooter locale={locale} />

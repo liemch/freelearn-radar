@@ -33,6 +33,7 @@ export async function generateMetadata({
   searchParams,
 }: CategoryPageProps): Promise<Metadata> {
   const locale = await resolveLocaleParam(params);
+  const dict = getDictionary(locale);
   const { slug } = await params;
   const raw = await searchParams;
   const hasFilters = Object.keys(raw).some(
@@ -50,7 +51,7 @@ export async function generateMetadata({
   return {
     title: category
       ? `${category.name} Free Courses | FreeLearn Radar`
-      : "Category not found",
+      : dict.meta.categoryNotFound,
     description: category?.description ?? undefined,
     alternates: category ? { canonical: path } : undefined,
     robots: hasFilters
@@ -128,22 +129,25 @@ export default async function CategoryPage({
             {category.name}
           </h1>
           <p className="text-muted-foreground">
-            {category.description ?? `Free ${category.name} courses.`}
+            {category.description ??
+              dict.pages.categoryFallbackDescription(category.name)}
           </p>
-          <p className="text-sm text-muted-foreground">{catalog.total} courses</p>
+          <p className="text-sm text-muted-foreground">
+            {dict.common.courseCount(catalog.total)}
+          </p>
           <p className="text-sm">
             <LocalizedLink
               href={`/free-courses/${slug === "data-science" ? "data-science" : slug}`}
               className="text-primary hover:underline"
             >
-              Topic guide
+              {dict.common.topicGuide}
             </LocalizedLink>
             {" · "}
             <LocalizedLink
               href="/free-certificate-courses"
               className="text-primary hover:underline"
             >
-              Free certificates
+              {dict.common.freeCertificates}
             </LocalizedLink>
           </p>
         </div>
@@ -159,10 +163,10 @@ export default async function CategoryPage({
 
         {catalog.items.length === 0 ? (
           <EmptyState
-            title="No matching courses"
-            description="No courses match these filters yet. Try clearing filters or browse another category."
+            title={dict.pages.categoryEmptyTitle}
+            description={dict.pages.categoryEmptyDescription}
             actionHref={localePath(locale, "/search")}
-            actionLabel="Browse all courses"
+            actionLabel={dict.common.browseAll}
           />
         ) : (
           <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
@@ -177,6 +181,7 @@ export default async function CategoryPage({
           totalPages={catalog.totalPages}
           basePath={localePath(locale, `/category/${slug}`)}
           query={catalogFiltersToQuery(filters)}
+          labels={dict.pagination}
         />
       </PageShell>
       <SiteFooter locale={locale} />

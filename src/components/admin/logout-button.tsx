@@ -5,7 +5,15 @@ import { useState } from "react";
 
 import { Button } from "@/components/ui/button";
 
-export function AdminLogoutButton() {
+type AdminLogoutButtonProps = {
+  label?: string;
+  signingOutLabel?: string;
+};
+
+export function AdminLogoutButton({
+  label = "Sign out",
+  signingOutLabel = "Signing out...",
+}: AdminLogoutButtonProps) {
   const router = useRouter();
   const [isSubmitting, setIsSubmitting] = useState(false);
 
@@ -28,7 +36,7 @@ export function AdminLogoutButton() {
       onClick={handleLogout}
       disabled={isSubmitting}
     >
-      {isSubmitting ? "Signing out..." : "Sign out"}
+      {isSubmitting ? signingOutLabel : label}
     </Button>
   );
 }

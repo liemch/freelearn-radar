@@ -2,6 +2,7 @@ import { LocalizedLink } from "@/components/public/localized-link";
 import { CourseCard } from "@/components/public/course-card";
 import type { CourseWithProvider } from "@/db/repositories/course-repository";
 import type { Locale } from "@/lib/i18n/config";
+import { getDictionary } from "@/lib/i18n/get-dictionary";
 
 type CourseSectionProps = {
   title: string;
@@ -18,11 +19,13 @@ export function CourseSection({
   courses,
   locale,
   viewAllHref,
-  viewAllLabel = "View all",
+  viewAllLabel,
 }: CourseSectionProps) {
   if (courses.length === 0) {
     return null;
   }
+
+  const viewAll = viewAllLabel ?? getDictionary(locale).sections.viewAll;
 
   return (
     <section className="space-y-4">
@@ -40,7 +43,7 @@ export function CourseSection({
             href={viewAllHref}
             className="shrink-0 text-sm font-medium text-primary hover:underline"
           >
-            {viewAllLabel}
+            {viewAll}
           </LocalizedLink>
         ) : null}
       </div>

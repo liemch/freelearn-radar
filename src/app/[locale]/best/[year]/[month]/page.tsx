@@ -13,6 +13,7 @@ import { selectMonthlyCollection } from "@/domain/discovery/monthly-collection";
 import { buildItemListJsonLd } from "@/domain/seo/json-ld";
 import { withDb } from "@/lib/db-safe";
 import { getServerEnv } from "@/lib/env";
+import { getDictionary } from "@/lib/i18n/get-dictionary";
 import { resolveLocaleParam } from "@/lib/i18n/page";
 import { localePath } from "@/lib/i18n/path";
 
@@ -68,6 +69,7 @@ export async function generateMetadata({
 
 export default async function BestCoursesPage({ params }: BestPageProps) {
   const locale = await resolveLocaleParam(params);
+  const dict = getDictionary(locale);
   const { year, month } = await params;
   const yearNumber = Number(year);
   const monthNumber = Number(month);
@@ -103,7 +105,8 @@ export default async function BestCoursesPage({ params }: BestPageProps) {
     appUrl = process.env.APP_URL || appUrl;
   }
 
-  const title = `Best Free Online Courses — ${monthName(monthNumber)} ${year}`;
+  const monthLabel = `${monthName(monthNumber)} ${year}`;
+  const title = dict.pages.bestHeading(monthLabel);
 
   return (
     <main className="min-h-screen bg-background">
@@ -111,7 +114,7 @@ export default async function BestCoursesPage({ params }: BestPageProps) {
       <JsonLd
         data={buildItemListJsonLd({
           name: title,
-          description: `Monthly free course collection for ${monthName(monthNumber)} ${year}.`,
+          description: dict.pages.bestIntro,
           url: `${appUrl}/best/${year}/${month}`,
           courses: collection.items,
           appUrl,
@@ -123,23 +126,20 @@ export default async function BestCoursesPage({ params }: BestPageProps) {
           <h1 className="font-display text-3xl font-semibold tracking-tight">
             {title}
           </h1>
-          <p className="text-muted-foreground">
-            Ranked by quality, freshness, trust, free value, and editorial
-            signals — not publish date alone.
-          </p>
+          <p className="text-muted-foreground">{dict.pages.bestIntro}</p>
           <p className="text-sm text-muted-foreground">
             {collection.mode === "in_month"
               ? `${collection.inMonthCount} courses published this month · showing top ${collection.items.length}`
-              : "No courses published this month yet — showing overall top ranked courses."}
+              : dict.pages.bestFallbackNotice}
           </p>
         </div>
 
         {collection.items.length === 0 ? (
           <EmptyState
-            title="No ranked courses yet"
-            description="Publish free courses to populate this monthly ranking."
+            title={dict.pages.bestEmptyTitle}
+            description={dict.pages.bestEmptyDescription}
             actionHref={localePath(locale, "/search")}
-            actionLabel="Browse catalog"
+            actionLabel={dict.common.browseAll}
           />
         ) : (
           <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
@@ -150,21 +150,19 @@ export default async function BestCoursesPage({ params }: BestPageProps) {
         )}
 
         <p className="text-sm text-muted-foreground">
-          Browse{" "}
           <Link
             href={localePath(locale, "/search")}
             className="text-primary hover:underline"
           >
-            Search
-          </Link>{" "}
-          or{" "}
+            {dict.nav.search}
+          </Link>
+          {" · "}
           <Link
             href={localePath(locale, "/free-certificate-courses")}
             className="text-primary hover:underline"
           >
-            free certificate courses
+            {dict.common.freeCertificates}
           </Link>
-          .
         </p>
       </div>
       <SiteFooter locale={locale} />

@@ -69,17 +69,32 @@ export function isVerificationDue(input: {
   return daysSince(input.lastVerifiedAt, input.now) >= interval;
 }
 
+type VerificationAgeLabels = {
+  never: string;
+  today: string;
+  yesterday: string;
+  daysAgo: (days: number) => string;
+};
+
+const DEFAULT_AGE_LABELS: VerificationAgeLabels = {
+  never: "Never verified",
+  today: "Verified today",
+  yesterday: "Verified yesterday",
+  daysAgo: (days) => `Last verified ${days} days ago`,
+};
+
 export function verificationAgeLabel(
   lastVerifiedAt: Date | null | undefined,
   now = new Date(),
+  labels: VerificationAgeLabels = DEFAULT_AGE_LABELS,
 ): string {
   if (!lastVerifiedAt) {
-    return "Never verified";
+    return labels.never;
   }
   const days = Math.floor(daysSince(lastVerifiedAt, now));
-  if (days <= 0) return "Verified today";
-  if (days === 1) return "Verified yesterday";
-  return `Last verified ${days} days ago`;
+  if (days <= 0) return labels.today;
+  if (days === 1) return labels.yesterday;
+  return labels.daysAgo(days);
 }
 
 export function isStaleForPublicWarning(

@@ -11,6 +11,8 @@ import {
   getPriceTypeLabel,
 } from "@/domain/course/labels";
 import { getSession } from "@/lib/auth/guards";
+import { getAdminDictionary } from "@/lib/i18n/admin";
+import { getAdminLocale } from "@/lib/i18n/admin-locale";
 
 export const dynamic = "force-dynamic";
 
@@ -19,6 +21,9 @@ export default async function AdminCoursesPage() {
   if (!session) {
     redirect("/admin/login");
   }
+
+  const locale = await getAdminLocale();
+  const t = getAdminDictionary(locale);
 
   let courses: Awaited<ReturnType<typeof listCourses>> = [];
   let databaseReady = true;
@@ -29,6 +34,14 @@ export default async function AdminCoursesPage() {
     databaseReady = false;
   }
 
+  const statusLabels = {
+    publish: t.courses.publish,
+    unpublish: t.courses.unpublish,
+    archive: t.courses.archive,
+    statusUpdateFailed: t.courses.statusUpdateFailed,
+    unableToUpdateStatus: t.courses.unableToUpdateStatus,
+  };
+
   return (
     <div className="min-h-screen bg-background">
       <header className="border-b border-border/60">
@@ -36,17 +49,20 @@ export default async function AdminCoursesPage() {
           <div>
             <p className="text-sm text-muted-foreground">
               <Link href="/admin" className="hover:underline">
-                Admin
+                {t.common.admin}
               </Link>{" "}
-              / Courses
+              / {t.courses.heading}
             </p>
-            <h1 className="text-xl font-semibold">Course management</h1>
+            <h1 className="text-xl font-semibold">{t.courses.management}</h1>
           </div>
           <div className="flex items-center gap-3">
             <Button asChild>
-              <Link href="/admin/courses/new">New course</Link>
+              <Link href="/admin/courses/new">{t.courses.newCourse}</Link>
             </Button>
-            <AdminLogoutButton />
+            <AdminLogoutButton
+              label={t.common.signOut}
+              signingOutLabel={t.common.signingOut}
+            />
           </div>
         </div>
       </header>
@@ -54,7 +70,7 @@ export default async function AdminCoursesPage() {
       <main className="mx-auto max-w-6xl space-y-6 px-6 py-8">
         {!databaseReady ? (
           <p className="rounded-xl border border-dashed border-border p-6 text-sm text-muted-foreground">
-            Database not ready. Run migrate + seed first.
+            {t.courses.databaseNotReady}
           </p>
         ) : null}
 
@@ -62,11 +78,11 @@ export default async function AdminCoursesPage() {
           <table className="min-w-full text-left text-sm">
             <thead className="bg-muted/50">
               <tr>
-                <th className="px-4 py-3 font-medium">Title</th>
-                <th className="px-4 py-3 font-medium">Provider</th>
-                <th className="px-4 py-3 font-medium">Price</th>
-                <th className="px-4 py-3 font-medium">Status</th>
-                <th className="px-4 py-3 font-medium">Actions</th>
+                <th className="px-4 py-3 font-medium">{t.courses.title}</th>
+                <th className="px-4 py-3 font-medium">{t.courses.provider}</th>
+                <th className="px-4 py-3 font-medium">{t.courses.price}</th>
+                <th className="px-4 py-3 font-medium">{t.common.status}</th>
+                <th className="px-4 py-3 font-medium">{t.common.actions}</th>
               </tr>
             </thead>
             <tbody>
@@ -91,11 +107,14 @@ export default async function AdminCoursesPage() {
                   <td className="px-4 py-3">
                     <div className="flex flex-wrap gap-2">
                       <Button asChild size="sm" variant="outline">
-                        <Link href={`/admin/courses/${course.id}`}>Edit</Link>
+                        <Link href={`/admin/courses/${course.id}`}>
+                          {t.common.edit}
+                        </Link>
                       </Button>
                       <CourseStatusActions
                         courseId={course.id}
                         status={course.status}
+                        labels={statusLabels}
                       />
                     </div>
                   </td>
@@ -107,7 +126,7 @@ export default async function AdminCoursesPage() {
                     colSpan={5}
                     className="px-4 py-8 text-center text-muted-foreground"
                   >
-                    No courses yet. Create one manually.
+                    {t.courses.emptyCreate}
                   </td>
                 </tr>
               ) : null}

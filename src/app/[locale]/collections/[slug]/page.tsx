@@ -18,6 +18,7 @@ import {
   catalogFiltersToQuery,
   DURATION_BUCKETS,
   durationBucketFromSlug,
+  durationBucketLabel,
 } from "@/domain/course/catalog-query";
 import { withDb } from "@/lib/db-safe";
 import { getDictionary } from "@/lib/i18n/get-dictionary";
@@ -39,14 +40,16 @@ export async function generateMetadata({
   params,
 }: CollectionPageProps): Promise<Metadata> {
   const locale = await resolveLocaleParam(params);
+  const dict = getDictionary(locale);
   const { slug } = await params;
   const bucketKey = durationBucketFromSlug(slug);
   if (!bucketKey) {
-    return { title: "Collection not found", robots: { index: false } };
+    return { title: dict.meta.collectionNotFound, robots: { index: false } };
   }
   const bucket = DURATION_BUCKETS[bucketKey];
+  const bucketLabel = durationBucketLabel(bucket, locale);
   return {
-    title: `${bucket.label} Free Courses | FreeLearn Radar`,
+    title: `${bucketLabel} Free Courses | FreeLearn Radar`,
     description: `Deterministic collection of free courses lasting up to ${bucket.maxMinutes} minutes.`,
     alternates: { canonical: localePath(locale, `/collections/${bucket.slug}`) },
   };
@@ -62,6 +65,7 @@ export default async function DurationCollectionPage({
   const bucketKey = durationBucketFromSlug(slug);
   if (!bucketKey) notFound();
   const bucket = DURATION_BUCKETS[bucketKey];
+  const bucketLabel = durationBucketLabel(bucket, locale);
 
   const raw = await searchParams;
   const urlParams = new URLSearchParams();
@@ -102,16 +106,15 @@ export default async function DurationCollectionPage({
         <div className="space-y-3">
           <p className="text-sm text-muted-foreground">
             <LocalizedLink href="/" className="hover:underline">
-              Home
+              {dict.common.home}
             </LocalizedLink>{" "}
-            / Collections / {bucket.label}
+            / {dict.common.collections} / {bucketLabel}
           </p>
           <h1 className="font-display text-3xl font-semibold tracking-tight">
-            {bucket.label}
+            {bucketLabel}
           </h1>
           <p className="max-w-3xl text-muted-foreground">
-            Courses with a known duration of {bucket.maxMinutes} minutes or
-            less. Courses without duration data are excluded.
+            {dict.pages.collectionIntro(bucket.maxMinutes)}
           </p>
           <div className="flex flex-wrap gap-2 text-sm">
             {Object.values(DURATION_BUCKETS).map((item) => (
@@ -124,7 +127,7 @@ export default async function DurationCollectionPage({
                     : "rounded-full border border-border px-3 py-1 hover:bg-accent"
                 }
               >
-                {item.label}
+                {durationBucketLabel(item, locale)}
               </LocalizedLink>
             ))}
           </div>
@@ -141,10 +144,10 @@ export default async function DurationCollectionPage({
 
         {catalog.items.length === 0 ? (
           <EmptyState
-            title="No short courses match yet"
-            description="Try another duration collection or browse all courses."
+            title={dict.pages.collectionEmptyTitle}
+            description={dict.pages.collectionEmptyDescription}
             actionHref={localePath(locale, "/search")}
-            actionLabel="Search catalog"
+            actionLabel={dict.common.searchCatalog}
           />
         ) : (
           <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
@@ -162,6 +165,7 @@ export default async function DurationCollectionPage({
             ...filters,
             durationMaxMinutes: undefined,
           })}
+          labels={dict.pagination}
         />
       </div>
       <SiteFooter locale={locale} />

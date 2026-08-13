@@ -7,9 +7,16 @@ import { Button } from "@/components/ui/button";
 type ShareCourseButtonProps = {
   title: string;
   url: string;
+  shareLabel: string;
+  copiedLabel: string;
 };
 
-export function ShareCourseButton({ title, url }: ShareCourseButtonProps) {
+export function ShareCourseButton({
+  title,
+  url,
+  shareLabel,
+  copiedLabel,
+}: ShareCourseButtonProps) {
   const [copied, setCopied] = useState(false);
 
   async function onShare() {
@@ -33,7 +40,7 @@ export function ShareCourseButton({ title, url }: ShareCourseButtonProps) {
 
   return (
     <Button type="button" variant="outline" className="w-full" onClick={onShare}>
-      {copied ? "Link copied" : "Share / Copy link"}
+      {copied ? copiedLabel : shareLabel}
     </Button>
   );
 }

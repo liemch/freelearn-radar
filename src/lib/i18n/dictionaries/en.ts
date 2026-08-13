@@ -92,6 +92,7 @@ export const en: Dictionary = {
     pageOf: (page, total) => `Page ${page} of ${total}`,
   },
   errors: {
+    reference: "Reference",
     notFoundTitle: "Page not found",
     notFoundDescription:
       "That link does not match a course or collection on FreeLearn Radar. Try searching, or return home.",
@@ -101,6 +102,112 @@ export const en: Dictionary = {
     genericDescription:
       "We could not load this page. Try again, or browse free courses from search.",
     tryAgain: "Try again",
+  },
+  common: {
+    home: "Home",
+    courseCount: (count) => `${count} course${count === 1 ? "" : "s"}`,
+    resultCount: (count) => `${count} result${count === 1 ? "" : "s"}`,
+    providers: "Providers",
+    collections: "Collections",
+    freeCourses: "Free courses",
+    topicGuide: "Topic guide",
+    freeCertificates: "Free certificates",
+    browseAll: "Browse all courses",
+    searchCatalog: "Search catalog",
+    openCategory: "Open category",
+    relatedTopics: "Related topics",
+    unknown: "Unknown",
+  },
+  pages: {
+    categoryFallbackDescription: (name) => `Free ${name} courses.`,
+    categoryEmptyTitle: "No matching courses",
+    categoryEmptyDescription:
+      "No courses match these filters yet. Try clearing filters or browse another category.",
+    topicEmptyTitle: "No courses match these filters",
+    topicEmptyDescription: "Try clearing filters or browse a related topic.",
+    topicFullCategory: (name) => `Full ${name} category`,
+    providerHeading: (name) => `Free courses from ${name}`,
+    providerIntro: "Factual listing of curated free courses linked from",
+    providerNotHosted: "FreeLearn Radar does not host course content.",
+    providerListed: (count) =>
+      `${count} published course${count === 1 ? "" : "s"} currently listed`,
+    providerEmptyTitle: (name) => `No free courses from ${name} right now`,
+    providerEmptyDescription:
+      "Browse other providers or search the full catalog.",
+    providerRecentlyVerified: "Recently verified on this page",
+    collectionIntro: (minutes) =>
+      `Courses with a known duration of ${minutes} minutes or less. Courses without duration data are excluded.`,
+    collectionEmptyTitle: "No short courses match yet",
+    collectionEmptyDescription:
+      "Try another duration collection or browse all courses.",
+    certificatesHeading: "Free certificate courses",
+    certificatesIntro:
+      "Only courses where a free certificate is confirmed. We never guess certificate status.",
+    certificatesEmptyTitle: "No free certificate courses yet",
+    certificatesEmptyDescription:
+      "We only list courses with a confirmed free certificate. Check back soon.",
+    bestHeading: (month) => `Best free courses — ${month}`,
+    bestIntro:
+      "Editorial picks ranked by quality, freshness, and free value for the month.",
+    bestFallbackNotice:
+      "Not enough courses were published this month, so this list shows the top ranked courses overall.",
+    bestEmptyTitle: "No collection for this month yet",
+    bestEmptyDescription:
+      "We're still verifying courses for this period. Browse the full catalog meanwhile.",
+  },
+  courseDetail: {
+    keyFacts: "Key facts",
+    whyLearn: "Why learn this",
+    noSummary: "No summary available yet.",
+    whatIsFree: "What is free",
+    certificate: "Certificate",
+    level: "Level",
+    duration: "Duration",
+    language: "Language",
+    instructor: "Instructor",
+    lastVerified: "Last verified",
+    provider: "Provider",
+    notListed: "Not listed",
+    notVerified: "Not verified",
+    unknown: "Unknown",
+    inactiveNotice:
+      "This course or free offer may no longer be available. Check the provider site, or browse related courses below.",
+    relatedCourses: "Related courses",
+    relatedAlternatives: "Related alternatives",
+    viewCourseHeading: "View course",
+    continuesOn: (provider) =>
+      `Continues on ${provider}. FreeLearn Radar does not host lessons. Free status is not guaranteed.`,
+    viewCourseOn: (provider) => `View course on ${provider}`,
+    moreFrom: (provider) => `More from ${provider}`,
+    monthlyBest: "Monthly best",
+    fallbackSummary: "Curated free course.",
+  },
+  meta: {
+    categoryNotFound: "Category not found",
+    providerNotFound: "Provider not found",
+    courseNotFound: "Course not found",
+    collectionNotFound: "Collection not found",
+    topicNotFound: "Topic not found",
+    certificatesTitle: "Free Certificate Courses",
+  },
+  a11y: {
+    freeStatusAndCertificate: "Free status and certificate",
+    exploreRelated: "Explore related",
+  },
+  verification: {
+    never: "Never verified",
+    today: "Verified today",
+    yesterday: "Verified yesterday",
+    daysAgo: (days) => `Last verified ${days} days ago`,
+    recently: "Verified recently",
+    notVerifiedNotice:
+      "Free status has not been verified yet. Details may be incomplete.",
+    staleNotice: (days) =>
+      `Free status last verified ${days} day${days === 1 ? "" : "s"} ago. The offer may have changed — confirm on the provider site before enrolling.`,
+  },
+  share: {
+    action: "Share / Copy link",
+    copied: "Link copied",
   },
   footer: {
     tagline: "Curated free learning from trusted providers.",

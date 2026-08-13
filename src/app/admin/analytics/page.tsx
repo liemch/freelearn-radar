@@ -9,12 +9,17 @@ import {
   listTopClickedProviders,
 } from "@/db/repositories/outbound-click-repository";
 import { getSession } from "@/lib/auth/guards";
+import { getAdminDictionary } from "@/lib/i18n/admin";
+import { getAdminLocale } from "@/lib/i18n/admin-locale";
 
 export const dynamic = "force-dynamic";
 
 export default async function AdminAnalyticsPage() {
   const session = await getSession();
   if (!session) redirect("/admin/login");
+
+  const locale = await getAdminLocale();
+  const t = getAdminDictionary(locale);
 
   let topCourses: Awaited<ReturnType<typeof listTopClickedCourses>> = [];
   let topProviders: Awaited<ReturnType<typeof listTopClickedProviders>> = [];
@@ -38,19 +43,25 @@ export default async function AdminAnalyticsPage() {
           <div>
             <p className="text-sm text-muted-foreground">
               <Link href="/admin" className="hover:underline">
-                Admin
+                {t.common.admin}
               </Link>{" "}
-              / Analytics
+              / {t.analytics.heading}
             </p>
-            <h1 className="text-xl font-semibold">Outbound analytics</h1>
+            <h1 className="text-xl font-semibold">
+              {t.analytics.outboundAnalytics}
+            </h1>
           </div>
-          <AdminLogoutButton />
+          <AdminLogoutButton
+            label={t.common.signOut}
+            signingOutLabel={t.common.signingOut}
+          />
         </div>
       </header>
 
       <main className="mx-auto grid max-w-6xl gap-6 px-6 py-8 lg:grid-cols-3">
         <AnalyticsList
-          title="Top clicked courses"
+          title={t.analytics.topClickedCourses}
+          emptyLabel={t.analytics.noClicks}
           items={topCourses.map((item) => ({
             id: item.courseId,
             label: item.title,
@@ -59,7 +70,8 @@ export default async function AdminAnalyticsPage() {
           }))}
         />
         <AnalyticsList
-          title="Top providers"
+          title={t.analytics.topProviders}
+          emptyLabel={t.analytics.noClicks}
           items={topProviders.map((item) => ({
             id: item.providerId,
             label: item.name,
@@ -67,7 +79,8 @@ export default async function AdminAnalyticsPage() {
           }))}
         />
         <AnalyticsList
-          title="Top categories"
+          title={t.analytics.topCategories}
+          emptyLabel={t.analytics.noClicks}
           items={topCategories.map((item) => ({
             id: item.categoryId,
             label: item.name,
@@ -82,9 +95,11 @@ export default async function AdminAnalyticsPage() {
 
 function AnalyticsList({
   title,
+  emptyLabel,
   items,
 }: {
   title: string;
+  emptyLabel: string;
   items: Array<{ id: string; label: string; value: number; href?: string }>;
 }) {
   return (
@@ -104,7 +119,7 @@ function AnalyticsList({
           </li>
         ))}
         {items.length === 0 ? (
-          <li className="text-sm text-muted-foreground">No clicks yet.</li>
+          <li className="text-sm text-muted-foreground">{emptyLabel}</li>
         ) : null}
       </ul>
     </section>

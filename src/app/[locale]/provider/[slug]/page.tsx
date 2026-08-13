@@ -41,6 +41,7 @@ export async function generateMetadata({
   params,
 }: ProviderPageProps): Promise<Metadata> {
   const locale = await resolveLocaleParam(params);
+  const dict = getDictionary(locale);
   const { slug } = await params;
   const provider = await withDb(
     "provider.meta",
@@ -48,7 +49,7 @@ export async function generateMetadata({
     null,
   );
   if (!provider) {
-    return { title: "Provider not found", robots: { index: false } };
+    return { title: dict.meta.providerNotFound, robots: { index: false } };
   }
 
   const path = localePath(locale, `/provider/${provider.slug}`);
@@ -139,20 +140,20 @@ export default async function ProviderPage({
         <div className="space-y-3">
           <p className="text-sm text-muted-foreground">
             <LocalizedLink href="/" className="hover:underline">
-              Home
+              {dict.common.home}
             </LocalizedLink>{" "}
-            / Providers / {provider.name}
+            / {dict.common.providers} / {provider.name}
           </p>
           <h1 className="font-display text-3xl font-semibold tracking-tight sm:text-4xl">
-            Free courses from {provider.name}
+            {dict.pages.providerHeading(provider.name)}
           </h1>
           <p className="max-w-3xl text-muted-foreground">
-            Factual listing of curated free courses linked from{" "}
+            {dict.pages.providerIntro}{" "}
             <span className="font-medium text-foreground">{provider.domain}</span>
-            . FreeLearn Radar does not host course content.
+            . {dict.pages.providerNotHosted}
           </p>
           <p className="text-sm text-muted-foreground">
-            {total} published course{total === 1 ? "" : "s"} currently listed
+            {dict.pages.providerListed(total)}
           </p>
         </div>
 
@@ -167,10 +168,10 @@ export default async function ProviderPage({
 
         {catalog.items.length === 0 ? (
           <EmptyState
-            title={`No free courses from ${provider.name} right now`}
-            description="Browse other providers or search the full catalog."
+            title={dict.pages.providerEmptyTitle(provider.name)}
+            description={dict.pages.providerEmptyDescription}
             actionHref={localePath(locale, "/search")}
-            actionLabel="Search all courses"
+            actionLabel={dict.common.searchCatalog}
           />
         ) : (
           <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
@@ -185,11 +186,14 @@ export default async function ProviderPage({
           totalPages={catalog.totalPages}
           basePath={localePath(locale, `/provider/${provider.slug}`)}
           query={catalogFiltersToQuery({ ...filters, providerSlug: undefined })}
+          labels={dict.pagination}
         />
 
         {recentlyVerified.length > 0 ? (
           <section className="space-y-3 border-t border-border pt-8">
-            <h2 className="text-lg font-semibold">Recently verified on this page</h2>
+            <h2 className="text-lg font-semibold">
+              {dict.pages.providerRecentlyVerified}
+            </h2>
             <ul className="space-y-1 text-sm text-muted-foreground">
               {recentlyVerified.map((course) => (
                 <li key={course.id}>

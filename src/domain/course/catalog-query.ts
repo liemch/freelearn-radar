@@ -33,12 +33,34 @@ export const MAX_PAGE = 200;
 
 export const DURATION_BUCKETS: Record<
   DurationBucket,
-  { maxMinutes: number; label: string; slug: string }
+  { maxMinutes: number; label: string; labelVi: string; slug: string }
 > = {
-  under_1h: { maxMinutes: 60, label: "Under 1 hour", slug: "under-1-hour" },
-  under_5h: { maxMinutes: 300, label: "Under 5 hours", slug: "under-5-hours" },
-  weekend: { maxMinutes: 480, label: "Weekend courses", slug: "weekend" },
+  under_1h: {
+    maxMinutes: 60,
+    label: "Under 1 hour",
+    labelVi: "Dưới 1 giờ",
+    slug: "under-1-hour",
+  },
+  under_5h: {
+    maxMinutes: 300,
+    label: "Under 5 hours",
+    labelVi: "Dưới 5 giờ",
+    slug: "under-5-hours",
+  },
+  weekend: {
+    maxMinutes: 480,
+    label: "Weekend courses",
+    labelVi: "Khóa cuối tuần",
+    slug: "weekend",
+  },
 };
+
+export function durationBucketLabel(
+  bucket: { label: string; labelVi: string },
+  locale: string,
+): string {
+  return locale === "vi" ? bucket.labelVi : bucket.label;
+}
 
 export function durationBucketFromSlug(
   slug: string,

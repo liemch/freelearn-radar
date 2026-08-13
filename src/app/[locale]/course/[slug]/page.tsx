@@ -30,6 +30,7 @@ import {
 } from "@/domain/seo/json-ld";
 import { withDb } from "@/lib/db-safe";
 import { getServerEnv } from "@/lib/env";
+import { getDictionary } from "@/lib/i18n/get-dictionary";
 import { resolveLocaleParam } from "@/lib/i18n/page";
 import { localePath } from "@/lib/i18n/path";
 import { buildLocaleAlternates } from "@/lib/i18n/seo";
@@ -42,6 +43,7 @@ export async function generateMetadata({
   params,
 }: CoursePageProps): Promise<Metadata> {
   const locale = await resolveLocaleParam(params);
+  const dict = getDictionary(locale);
   const { slug } = await params;
   const course = await withDb(
     "course.metadata",
@@ -50,7 +52,7 @@ export async function generateMetadata({
   );
 
   if (!course) {
-    return { title: "Course not found", robots: { index: false, follow: false } };
+    return { title: dict.meta.courseNotFound, robots: { index: false, follow: false } };
   }
 
   if (course.status !== "PUBLISHED") {
@@ -97,6 +99,7 @@ export async function generateMetadata({
 
 export default async function CourseDetailPage({ params }: CoursePageProps) {
   const locale = await resolveLocaleParam(params);
+  const dict = getDictionary(locale);
   const { slug } = await params;
   const course = await withDb(
     "course.detail",
@@ -189,7 +192,7 @@ export default async function CourseDetailPage({ params }: CoursePageProps) {
                 {course.title}
               </h1>
               <p className="max-w-2xl text-muted-foreground text-pretty">
-                {course.shortDescription ?? "Curated free course."}
+                {course.shortDescription ?? dict.courseDetail.fallbackSummary}
               </p>
 
               {inactive ? (
@@ -197,19 +200,19 @@ export default async function CourseDetailPage({ params }: CoursePageProps) {
                   className="rounded-lg border border-orange-200 bg-orange-50 px-3 py-2 text-sm text-orange-950"
                   role="status"
                 >
-                  This course or free offer may no longer be available. Check the
-                  provider site, or browse related courses below.
+                  {dict.courseDetail.inactiveNotice}
                 </p>
               ) : (
                 <VerificationFreshnessNotice
                   lastVerifiedAt={course.lastVerifiedAt}
                   priceType={course.priceType}
+                  locale={locale}
                 />
               )}
 
               <div
                 className="flex flex-wrap items-center gap-2"
-                aria-label="Free status and certificate"
+                aria-label={dict.a11y.freeStatusAndCertificate}
               >
                 <FreeStatusBadge priceType={course.priceType} locale={locale} size="lg" />
                 <span className="rounded-full border border-border bg-secondary px-3 py-1 text-sm">
@@ -220,40 +223,59 @@ export default async function CourseDetailPage({ params }: CoursePageProps) {
 
             <section aria-labelledby="facts-heading" className="space-y-3">
               <h2 id="facts-heading" className="text-lg font-semibold">
-                Key facts
+                {dict.courseDetail.keyFacts}
               </h2>
               <dl className="grid gap-x-8 gap-y-3 sm:grid-cols-2">
-                <Fact label="What is free" value={price.label} hint={price.shortHint} />
-                <Fact label="Certificate" value={certificate} />
-                <Fact label="Level" value={formatLevelLabel(course.level, locale)} />
-                <Fact label="Duration" value={duration ?? "Unknown"} />
-                <Fact label="Language" value={course.language ?? "Unknown"} />
                 <Fact
-                  label="Instructor"
-                  value={course.instructor ?? "Not listed"}
+                  label={dict.courseDetail.whatIsFree}
+                  value={price.label}
+                  hint={price.shortHint}
+                />
+                <Fact label={dict.courseDetail.certificate} value={certificate} />
+                <Fact
+                  label={dict.courseDetail.level}
+                  value={formatLevelLabel(course.level, locale)}
                 />
                 <Fact
-                  label="Last verified"
+                  label={dict.courseDetail.duration}
+                  value={duration ?? dict.courseDetail.unknown}
+                />
+                <Fact
+                  label={dict.courseDetail.language}
+                  value={course.language ?? dict.courseDetail.unknown}
+                />
+                <Fact
+                  label={dict.courseDetail.instructor}
+                  value={course.instructor ?? dict.courseDetail.notListed}
+                />
+                <Fact
+                  label={dict.courseDetail.lastVerified}
                   value={
                     course.lastVerifiedAt
-                      ? course.lastVerifiedAt.toLocaleDateString()
-                      : "Not verified"
+                      ? course.lastVerifiedAt.toLocaleDateString(locale)
+                      : dict.courseDetail.notVerified
                   }
                 />
-                <Fact label="Provider" value={course.provider.name} />
+                <Fact
+                  label={dict.courseDetail.provider}
+                  value={course.provider.name}
+                />
               </dl>
             </section>
 
             <section className="space-y-2" aria-labelledby="why-heading">
               <h2 id="why-heading" className="text-lg font-semibold">
-                Why learn this
+                {dict.courseDetail.whyLearn}
               </h2>
               <p className="max-w-prose text-sm leading-relaxed text-muted-foreground whitespace-pre-line">
-                {course.description || "No summary available yet."}
+                {course.description || dict.courseDetail.noSummary}
               </p>
             </section>
 
-            <nav className="flex flex-wrap gap-2" aria-label="Explore related">
+            <nav
+              className="flex flex-wrap gap-2"
+              aria-label={dict.a11y.exploreRelated}
+            >
               {course.categories.map((category) => (
                 <LocalizedLink
                   key={category.id}
@@ -267,28 +289,33 @@ export default async function CourseDetailPage({ params }: CoursePageProps) {
                 href={`/provider/${course.provider.slug}`}
                 className="rounded-full border border-border px-3 py-1.5 text-sm hover:bg-accent"
               >
-                More from {course.provider.name}
+                {dict.courseDetail.moreFrom(course.provider.name)}
               </LocalizedLink>
               <LocalizedLink
                 href={bestHref}
                 className="rounded-full border border-border px-3 py-1.5 text-sm hover:bg-accent"
               >
-                Monthly best
+                {dict.courseDetail.monthlyBest}
               </LocalizedLink>
             </nav>
 
             <CourseSection
               locale={locale}
-              title={inactive ? "Related alternatives" : "Related courses"}
+              title={
+                inactive
+                  ? dict.courseDetail.relatedAlternatives
+                  : dict.courseDetail.relatedCourses
+              }
               courses={related}
             />
           </article>
 
           <aside className="h-fit space-y-4 rounded-xl border border-border bg-card p-5 shadow-sm lg:sticky lg:top-20">
-            <h2 className="text-lg font-semibold">View course</h2>
+            <h2 className="text-lg font-semibold">
+              {dict.courseDetail.viewCourseHeading}
+            </h2>
             <p className="text-sm text-muted-foreground">
-              Continues on {course.provider.name}. FreeLearn Radar does not host
-              lessons. Free status is not guaranteed.
+              {dict.courseDetail.continuesOn(course.provider.name)}
             </p>
             <Button
               asChild
@@ -297,10 +324,15 @@ export default async function CourseDetailPage({ params }: CoursePageProps) {
               variant={inactive ? "outline" : "default"}
             >
               <a href={`/course/${course.slug}/go`}>
-                View course on {course.provider.name}
+                {dict.courseDetail.viewCourseOn(course.provider.name)}
               </a>
             </Button>
-            <ShareCourseButton title={course.title} url={shareUrl} />
+            <ShareCourseButton
+              title={course.title}
+              url={shareUrl}
+              shareLabel={dict.share.action}
+              copiedLabel={dict.share.copied}
+            />
             <p className="sr-only">Source URL: {course.canonicalUrl}</p>
           </aside>
         </div>

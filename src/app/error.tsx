@@ -4,8 +4,8 @@ import { useEffect } from "react";
 
 import { LocalizedLink } from "@/components/public/localized-link";
 import { Button } from "@/components/ui/button";
-import { defaultLocale } from "@/lib/i18n/config";
 import { getDictionary } from "@/lib/i18n/get-dictionary";
+import { useCurrentLocale } from "@/lib/i18n/use-locale";
 
 type ErrorPageProps = {
   error: Error & { digest?: string };
@@ -13,7 +13,7 @@ type ErrorPageProps = {
 };
 
 export default function GlobalError({ error, reset }: ErrorPageProps) {
-  const dict = getDictionary(defaultLocale);
+  const dict = getDictionary(useCurrentLocale());
 
   useEffect(() => {
     console.error(error);
@@ -39,7 +39,7 @@ export default function GlobalError({ error, reset }: ErrorPageProps) {
       </div>
       {error.digest ? (
         <p className="mt-6 text-xs text-muted-foreground">
-          Reference: {error.digest}
+          {dict.errors.reference}: {error.digest}
         </p>
       ) : null}
     </main>

@@ -6,14 +6,24 @@ import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import type { CourseStatus } from "@/domain/course/types";
 
+type CourseStatusActionsLabels = {
+  publish: string;
+  unpublish: string;
+  archive: string;
+  statusUpdateFailed: string;
+  unableToUpdateStatus: string;
+};
+
 type CourseStatusActionsProps = {
   courseId: string;
   status: CourseStatus;
+  labels: CourseStatusActionsLabels;
 };
 
 export function CourseStatusActions({
   courseId,
   status,
+  labels,
 }: CourseStatusActionsProps) {
   const router = useRouter();
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -32,13 +42,13 @@ export function CourseStatusActions({
 
       const body = (await response.json()) as { error?: string };
       if (!response.ok) {
-        setError(body.error ?? "Status update failed");
+        setError(body.error ?? labels.statusUpdateFailed);
         return;
       }
 
       router.refresh();
     } catch {
-      setError("Unable to update status");
+      setError(labels.unableToUpdateStatus);
     } finally {
       setIsSubmitting(false);
     }
@@ -53,7 +63,7 @@ export function CourseStatusActions({
             disabled={isSubmitting}
             onClick={() => updateStatus("PUBLISHED")}
           >
-            Publish
+            {labels.publish}
           </Button>
         ) : (
           <Button
@@ -62,7 +72,7 @@ export function CourseStatusActions({
             disabled={isSubmitting}
             onClick={() => updateStatus("DRAFT")}
           >
-            Unpublish
+            {labels.unpublish}
           </Button>
         )}
         {status !== "ARCHIVED" ? (
@@ -72,7 +82,7 @@ export function CourseStatusActions({
             disabled={isSubmitting}
             onClick={() => updateStatus("ARCHIVED")}
           >
-            Archive
+            {labels.archive}
           </Button>
         ) : null}
       </div>
