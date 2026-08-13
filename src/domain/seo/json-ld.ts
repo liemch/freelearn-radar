@@ -18,8 +18,11 @@ export function buildCourseJsonLd(input: {
   >;
   providerName: string;
   appUrl: string;
+  /** Optional locale-aware public URL; defaults to unprefixed for back-compat. */
+  courseUrl?: string;
 }): Record<string, unknown> {
-  const url = `${input.appUrl}/course/${input.course.slug}`;
+  const url =
+    input.courseUrl ?? `${input.appUrl}/course/${input.course.slug}`;
   const data: Record<string, unknown> = {
     "@context": "https://schema.org",
     "@type": "Course",

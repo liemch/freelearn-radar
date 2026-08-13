@@ -1,11 +1,11 @@
 import type { Metadata } from "next";
-import Link from "next/link";
 import { notFound } from "next/navigation";
 
 import { CatalogFiltersForm } from "@/components/public/catalog-filters";
 import { CourseCard } from "@/components/public/course-card";
 import { EmptyState } from "@/components/public/empty-state";
 import { LocaleHtmlLang } from "@/components/public/locale-html-lang";
+import { LocalizedLink } from "@/components/public/localized-link";
 import { Pagination } from "@/components/public/pagination";
 import { SiteFooter } from "@/components/public/site-footer";
 import { SiteHeader } from "@/components/public/site-header";
@@ -25,6 +25,7 @@ import {
 import { buildItemListJsonLd } from "@/domain/seo/json-ld";
 import { withDb } from "@/lib/db-safe";
 import { getServerEnv } from "@/lib/env";
+import { getDictionary } from "@/lib/i18n/get-dictionary";
 import { resolveLocaleParam } from "@/lib/i18n/page";
 import { localePath } from "@/lib/i18n/path";
 
@@ -67,6 +68,7 @@ export default async function FreeCoursesTopicPage({
   searchParams,
 }: TopicPageProps) {
   const locale = await resolveLocaleParam(params);
+  const dict = getDictionary(locale);
   const { topic } = await params;
   const landing = findTopicLanding(topic);
   if (!landing) notFound();
@@ -137,9 +139,9 @@ export default async function FreeCoursesTopicPage({
       <div className="mx-auto w-full max-w-6xl space-y-8 px-4 py-10 sm:px-6">
         <div className="space-y-3">
           <p className="text-sm text-muted-foreground">
-            <Link href={localePath(locale, "/")} className="hover:underline">
+            <LocalizedLink href="/" className="hover:underline">
               Home
-            </Link>{" "}
+            </LocalizedLink>{" "}
             / Free courses / {landing.slug}
           </p>
           <h1 className="font-display text-3xl font-semibold tracking-tight sm:text-4xl">
@@ -152,10 +154,11 @@ export default async function FreeCoursesTopicPage({
         </div>
 
         <CatalogFiltersForm
-          action={localePath(locale, `/free-courses/${landing.slug}`)}
+          action={`/free-courses/${landing.slug}`}
           filters={filters}
           providers={providers}
           categories={categories}
+          labels={dict.filters}
         />
 
         {catalog.items.length === 0 ? (
@@ -184,20 +187,20 @@ export default async function FreeCoursesTopicPage({
           <h2 className="text-lg font-semibold">Related topics</h2>
           <div className="flex flex-wrap gap-2">
             {landing.relatedTopics.map((related) => (
-              <Link
+              <LocalizedLink
                 key={related}
-                href={localePath(locale, `/free-courses/${related}`)}
+                href={`/free-courses/${related}`}
                 className="rounded-full border border-border px-3 py-1 text-sm hover:bg-accent capitalize"
               >
                 {related.replace(/-/g, " ")}
-              </Link>
+              </LocalizedLink>
             ))}
-            <Link
-              href={localePath(locale, `/category/${landing.categorySlug}`)}
+            <LocalizedLink
+              href={`/category/${landing.categorySlug}`}
               className="rounded-full border border-border px-3 py-1 text-sm hover:bg-accent"
             >
               Full {category.name} category
-            </Link>
+            </LocalizedLink>
           </div>
         </section>
       </div>

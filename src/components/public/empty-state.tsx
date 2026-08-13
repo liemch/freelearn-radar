@@ -1,5 +1,4 @@
-import Link from "next/link";
-
+import { LocalizedLink } from "@/components/public/localized-link";
 import { Button } from "@/components/ui/button";
 
 type EmptyStateProps = {
@@ -16,20 +15,20 @@ export function EmptyState({
   actionLabel,
 }: EmptyStateProps) {
   return (
-    <section role="status" className="py-10 text-center sm:py-12">
-      <h2 className="font-display text-2xl font-semibold tracking-tight text-balance">
+    <div className="rounded-xl bg-surface-muted/80 px-6 py-12 text-center">
+      <h2 className="font-display text-xl font-semibold tracking-tight">
         {title}
       </h2>
-      <p className="mx-auto mt-2 max-w-lg text-sm leading-relaxed text-muted-foreground text-pretty">
+      <p className="mx-auto mt-2 max-w-md text-sm leading-relaxed text-muted-foreground">
         {description}
       </p>
       {actionHref && actionLabel ? (
-        <div className="mt-5">
-          <Button asChild variant="outline">
-            <Link href={actionHref}>{actionLabel}</Link>
+        <div className="mt-6">
+          <Button asChild>
+            <LocalizedLink href={actionHref}>{actionLabel}</LocalizedLink>
           </Button>
         </div>
       ) : null}
-    </section>
+    </div>
   );
 }

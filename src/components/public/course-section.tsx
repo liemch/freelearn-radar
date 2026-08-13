@@ -1,5 +1,4 @@
-import Link from "next/link";
-
+import { LocalizedLink } from "@/components/public/localized-link";
 import { CourseCard } from "@/components/public/course-card";
 import type { CourseWithProvider } from "@/db/repositories/course-repository";
 import type { Locale } from "@/lib/i18n/config";
@@ -37,12 +36,12 @@ export function CourseSection({
           ) : null}
         </div>
         {viewAllHref ? (
-          <Link
+          <LocalizedLink
             href={viewAllHref}
             className="shrink-0 text-sm font-medium text-primary hover:underline"
           >
             {viewAllLabel}
-          </Link>
+          </LocalizedLink>
         ) : null}
       </div>
       <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">

@@ -1,6 +1,5 @@
-import Link from "next/link";
-
 import { BrandMark } from "@/components/brand/brand-mark";
+import { LocalizedLink } from "@/components/public/localized-link";
 import { currentBestPath } from "@/domain/discovery/monthly-collection";
 import { DURATION_BUCKETS } from "@/domain/course/catalog-query";
 import { listTopicSlugs } from "@/domain/discovery/topic-landings";
@@ -36,33 +35,36 @@ export function SiteFooter({ locale }: SiteFooterProps) {
           </p>
           <ul className="mt-3 space-y-2 text-sm text-muted-foreground">
             <li>
-              <Link
+              <LocalizedLink
                 href={localePath(locale, "/search")}
                 className="hover:text-foreground"
               >
                 {locale === "vi" ? "Tìm kiếm" : "Search"}
-              </Link>
+              </LocalizedLink>
             </li>
             <li>
-              <Link
+              <LocalizedLink
                 href={localePath(locale, "/free-certificate-courses")}
                 className="hover:text-foreground"
               >
                 {locale === "vi" ? "Chứng chỉ miễn phí" : "Free certificates"}
-              </Link>
+              </LocalizedLink>
             </li>
             <li>
-              <Link
-                href={localePath(locale, `/collections/${DURATION_BUCKETS.under_1h.slug}`)}
+              <LocalizedLink
+                href={localePath(
+                  locale,
+                  `/collections/${DURATION_BUCKETS.under_1h.slug}`,
+                )}
                 className="hover:text-foreground"
               >
                 {locale === "vi" ? "Dưới 1 giờ" : "Under 1 hour"}
-              </Link>
+              </LocalizedLink>
             </li>
             <li>
-              <Link href={bestHref} className="hover:text-foreground">
+              <LocalizedLink href={bestHref} className="hover:text-foreground">
                 {locale === "vi" ? "Hay nhất tháng" : "Best this month"}
-              </Link>
+              </LocalizedLink>
             </li>
           </ul>
         </div>
@@ -74,12 +76,12 @@ export function SiteFooter({ locale }: SiteFooterProps) {
           <ul className="mt-3 space-y-2 text-sm text-muted-foreground">
             {topics.map((slug) => (
               <li key={slug}>
-                <Link
+                <LocalizedLink
                   href={localePath(locale, `/free-courses/${slug}`)}
                   className="capitalize hover:text-foreground"
                 >
                   {slug.replace(/-/g, " ")}
-                </Link>
+                </LocalizedLink>
               </li>
             ))}
           </ul>

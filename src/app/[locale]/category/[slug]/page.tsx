@@ -1,11 +1,11 @@
 import type { Metadata } from "next";
-import Link from "next/link";
 import { notFound } from "next/navigation";
 
 import { CatalogFiltersForm } from "@/components/public/catalog-filters";
 import { CourseCard } from "@/components/public/course-card";
 import { EmptyState } from "@/components/public/empty-state";
 import { LocaleHtmlLang } from "@/components/public/locale-html-lang";
+import { LocalizedLink } from "@/components/public/localized-link";
 import { Pagination } from "@/components/public/pagination";
 import { SiteFooter } from "@/components/public/site-footer";
 import { SiteHeader } from "@/components/public/site-header";
@@ -19,6 +19,7 @@ import {
   catalogFiltersToQuery,
 } from "@/domain/course/catalog-query";
 import { withDb } from "@/lib/db-safe";
+import { getDictionary } from "@/lib/i18n/get-dictionary";
 import { resolveLocaleParam } from "@/lib/i18n/page";
 import { localePath } from "@/lib/i18n/path";
 
@@ -71,6 +72,7 @@ export default async function CategoryPage({
   searchParams,
 }: CategoryPageProps) {
   const locale = await resolveLocaleParam(params);
+  const dict = getDictionary(locale);
   const { slug } = await params;
   const raw = await searchParams;
   const urlParams = new URLSearchParams();
@@ -130,31 +132,29 @@ export default async function CategoryPage({
           </p>
           <p className="text-sm text-muted-foreground">{catalog.total} courses</p>
           <p className="text-sm">
-            <Link
-              href={localePath(
-                locale,
-                `/free-courses/${slug === "data-science" ? "data-science" : slug}`,
-              )}
+            <LocalizedLink
+              href={`/free-courses/${slug === "data-science" ? "data-science" : slug}`}
               className="text-primary hover:underline"
             >
               Topic guide
-            </Link>
+            </LocalizedLink>
             {" · "}
-            <Link
-              href={localePath(locale, "/free-certificate-courses")}
+            <LocalizedLink
+              href="/free-certificate-courses"
               className="text-primary hover:underline"
             >
               Free certificates
-            </Link>
+            </LocalizedLink>
           </p>
         </div>
 
         <CatalogFiltersForm
-          action={localePath(locale, `/category/${slug}`)}
+          action={`/category/${slug}`}
           filters={filters}
           providers={providers}
           categories={categories}
           showCategoryLinks
+          labels={dict.filters}
         />
 
         {catalog.items.length === 0 ? (

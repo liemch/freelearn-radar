@@ -1,10 +1,10 @@
-import Link from "next/link";
 import { notFound } from "next/navigation";
 import type { Metadata } from "next";
 
 import { CourseSection } from "@/components/public/course-section";
 import { FreeStatusBadge } from "@/components/public/free-status-badge";
 import { LocaleHtmlLang } from "@/components/public/locale-html-lang";
+import { LocalizedLink } from "@/components/public/localized-link";
 import { ShareCourseButton } from "@/components/public/share-course-button";
 import { SiteFooter } from "@/components/public/site-footer";
 import { SiteHeader } from "@/components/public/site-header";
@@ -32,6 +32,7 @@ import { withDb } from "@/lib/db-safe";
 import { getServerEnv } from "@/lib/env";
 import { resolveLocaleParam } from "@/lib/i18n/page";
 import { localePath } from "@/lib/i18n/path";
+import { buildLocaleAlternates } from "@/lib/i18n/seo";
 
 type CoursePageProps = {
   params: Promise<{ locale: string; slug: string }>;
@@ -65,10 +66,21 @@ export async function generateMetadata({
     course.shortDescription ?? course.description ?? undefined;
   const path = localePath(locale, `/course/${course.slug}`);
 
+  let appUrl = "http://localhost:3000";
+  try {
+    appUrl = getServerEnv().APP_URL;
+  } catch {
+    appUrl = process.env.APP_URL || appUrl;
+  }
+
   return {
     title: `${course.title} | FreeLearn Radar`,
     description,
-    alternates: { canonical: path },
+    alternates: buildLocaleAlternates(
+      appUrl,
+      locale,
+      `/course/${course.slug}`,
+    ),
     openGraph: {
       title: course.title,
       description,
@@ -135,7 +147,9 @@ export default async function CourseDetailPage({ params }: CoursePageProps) {
   }
 
   const shareUrl = `${appUrl}${localePath(locale, `/course/${course.slug}`)}`;
-  const bestHref = localePath(locale, currentBestPath());
+  const bestHref = currentBestPath();
+  const homeUrl = `${appUrl}${localePath(locale, "/")}`;
+  const providerUrl = `${appUrl}${localePath(locale, `/provider/${course.provider.slug}`)}`;
 
   return (
     <main className="min-h-screen bg-background">
@@ -145,14 +159,15 @@ export default async function CourseDetailPage({ params }: CoursePageProps) {
           course,
           providerName: course.provider.name,
           appUrl,
+          courseUrl: shareUrl,
         })}
       />
       <JsonLd
         data={buildBreadcrumbJsonLd([
-          { name: "Home", url: `${appUrl}/` },
+          { name: "Home", url: homeUrl },
           {
             name: course.provider.name,
-            url: `${appUrl}/provider/${course.provider.slug}`,
+            url: providerUrl,
           },
           { name: course.title, url: shareUrl },
         ])}
@@ -163,12 +178,12 @@ export default async function CourseDetailPage({ params }: CoursePageProps) {
           <article className="space-y-8">
             <header className="space-y-4">
               <p className="text-sm font-medium text-muted-foreground">
-                <Link
-                  href={localePath(locale, `/provider/${course.provider.slug}`)}
+                <LocalizedLink
+                  href={`/provider/${course.provider.slug}`}
                   className="hover:text-primary hover:underline"
                 >
                   {course.provider.name}
-                </Link>
+                </LocalizedLink>
               </p>
               <h1 className="font-display text-3xl font-semibold tracking-tight text-balance sm:text-4xl">
                 {course.title}
@@ -240,26 +255,26 @@ export default async function CourseDetailPage({ params }: CoursePageProps) {
 
             <nav className="flex flex-wrap gap-2" aria-label="Explore related">
               {course.categories.map((category) => (
-                <Link
+                <LocalizedLink
                   key={category.id}
-                  href={localePath(locale, `/category/${category.slug}`)}
+                  href={`/category/${category.slug}`}
                   className="rounded-full border border-border px-3 py-1.5 text-sm hover:bg-accent focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
                 >
                   {category.name}
-                </Link>
+                </LocalizedLink>
               ))}
-              <Link
-                href={localePath(locale, `/provider/${course.provider.slug}`)}
+              <LocalizedLink
+                href={`/provider/${course.provider.slug}`}
                 className="rounded-full border border-border px-3 py-1.5 text-sm hover:bg-accent"
               >
                 More from {course.provider.name}
-              </Link>
-              <Link
+              </LocalizedLink>
+              <LocalizedLink
                 href={bestHref}
                 className="rounded-full border border-border px-3 py-1.5 text-sm hover:bg-accent"
               >
                 Monthly best
-              </Link>
+              </LocalizedLink>
             </nav>
 
             <CourseSection

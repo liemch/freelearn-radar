@@ -1,11 +1,14 @@
 "use client";
 
 import Link from "next/link";
-import { usePathname } from "next/navigation";
+import { usePathname, useSearchParams } from "next/navigation";
 
 import type { Locale } from "@/lib/i18n/config";
 import { locales } from "@/lib/i18n/config";
-import { switchLocalePath } from "@/lib/i18n/path";
+import {
+  setLocalePreferenceCookie,
+  switchLocalePath,
+} from "@/lib/i18n/path";
 import { cn } from "@/lib/utils";
 
 type LanguageSwitcherProps = {
@@ -19,16 +22,28 @@ export function LanguageSwitcher({
   label,
   className,
 }: LanguageSwitcherProps) {
-  const pathname = usePathname();
+  const pathname = usePathname() ?? "/";
+  const searchParams = useSearchParams();
+  const search = searchParams?.toString();
+  const current = search ? `${pathname}?${search}` : pathname;
 
   return (
-    <div className={cn("flex items-center gap-1", className)} role="group" aria-label={label}>
+    <div
+      className={cn("flex items-center gap-1", className)}
+      role="group"
+      aria-label={label}
+    >
       {locales.map((code) => {
         const active = code === locale;
+        const href = switchLocalePath(current, code);
         return (
           <Link
             key={code}
-            href={switchLocalePath(pathname, code)}
+            href={href}
+            prefetch
+            onClick={() => {
+              setLocalePreferenceCookie(code);
+            }}
             className={cn(
               "rounded-md px-2 py-1 text-xs font-semibold uppercase tracking-wide transition",
               active
@@ -37,6 +52,7 @@ export function LanguageSwitcher({
             )}
             aria-current={active ? "true" : undefined}
             lang={code}
+            hrefLang={code}
           >
             {code}
           </Link>

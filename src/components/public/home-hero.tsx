@@ -1,11 +1,13 @@
-import Link from "next/link";
+"use client";
+
 import { Search } from "lucide-react";
 
-import type { Locale } from "@/lib/i18n/config";
-import type { Dictionary } from "@/lib/i18n/types";
-import { localePath } from "@/lib/i18n/path";
+import { LocalizedLink } from "@/components/public/localized-link";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import type { Locale } from "@/lib/i18n/config";
+import type { Dictionary } from "@/lib/i18n/types";
+import { useLocalizedPath } from "@/lib/i18n/use-locale";
 
 type HomeHeroProps = {
   locale: Locale;
@@ -13,7 +15,9 @@ type HomeHeroProps = {
   topics: { href: string; label: string }[];
 };
 
-export function HomeHero({ locale, dict, topics }: HomeHeroProps) {
+export function HomeHero({ dict, topics }: HomeHeroProps) {
+  const searchAction = useLocalizedPath("/search");
+
   return (
     <section className="border-b border-border/50 bg-surface">
       <div className="mx-auto grid w-full max-w-6xl gap-6 px-4 py-8 sm:px-6 sm:py-10 lg:grid-cols-[1fr_minmax(0,420px)] lg:items-end lg:gap-10">
@@ -31,7 +35,7 @@ export function HomeHero({ locale, dict, topics }: HomeHeroProps) {
 
         <div className="space-y-3">
           <form
-            action={localePath(locale, "/search")}
+            action={searchAction}
             method="get"
             className="flex items-center gap-2 rounded-xl border border-border bg-card p-1.5 shadow-sm"
             role="search"
@@ -65,12 +69,12 @@ export function HomeHero({ locale, dict, topics }: HomeHeroProps) {
                     ·
                   </span>
                 ) : null}
-                <Link
+                <LocalizedLink
                   href={topic.href}
                   className="font-medium text-foreground underline-offset-4 hover:text-primary hover:underline"
                 >
                   {topic.label}
-                </Link>
+                </LocalizedLink>
               </span>
             ))}
           </div>

@@ -7,13 +7,23 @@ import { buildOutboundUrl } from "@/domain/ranking/ranking";
 import { trackProductEvent } from "@/domain/analytics/product-events";
 import { logger } from "@/lib/logger";
 import { assertSafeHttpUrl } from "@/lib/url";
+import { LOCALE_COOKIE, isLocale, defaultLocale } from "@/lib/i18n/config";
 
 type RouteContext = {
   params: Promise<{ slug: string }>;
 };
 
+function resolveRedirectLocale(request: NextRequest): string {
+  const cookie = request.cookies.get(LOCALE_COOKIE)?.value;
+  if (cookie && isLocale(cookie)) {
+    return cookie;
+  }
+  return defaultLocale;
+}
+
 export async function GET(request: NextRequest, context: RouteContext) {
   const { slug } = await context.params;
+  const locale = resolveRedirectLocale(request);
 
   try {
     const db = getDb();
@@ -25,7 +35,7 @@ export async function GET(request: NextRequest, context: RouteContext) {
         course.status !== "EXPIRED" &&
         course.status !== "UNAVAILABLE")
     ) {
-      return NextResponse.redirect(new URL("/", request.url));
+      return NextResponse.redirect(new URL(`/${locale}`, request.url));
     }
 
     let destination: string;
@@ -39,7 +49,9 @@ export async function GET(request: NextRequest, context: RouteContext) {
         slug,
         error: error instanceof Error ? error.message : "Unsafe URL",
       });
-      return NextResponse.redirect(new URL(`/en/course/${slug}`, request.url));
+      return NextResponse.redirect(
+        new URL(`/${locale}/course/${slug}`, request.url),
+      );
     }
 
     try {
@@ -79,6 +91,6 @@ export async function GET(request: NextRequest, context: RouteContext) {
       slug,
       error: error instanceof Error ? error.message : "Unknown error",
     });
-    return NextResponse.redirect(new URL("/", request.url));
+    return NextResponse.redirect(new URL(`/${locale}`, request.url));
   }
 }

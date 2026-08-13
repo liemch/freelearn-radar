@@ -21,6 +21,7 @@ import { rankCourses } from "@/domain/ranking/ranking";
 import { isLocale, type Locale } from "@/lib/i18n/config";
 import { getDictionary } from "@/lib/i18n/get-dictionary";
 import { localePath } from "@/lib/i18n/path";
+import { buildLocaleAlternates } from "@/lib/i18n/seo";
 import { withDb } from "@/lib/db-safe";
 import { getServerEnv } from "@/lib/env";
 
@@ -53,13 +54,7 @@ export async function generateMetadata({
   return {
     title,
     description: dict.hero.subhead,
-    alternates: {
-      canonical: path,
-      languages: {
-        en: `${appUrl}/en`,
-        vi: `${appUrl}/vi`,
-      },
-    },
+    alternates: buildLocaleAlternates(appUrl, locale, "/"),
     openGraph: {
       title: "FreeLearn Radar",
       description: dict.hero.subhead,

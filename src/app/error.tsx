@@ -1,11 +1,11 @@
 "use client";
 
-import Link from "next/link";
 import { useEffect } from "react";
 
+import { LocalizedLink } from "@/components/public/localized-link";
 import { Button } from "@/components/ui/button";
 import { defaultLocale } from "@/lib/i18n/config";
-import { localePath } from "@/lib/i18n/path";
+import { getDictionary } from "@/lib/i18n/get-dictionary";
 
 type ErrorPageProps = {
   error: Error & { digest?: string };
@@ -13,6 +13,8 @@ type ErrorPageProps = {
 };
 
 export default function GlobalError({ error, reset }: ErrorPageProps) {
+  const dict = getDictionary(defaultLocale);
+
   useEffect(() => {
     console.error(error);
   }, [error]);
@@ -20,18 +22,19 @@ export default function GlobalError({ error, reset }: ErrorPageProps) {
   return (
     <main className="flex min-h-[70vh] flex-col items-center justify-center px-4 text-center">
       <h1 className="font-display text-3xl font-semibold tracking-tight">
-        Something went wrong
+        {dict.errors.genericTitle}
       </h1>
       <p className="mt-3 max-w-md text-muted-foreground">
-        We could not load this page. Try again, or browse free courses from
-        search.
+        {dict.errors.genericDescription}
       </p>
       <div className="mt-6 flex flex-wrap justify-center gap-3">
         <Button type="button" onClick={reset}>
-          Try again
+          {dict.errors.tryAgain}
         </Button>
         <Button asChild variant="outline">
-          <Link href={localePath(defaultLocale, "/search")}>Search courses</Link>
+          <LocalizedLink href="/search">
+            {dict.errors.searchCourses}
+          </LocalizedLink>
         </Button>
       </div>
       {error.digest ? (

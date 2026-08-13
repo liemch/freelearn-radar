@@ -39,6 +39,7 @@ export type Dictionary = {
     catalogAction: string;
     searchTitle: string;
     searchDescription: string;
+    searchAction: string;
   };
   course: {
     openCourse: string;
@@ -46,6 +47,51 @@ export type Dictionary = {
     durationUnknown: string;
     levelUnknown: string;
     staleVerification: string;
+  };
+  search: {
+    title: string;
+    description: string;
+    results: (count: number, query?: string) => string;
+  };
+  filters: {
+    filters: string;
+    active: string;
+    keyword: string;
+    keywordPlaceholder: string;
+    provider: string;
+    level: string;
+    freeType: string;
+    certificate: string;
+    duration: string;
+    sort: string;
+    all: string;
+    any: string;
+    apply: string;
+    clearAll: string;
+    filtersActive: string;
+    categories: string;
+    sortRecommended: string;
+    sortNewest: string;
+    sortPopular: string;
+    sortShortest: string;
+    levelBeginner: string;
+    levelIntermediate: string;
+    levelAdvanced: string;
+    levelAll: string;
+  };
+  pagination: {
+    previous: string;
+    next: string;
+    pageOf: (page: number, total: number) => string;
+  };
+  errors: {
+    notFoundTitle: string;
+    notFoundDescription: string;
+    goHome: string;
+    searchCourses: string;
+    genericTitle: string;
+    genericDescription: string;
+    tryAgain: string;
   };
   footer: {
     tagline: string;

@@ -1,11 +1,11 @@
 import type { Metadata } from "next";
-import Link from "next/link";
 import { notFound } from "next/navigation";
 
 import { CatalogFiltersForm } from "@/components/public/catalog-filters";
 import { CourseCard } from "@/components/public/course-card";
 import { EmptyState } from "@/components/public/empty-state";
 import { LocaleHtmlLang } from "@/components/public/locale-html-lang";
+import { LocalizedLink } from "@/components/public/localized-link";
 import { Pagination } from "@/components/public/pagination";
 import { SiteFooter } from "@/components/public/site-footer";
 import { SiteHeader } from "@/components/public/site-header";
@@ -28,6 +28,7 @@ import {
 import { buildProviderJsonLd } from "@/domain/seo/json-ld";
 import { withDb } from "@/lib/db-safe";
 import { getServerEnv } from "@/lib/env";
+import { getDictionary } from "@/lib/i18n/get-dictionary";
 import { resolveLocaleParam } from "@/lib/i18n/page";
 import { localePath } from "@/lib/i18n/path";
 
@@ -70,6 +71,7 @@ export default async function ProviderPage({
   searchParams,
 }: ProviderPageProps) {
   const locale = await resolveLocaleParam(params);
+  const dict = getDictionary(locale);
   const { slug } = await params;
   const provider = await withDb(
     "provider.find",
@@ -136,9 +138,9 @@ export default async function ProviderPage({
       <PageShell className="space-y-8 py-10">
         <div className="space-y-3">
           <p className="text-sm text-muted-foreground">
-            <Link href={localePath(locale, "/")} className="hover:underline">
+            <LocalizedLink href="/" className="hover:underline">
               Home
-            </Link>{" "}
+            </LocalizedLink>{" "}
             / Providers / {provider.name}
           </p>
           <h1 className="font-display text-3xl font-semibold tracking-tight sm:text-4xl">
@@ -155,11 +157,12 @@ export default async function ProviderPage({
         </div>
 
         <CatalogFiltersForm
-          action={localePath(locale, `/provider/${provider.slug}`)}
+          action={`/provider/${provider.slug}`}
           filters={filters}
           providers={providers}
           categories={categories}
           showCategoryLinks
+          labels={dict.filters}
         />
 
         {catalog.items.length === 0 ? (
@@ -190,12 +193,12 @@ export default async function ProviderPage({
             <ul className="space-y-1 text-sm text-muted-foreground">
               {recentlyVerified.map((course) => (
                 <li key={course.id}>
-                  <Link
-                    href={localePath(locale, `/course/${course.slug}`)}
+                  <LocalizedLink
+                    href={`/course/${course.slug}`}
                     className="text-foreground hover:underline"
                   >
                     {course.title}
-                  </Link>
+                  </LocalizedLink>
                   {course.lastVerifiedAt
                     ? ` · ${course.lastVerifiedAt.toLocaleDateString()}`
                     : ""}

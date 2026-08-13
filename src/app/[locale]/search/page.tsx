@@ -17,8 +17,11 @@ import {
   catalogFiltersToQuery,
 } from "@/domain/course/catalog-query";
 import { withDb } from "@/lib/db-safe";
+import { getServerEnv } from "@/lib/env";
+import { getDictionary } from "@/lib/i18n/get-dictionary";
 import { resolveLocaleParam } from "@/lib/i18n/page";
 import { localePath } from "@/lib/i18n/path";
+import { buildLocaleAlternates } from "@/lib/i18n/seo";
 
 type SearchPageProps = {
   params: Promise<{ locale: string }>;
@@ -30,25 +33,33 @@ export async function generateMetadata({
   searchParams,
 }: SearchPageProps): Promise<Metadata> {
   const locale = await resolveLocaleParam(params);
+  const dict = getDictionary(locale);
   const raw = await searchParams;
   const hasFilters = Object.keys(raw).some(
     (key) => key !== "page" && raw[key],
   );
-  const path = localePath(locale, "/search");
+
+  let appUrl = "http://localhost:3000";
+  try {
+    appUrl = getServerEnv().APP_URL;
+  } catch {
+    appUrl = process.env.APP_URL || appUrl;
+  }
 
   return {
-    title: "Search Free Courses | FreeLearn Radar",
-    description:
-      "Search curated free online courses by keyword, provider, level, free type, and certificate.",
-    alternates: { canonical: path },
-    // Filtered search URLs are shareable but should not explode the index.
+    title:
+      locale === "vi"
+        ? "Tìm khóa học miễn phí | FreeLearn Radar"
+        : "Search Free Courses | FreeLearn Radar",
+    description: dict.search.description,
+    alternates: buildLocaleAlternates(appUrl, locale, "/search"),
     robots: hasFilters
       ? { index: false, follow: true }
       : { index: true, follow: true },
     openGraph: {
-      title: "Search Free Courses",
-      description: "Find curated free courses on FreeLearn Radar.",
-      url: path,
+      title: dict.search.title,
+      description: dict.search.description,
+      url: localePath(locale, "/search"),
       type: "website",
     },
   };
@@ -59,6 +70,7 @@ export default async function SearchPage({
   searchParams,
 }: SearchPageProps) {
   const locale = await resolveLocaleParam(params);
+  const dict = getDictionary(locale);
   const raw = await searchParams;
   const urlParams = new URLSearchParams();
 
@@ -100,31 +112,29 @@ export default async function SearchPage({
       <PageShell className="space-y-8 py-10">
         <div className="space-y-2">
           <h1 className="font-display text-3xl font-semibold tracking-tight">
-            Search courses
+            {dict.search.title}
           </h1>
-          <p className="text-muted-foreground">
-            Filter by provider, level, free type, certificate, and duration.
-          </p>
+          <p className="text-muted-foreground">{dict.search.description}</p>
           <p className="text-sm text-muted-foreground">
-            {catalog.total} result{catalog.total === 1 ? "" : "s"}
-            {filters.q ? ` for “${filters.q}”` : ""}
+            {dict.search.results(catalog.total, filters.q)}
           </p>
         </div>
 
         <CatalogFiltersForm
-          action={localePath(locale, "/search")}
+          action="/search"
           filters={filters}
           providers={providers}
           categories={categories}
           showCategoryLinks
+          labels={dict.filters}
         />
 
         {catalog.items.length === 0 ? (
           <EmptyState
-            title="No courses found"
-            description="Try a broader keyword, clear filters, or browse topics."
-            actionHref={localePath(locale, "/free-courses/ai")}
-            actionLabel="Browse AI topics"
+            title={dict.empty.searchTitle}
+            description={dict.empty.searchDescription}
+            actionHref="/free-courses/ai"
+            actionLabel={dict.empty.searchAction}
           />
         ) : (
           <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
@@ -137,8 +147,9 @@ export default async function SearchPage({
         <Pagination
           page={catalog.page}
           totalPages={catalog.totalPages}
-          basePath={localePath(locale, "/search")}
+          basePath="/search"
           query={catalogFiltersToQuery(filters)}
+          labels={dict.pagination}
         />
       </PageShell>
       <SiteFooter locale={locale} />

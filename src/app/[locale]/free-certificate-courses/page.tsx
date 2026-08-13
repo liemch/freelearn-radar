@@ -1,10 +1,10 @@
 import type { Metadata } from "next";
-import Link from "next/link";
 
 import { CatalogFiltersForm } from "@/components/public/catalog-filters";
 import { CourseCard } from "@/components/public/course-card";
 import { EmptyState } from "@/components/public/empty-state";
 import { LocaleHtmlLang } from "@/components/public/locale-html-lang";
+import { LocalizedLink } from "@/components/public/localized-link";
 import { Pagination } from "@/components/public/pagination";
 import { SiteFooter } from "@/components/public/site-footer";
 import { SiteHeader } from "@/components/public/site-header";
@@ -21,6 +21,7 @@ import {
 import { buildItemListJsonLd } from "@/domain/seo/json-ld";
 import { withDb } from "@/lib/db-safe";
 import { getServerEnv } from "@/lib/env";
+import { getDictionary } from "@/lib/i18n/get-dictionary";
 import { resolveLocaleParam } from "@/lib/i18n/page";
 import { localePath } from "@/lib/i18n/path";
 
@@ -52,6 +53,7 @@ export default async function FreeCertificateCoursesPage({
   searchParams,
 }: PageProps) {
   const locale = await resolveLocaleParam(params);
+  const dict = getDictionary(locale);
   const raw = await searchParams;
   const urlParams = new URLSearchParams();
   for (const [key, value] of Object.entries(raw)) {
@@ -105,9 +107,9 @@ export default async function FreeCertificateCoursesPage({
       <PageShell className="space-y-8 py-10">
         <div className="space-y-3">
           <p className="text-sm text-muted-foreground">
-            <Link href={localePath(locale, "/")} className="hover:underline">
+            <LocalizedLink href="/" className="hover:underline">
               Home
-            </Link>{" "}
+            </LocalizedLink>{" "}
             / Free certificate courses
           </p>
           <h1 className="font-display text-3xl font-semibold tracking-tight">
@@ -122,11 +124,12 @@ export default async function FreeCertificateCoursesPage({
         </div>
 
         <CatalogFiltersForm
-          action={localePath(locale, "/free-certificate-courses")}
+          action="/free-certificate-courses"
           filters={filters}
           providers={providers}
           categories={categories}
           showCategoryLinks
+          labels={dict.filters}
         />
 
         {catalog.items.length === 0 ? (

@@ -1,11 +1,11 @@
 import type { Metadata } from "next";
-import Link from "next/link";
 import { notFound } from "next/navigation";
 
 import { CatalogFiltersForm } from "@/components/public/catalog-filters";
 import { CourseCard } from "@/components/public/course-card";
 import { EmptyState } from "@/components/public/empty-state";
 import { LocaleHtmlLang } from "@/components/public/locale-html-lang";
+import { LocalizedLink } from "@/components/public/localized-link";
 import { Pagination } from "@/components/public/pagination";
 import { SiteFooter } from "@/components/public/site-footer";
 import { SiteHeader } from "@/components/public/site-header";
@@ -20,6 +20,7 @@ import {
   durationBucketFromSlug,
 } from "@/domain/course/catalog-query";
 import { withDb } from "@/lib/db-safe";
+import { getDictionary } from "@/lib/i18n/get-dictionary";
 import { resolveLocaleParam } from "@/lib/i18n/page";
 import { localePath } from "@/lib/i18n/path";
 
@@ -56,6 +57,7 @@ export default async function DurationCollectionPage({
   searchParams,
 }: CollectionPageProps) {
   const locale = await resolveLocaleParam(params);
+  const dict = getDictionary(locale);
   const { slug } = await params;
   const bucketKey = durationBucketFromSlug(slug);
   if (!bucketKey) notFound();
@@ -99,9 +101,9 @@ export default async function DurationCollectionPage({
       <div className="mx-auto w-full max-w-6xl space-y-8 px-4 py-10 sm:px-6">
         <div className="space-y-3">
           <p className="text-sm text-muted-foreground">
-            <Link href={localePath(locale, "/")} className="hover:underline">
+            <LocalizedLink href="/" className="hover:underline">
               Home
-            </Link>{" "}
+            </LocalizedLink>{" "}
             / Collections / {bucket.label}
           </p>
           <h1 className="font-display text-3xl font-semibold tracking-tight">
@@ -113,9 +115,9 @@ export default async function DurationCollectionPage({
           </p>
           <div className="flex flex-wrap gap-2 text-sm">
             {Object.values(DURATION_BUCKETS).map((item) => (
-              <Link
+              <LocalizedLink
                 key={item.slug}
-                href={localePath(locale, `/collections/${item.slug}`)}
+                href={`/collections/${item.slug}`}
                 className={
                   item.slug === bucket.slug
                     ? "rounded-full bg-primary px-3 py-1 text-primary-foreground"
@@ -123,17 +125,18 @@ export default async function DurationCollectionPage({
                 }
               >
                 {item.label}
-              </Link>
+              </LocalizedLink>
             ))}
           </div>
         </div>
 
         <CatalogFiltersForm
-          action={localePath(locale, `/collections/${bucket.slug}`)}
+          action={`/collections/${bucket.slug}`}
           filters={filters}
           providers={providers}
           categories={categories}
           showCategoryLinks
+          labels={dict.filters}
         />
 
         {catalog.items.length === 0 ? (

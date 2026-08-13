@@ -1,5 +1,4 @@
-import Link from "next/link";
-
+import { LocalizedLink } from "@/components/public/localized-link";
 import { Button } from "@/components/ui/button";
 
 type PaginationProps = {
@@ -7,6 +6,11 @@ type PaginationProps = {
   totalPages: number;
   basePath: string;
   query?: Record<string, string | undefined>;
+  labels?: {
+    pageOf: (page: number, total: number) => string;
+    previous: string;
+    next: string;
+  };
 };
 
 function buildHref(
@@ -35,28 +39,36 @@ export function Pagination({
   totalPages,
   basePath,
   query = {},
+  labels,
 }: PaginationProps) {
   if (totalPages <= 1) {
     return null;
   }
+
+  const pageOf =
+    labels?.pageOf?.(page, totalPages) ?? `Page ${page} of ${totalPages}`;
+  const previous = labels?.previous ?? "Previous";
+  const next = labels?.next ?? "Next";
 
   return (
     <nav
       className="flex items-center justify-between gap-4 pt-2"
       aria-label="Pagination"
     >
-      <p className="text-sm text-muted-foreground">
-        Page {page} of {totalPages}
-      </p>
+      <p className="text-sm text-muted-foreground">{pageOf}</p>
       <div className="flex gap-2">
         {page > 1 ? (
           <Button asChild variant="outline" size="sm">
-            <Link href={buildHref(basePath, page - 1, query)}>Previous</Link>
+            <LocalizedLink href={buildHref(basePath, page - 1, query)}>
+              {previous}
+            </LocalizedLink>
           </Button>
         ) : null}
         {page < totalPages ? (
           <Button asChild variant="outline" size="sm">
-            <Link href={buildHref(basePath, page + 1, query)}>Next</Link>
+            <LocalizedLink href={buildHref(basePath, page + 1, query)}>
+              {next}
+            </LocalizedLink>
           </Button>
         ) : null}
       </div>

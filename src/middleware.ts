@@ -113,6 +113,8 @@ export async function middleware(request: NextRequest) {
   const first = segments[0];
 
   if (first && isLocale(first)) {
+    // Explicit URL locale is authoritative. Persist as preference for
+    // unprefixed redirects — never override the URL itself from cookie.
     const response = NextResponse.next();
     response.cookies.set(LOCALE_COOKIE, first, {
       path: "/",
@@ -122,6 +124,7 @@ export async function middleware(request: NextRequest) {
     return response;
   }
 
+  // Precedence for bare paths: cookie preference → Accept-Language → default
   const locale = negotiateLocale(request);
   const redirectUrl = request.nextUrl.clone();
   redirectUrl.pathname =

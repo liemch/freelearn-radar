@@ -1,7 +1,6 @@
-import Link from "next/link";
-
 import { CourseCardVisual } from "@/components/public/course-card-visual";
 import { FreeStatusBadge } from "@/components/public/free-status-badge";
+import { LocalizedLink } from "@/components/public/localized-link";
 import { Button } from "@/components/ui/button";
 import type { CourseWithProvider } from "@/db/repositories/course-repository";
 import {
@@ -24,6 +23,7 @@ type CourseCardProps = {
 
 /**
  * Scan order: Visual → Free status → Title → Provider → Value → Meta → CTA
+ * Links go through LocalizedLink so navigation tracks the live URL locale.
  */
 export function CourseCard({ course, locale }: CourseCardProps) {
   const dict = getDictionary(locale);
@@ -37,35 +37,39 @@ export function CourseCard({ course, locale }: CourseCardProps) {
 
   return (
     <article className="group flex h-full flex-col overflow-hidden rounded-xl bg-card ring-1 ring-border/70 transition hover:-translate-y-0.5 hover:ring-primary/30 hover:shadow-md motion-reduce:transition-none motion-reduce:hover:translate-y-0">
-      <Link href={courseHref} className="block shrink-0">
+      <LocalizedLink href={courseHref} className="block shrink-0">
         <CourseCardVisual course={course} locale={locale} />
-      </Link>
+      </LocalizedLink>
 
       <div className="flex flex-1 flex-col p-4 pt-3">
         <div className="flex flex-wrap items-center gap-2">
-          <FreeStatusBadge priceType={course.priceType} locale={locale} size="sm" />
+          <FreeStatusBadge
+            priceType={course.priceType}
+            locale={locale}
+            size="sm"
+          />
           {course.certificateType !== "UNKNOWN" ? (
             <span className="text-xs text-muted-foreground">{certificate}</span>
           ) : null}
         </div>
 
         <h3 className="mt-2.5 text-base font-semibold leading-snug tracking-tight">
-          <Link
+          <LocalizedLink
             href={courseHref}
             className="transition hover:text-primary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
           >
             {course.title}
-          </Link>
+          </LocalizedLink>
         </h3>
 
         <p className="mt-1 text-xs font-medium text-muted-foreground">
           {course.provider?.slug ? (
-            <Link
+            <LocalizedLink
               href={localePath(locale, `/provider/${course.provider.slug}`)}
               className="hover:text-primary hover:underline"
             >
               {course.provider.name}
-            </Link>
+            </LocalizedLink>
           ) : (
             course.provider?.name || "Unknown provider"
           )}
@@ -100,7 +104,9 @@ export function CourseCard({ course, locale }: CourseCardProps) {
 
         <div className="mt-4">
           <Button asChild className="w-full" size="sm">
-            <Link href={courseHref}>{dict.course.openCourse}</Link>
+            <LocalizedLink href={courseHref}>
+              {dict.course.openCourse}
+            </LocalizedLink>
           </Button>
         </div>
       </div>

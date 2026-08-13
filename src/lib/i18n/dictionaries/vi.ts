@@ -42,7 +42,9 @@ export const vi: Dictionary = {
       "Chúng tôi đang tuyển chọn các khóa miễn phí mới nhất từ nền tảng uy tín. Quay lại sớm hoặc khám phá chủ đề bên dưới.",
     catalogAction: "Khám phá chủ đề",
     searchTitle: "Không tìm thấy khóa phù hợp",
-    searchDescription: "Thử từ khóa rộng hơn hoặc xóa bộ lọc để xem thêm kết quả.",
+    searchDescription:
+      "Thử từ khóa rộng hơn hoặc xóa bộ lọc để xem thêm kết quả.",
+    searchAction: "Khám phá chủ đề AI",
   },
   course: {
     openCourse: "Xem khóa học",
@@ -50,6 +52,55 @@ export const vi: Dictionary = {
     durationUnknown: "Thời lượng chưa rõ",
     levelUnknown: "Trình độ chưa rõ",
     staleVerification: "Trạng thái miễn phí có thể đã cũ",
+  },
+  search: {
+    title: "Tìm khóa học",
+    description:
+      "Lọc theo nền tảng, trình độ, loại miễn phí, chứng chỉ và thời lượng.",
+    results: (count, query) =>
+      `${count} kết quả${query ? ` cho “${query}”` : ""}`,
+  },
+  filters: {
+    filters: "Bộ lọc",
+    active: "Đang dùng",
+    keyword: "Từ khóa",
+    keywordPlaceholder: "Tìm khóa học",
+    provider: "Nền tảng",
+    level: "Trình độ",
+    freeType: "Loại miễn phí",
+    certificate: "Chứng chỉ",
+    duration: "Thời lượng",
+    sort: "Sắp xếp",
+    all: "Tất cả",
+    any: "Bất kỳ",
+    apply: "Áp dụng",
+    clearAll: "Xóa hết",
+    filtersActive: "Đang lọc",
+    categories: "Chủ đề",
+    sortRecommended: "Đề xuất",
+    sortNewest: "Mới nhất",
+    sortPopular: "Phổ biến",
+    sortShortest: "Ngắn nhất",
+    levelBeginner: "Cơ bản",
+    levelIntermediate: "Trung cấp",
+    levelAdvanced: "Nâng cao",
+    levelAll: "Mọi trình độ",
+  },
+  pagination: {
+    previous: "Trước",
+    next: "Sau",
+    pageOf: (page, total) => `Trang ${page} / ${total}`,
+  },
+  errors: {
+    notFoundTitle: "Không tìm thấy trang",
+    notFoundDescription:
+      "Liên kết này không khớp khóa học hoặc bộ sưu tập nào trên FreeLearn Radar. Hãy tìm kiếm hoặc về trang chủ.",
+    goHome: "Về trang chủ",
+    searchCourses: "Tìm khóa học",
+    genericTitle: "Đã xảy ra lỗi",
+    genericDescription:
+      "Không tải được trang này. Thử lại hoặc tìm khóa học miễn phí.",
+    tryAgain: "Thử lại",
   },
   footer: {
     tagline: "Học miễn phí được tuyển chọn từ nền tảng uy tín.",
