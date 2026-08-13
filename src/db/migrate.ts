@@ -3,7 +3,7 @@ import path from "node:path";
 import "@/lib/load-env";
 
 import {
-  createScriptDb,
+  createTcpMigrateClient,
   resolveScriptDatabaseUrl,
   shouldUseNeonHttpExplicit,
 } from "@/db/script-db";
@@ -24,7 +24,7 @@ async function runMigrationsOverHttp() {
 
 async function runMigrationsOverTcp() {
   const { migrate } = await import("drizzle-orm/postgres-js/migrator");
-  const { db, close } = createScriptDb();
+  const { db, close } = createTcpMigrateClient();
   const migrationsFolder = path.join(process.cwd(), "drizzle");
 
   console.log("Using PostgreSQL TCP driver (port 5432)");

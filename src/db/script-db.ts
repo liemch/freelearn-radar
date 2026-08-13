@@ -64,8 +64,26 @@ export function createScriptDb(): ScriptDbHandle {
     };
   }
 
+  return createTcpScriptDb(databaseUrl);
+}
+
+/** Always uses postgres-js TCP — required for migrations (transactions + multi-statement SQL). */
+export function createTcpScriptDb(databaseUrl = resolveScriptDatabaseUrl()): ScriptDbHandle {
   const client = postgres(databaseUrl, postgresOptions(databaseUrl));
   const db = drizzlePostgres(client, { schema });
+
+  return {
+    db,
+    close: async () => {
+      await client.end();
+    },
+  };
+}
+
+/** TCP connection without schema — used only by drizzle migrator. */
+export function createTcpMigrateClient(databaseUrl = resolveScriptDatabaseUrl()) {
+  const client = postgres(databaseUrl, postgresOptions(databaseUrl));
+  const db = drizzlePostgres(client);
 
   return {
     db,
