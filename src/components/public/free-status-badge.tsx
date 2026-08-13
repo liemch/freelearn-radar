@@ -14,6 +14,7 @@ const TONE: Record<PriceType, string> = {
 
 type FreeStatusBadgeProps = {
   priceType: PriceType;
+  locale?: import("@/lib/i18n/config").Locale;
   size?: "sm" | "md" | "lg";
   className?: string;
   showHint?: boolean;
@@ -25,11 +26,12 @@ export function freeStatusTone(priceType: PriceType): string {
 
 export function FreeStatusBadge({
   priceType,
+  locale = "en",
   size = "md",
   className,
   showHint = false,
 }: FreeStatusBadgeProps) {
-  const { label, shortHint } = getPriceTypeLabel(priceType);
+  const { label, shortHint } = getPriceTypeLabel(priceType, locale);
   const sizeClass =
     size === "lg"
       ? "px-4 py-1.5 text-base"

@@ -19,7 +19,12 @@ export async function GET(request: NextRequest, context: RouteContext) {
     const db = getDb();
     const course = await getCourseDetailBySlug(db, slug);
 
-    if (!course || (course.status !== "PUBLISHED" && course.status !== "EXPIRED" && course.status !== "UNAVAILABLE")) {
+    if (
+      !course ||
+      (course.status !== "PUBLISHED" &&
+        course.status !== "EXPIRED" &&
+        course.status !== "UNAVAILABLE")
+    ) {
       return NextResponse.redirect(new URL("/", request.url));
     }
 
@@ -34,7 +39,7 @@ export async function GET(request: NextRequest, context: RouteContext) {
         slug,
         error: error instanceof Error ? error.message : "Unsafe URL",
       });
-      return NextResponse.redirect(new URL(`/course/${slug}`, request.url));
+      return NextResponse.redirect(new URL(`/en/course/${slug}`, request.url));
     }
 
     try {
@@ -45,7 +50,6 @@ export async function GET(request: NextRequest, context: RouteContext) {
         utmSource: request.nextUrl.searchParams.get("utm_source"),
       });
     } catch (clickError) {
-      // Never block the learner redirect on analytics failure
       logger.warn("outbound.click", {
         status: "click_record_failed",
         courseId: course.id,

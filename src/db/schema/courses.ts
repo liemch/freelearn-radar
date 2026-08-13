@@ -51,6 +51,12 @@ export const courses = pgTable(
     status: courseStatusEnum("status").notNull().default("DRAFT"),
     publishedAt: timestamp("published_at", { withTimezone: true }),
     lastVerifiedAt: timestamp("last_verified_at", { withTimezone: true }),
+    imageSourceUrl: text("image_source_url"),
+    imageStorageUrl: text("image_storage_url"),
+    imageLastVerifiedAt: timestamp("image_last_verified_at", {
+      withTimezone: true,
+    }),
+    imagePolicy: text("image_policy").default("REMOTE_ONLY"),
     createdAt: timestamp("created_at", { withTimezone: true })
       .notNull()
       .defaultNow(),

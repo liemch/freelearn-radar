@@ -16,12 +16,11 @@ export function EmptyState({
   actionLabel,
 }: EmptyStateProps) {
   return (
-    <section
-      role="status"
-      className="rounded-xl border border-dashed border-border bg-muted/25 px-6 py-12 text-center"
-    >
-      <h2 className="text-xl font-semibold tracking-tight">{title}</h2>
-      <p className="mx-auto mt-2 max-w-xl text-sm text-muted-foreground">
+    <section role="status" className="py-10 text-center sm:py-12">
+      <h2 className="font-display text-2xl font-semibold tracking-tight text-balance">
+        {title}
+      </h2>
+      <p className="mx-auto mt-2 max-w-lg text-sm leading-relaxed text-muted-foreground text-pretty">
         {description}
       </p>
       {actionHref && actionLabel ? (

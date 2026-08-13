@@ -2,6 +2,12 @@ import { NextRequest, NextResponse } from "next/server";
 
 import { SESSION_COOKIE_NAME } from "@/lib/auth/constants";
 import { verifySessionToken } from "@/lib/auth/session";
+import {
+  defaultLocale,
+  isLocale,
+  LOCALE_COOKIE,
+  locales,
+} from "@/lib/i18n/config";
 
 const PUBLIC_ADMIN_PATHS = ["/admin/login"];
 const PUBLIC_ADMIN_API_PATHS = [
@@ -9,10 +15,33 @@ const PUBLIC_ADMIN_API_PATHS = [
   "/api/admin/auth/logout",
 ];
 
-export async function middleware(request: NextRequest) {
+const PUBLIC_FILE = /\.[^/]+$/;
+
+function shouldSkipLocale(pathname: string): boolean {
+  return (
+    pathname.startsWith("/admin") ||
+    pathname.startsWith("/api") ||
+    pathname.startsWith("/_next") ||
+    pathname.includes("/go") ||
+    PUBLIC_FILE.test(pathname)
+  );
+}
+
+function negotiateLocale(request: NextRequest): (typeof locales)[number] {
+  const cookie = request.cookies.get(LOCALE_COOKIE)?.value;
+  if (cookie && isLocale(cookie)) {
+    return cookie;
+  }
+  const accept = request.headers.get("accept-language") ?? "";
+  if (accept.toLowerCase().includes("vi")) {
+    return "vi";
+  }
+  return defaultLocale;
+}
+
+async function handleAdmin(request: NextRequest): Promise<NextResponse | null> {
   const { pathname } = request.nextUrl;
 
-  // Protect admin API routes (except auth endpoints)
   if (pathname.startsWith("/api/admin")) {
     if (PUBLIC_ADMIN_API_PATHS.some((path) => pathname.startsWith(path))) {
       return NextResponse.next();
@@ -37,7 +66,7 @@ export async function middleware(request: NextRequest) {
   }
 
   if (!pathname.startsWith("/admin")) {
-    return NextResponse.next();
+    return null;
   }
 
   if (PUBLIC_ADMIN_PATHS.some((path) => pathname.startsWith(path))) {
@@ -48,7 +77,6 @@ export async function middleware(request: NextRequest) {
         return NextResponse.redirect(new URL("/admin", request.url));
       }
     }
-
     return NextResponse.next();
   }
 
@@ -69,6 +97,47 @@ export async function middleware(request: NextRequest) {
   return NextResponse.next();
 }
 
+export async function middleware(request: NextRequest) {
+  const { pathname } = request.nextUrl;
+
+  const adminResponse = await handleAdmin(request);
+  if (adminResponse) {
+    return adminResponse;
+  }
+
+  if (shouldSkipLocale(pathname)) {
+    return NextResponse.next();
+  }
+
+  const segments = pathname.split("/").filter(Boolean);
+  const first = segments[0];
+
+  if (first && isLocale(first)) {
+    const response = NextResponse.next();
+    response.cookies.set(LOCALE_COOKIE, first, {
+      path: "/",
+      maxAge: 60 * 60 * 24 * 365,
+      sameSite: "lax",
+    });
+    return response;
+  }
+
+  const locale = negotiateLocale(request);
+  const redirectUrl = request.nextUrl.clone();
+  redirectUrl.pathname =
+    pathname === "/" ? `/${locale}` : `/${locale}${pathname}`;
+
+  const response = NextResponse.redirect(redirectUrl);
+  response.cookies.set(LOCALE_COOKIE, locale, {
+    path: "/",
+    maxAge: 60 * 60 * 24 * 365,
+    sameSite: "lax",
+  });
+  return response;
+}
+
 export const config = {
-  matcher: ["/admin", "/admin/:path*", "/api/admin/:path*"],
+  matcher: [
+    "/((?!_next/static|_next/image|favicon.ico|icon|sitemap.xml|robots.txt).*)",
+  ],
 };

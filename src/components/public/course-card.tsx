@@ -1,5 +1,6 @@
 import Link from "next/link";
 
+import { CourseCardVisual } from "@/components/public/course-card-visual";
 import { FreeStatusBadge } from "@/components/public/free-status-badge";
 import { Button } from "@/components/ui/button";
 import type { CourseWithProvider } from "@/db/repositories/course-repository";
@@ -7,100 +8,101 @@ import {
   formatLevelLabel,
   getCertificateTypeLabel,
 } from "@/domain/course/labels";
+import { formatDuration } from "@/domain/course/recommendation";
 import {
-  formatDuration,
-  getRecommendationLabel,
-} from "@/domain/course/recommendation";
-import { verificationAgeLabel } from "@/domain/verification/freshness-policy";
-import { isStaleForPublicWarning } from "@/domain/verification/freshness-policy";
+  isStaleForPublicWarning,
+  verificationAgeLabel,
+} from "@/domain/verification/freshness-policy";
+import type { Locale } from "@/lib/i18n/config";
+import { getDictionary } from "@/lib/i18n/get-dictionary";
+import { localePath } from "@/lib/i18n/path";
 
 type CourseCardProps = {
   course: CourseWithProvider;
+  locale: Locale;
 };
 
 /**
- * Scan order: Free status → Title → Provider → Value → Level/Duration → Cert → CTA
- * Do not prioritize AI/editorial score on the card.
+ * Scan order: Visual → Free status → Title → Provider → Value → Meta → CTA
  */
-export function CourseCard({ course }: CourseCardProps) {
-  const certificate = getCertificateTypeLabel(course.certificateType);
+export function CourseCard({ course, locale }: CourseCardProps) {
+  const dict = getDictionary(locale);
+  const certificate = getCertificateTypeLabel(course.certificateType, locale);
   const duration = formatDuration(course.durationMinutes);
   const stale = isStaleForPublicWarning(
     course.lastVerifiedAt,
     course.priceType,
   );
-  // Project plan §19/§23: qualitative label only — never a raw numeric score.
-  const recommendation =
-    course.qualityScore == null
-      ? null
-      : getRecommendationLabel(course.qualityScore);
+  const courseHref = localePath(locale, `/course/${course.slug}`);
 
   return (
-    <article className="group flex h-full flex-col rounded-xl border border-border/80 bg-card p-5 shadow-sm transition hover:border-primary/25 hover:shadow-md">
-      <div className="flex flex-wrap items-start gap-2">
-        <FreeStatusBadge priceType={course.priceType} size="md" />
-        {course.certificateType !== "UNKNOWN" ? (
-          <span className="inline-flex items-center rounded-full border border-border bg-background px-2.5 py-1 text-xs font-medium text-muted-foreground">
-            {certificate}
-          </span>
-        ) : null}
-      </div>
+    <article className="group flex h-full flex-col overflow-hidden rounded-xl bg-card ring-1 ring-border/70 transition hover:-translate-y-0.5 hover:ring-primary/30 hover:shadow-md motion-reduce:transition-none motion-reduce:hover:translate-y-0">
+      <Link href={courseHref} className="block shrink-0">
+        <CourseCardVisual course={course} locale={locale} />
+      </Link>
 
-      <h3 className="mt-3 text-lg font-semibold leading-snug tracking-tight">
-        <Link
-          href={`/course/${course.slug}`}
-          className="transition hover:text-primary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
-        >
-          {course.title}
-        </Link>
-      </h3>
+      <div className="flex flex-1 flex-col p-4 pt-3">
+        <div className="flex flex-wrap items-center gap-2">
+          <FreeStatusBadge priceType={course.priceType} locale={locale} size="sm" />
+          {course.certificateType !== "UNKNOWN" ? (
+            <span className="text-xs text-muted-foreground">{certificate}</span>
+          ) : null}
+        </div>
 
-      <p className="mt-1.5 text-xs font-semibold uppercase tracking-[0.12em] text-muted-foreground">
-        {course.provider?.slug ? (
+        <h3 className="mt-2.5 text-base font-semibold leading-snug tracking-tight">
           <Link
-            href={`/provider/${course.provider.slug}`}
-            className="hover:text-primary hover:underline"
+            href={courseHref}
+            className="transition hover:text-primary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
           >
-            {course.provider.name}
+            {course.title}
           </Link>
-        ) : (
-          course.provider?.name || "Unknown provider"
-        )}
-      </p>
+        </h3>
 
-      <p className="mt-3 line-clamp-2 flex-1 text-sm leading-relaxed text-muted-foreground">
-        {course.shortDescription ?? "Curated free course worth exploring."}
-      </p>
-
-      <p className="mt-3 text-sm text-muted-foreground">
-        <span>{formatLevelLabel(course.level)}</span>
-        <span aria-hidden="true" className="mx-1.5 text-border">
-          ·
-        </span>
-        <span>{duration ?? "Duration unknown"}</span>
-      </p>
-
-      {recommendation ? (
-        <p className="mt-3 text-xs font-medium text-muted-foreground">
-          {recommendation}
+        <p className="mt-1 text-xs font-medium text-muted-foreground">
+          {course.provider?.slug ? (
+            <Link
+              href={localePath(locale, `/provider/${course.provider.slug}`)}
+              className="hover:text-primary hover:underline"
+            >
+              {course.provider.name}
+            </Link>
+          ) : (
+            course.provider?.name || "Unknown provider"
+          )}
         </p>
-      ) : null}
 
-      <p className="mt-1 text-xs text-muted-foreground">
-        {stale ? (
-          <span className="text-amber-800">
-            Free status may be outdated ·{" "}
-            {verificationAgeLabel(course.lastVerifiedAt)}
+        <p className="mt-2 line-clamp-2 flex-1 text-sm leading-relaxed text-muted-foreground">
+          {course.shortDescription ?? "Curated free course worth exploring."}
+        </p>
+
+        <p className="mt-3 text-xs text-muted-foreground">
+          <span>
+            {course.level === "UNKNOWN"
+              ? dict.course.levelUnknown
+              : formatLevelLabel(course.level, locale)}
           </span>
-        ) : (
-          verificationAgeLabel(course.lastVerifiedAt)
-        )}
-      </p>
+          <span aria-hidden="true" className="mx-1.5 text-border">
+            ·
+          </span>
+          <span>{duration ?? dict.course.durationUnknown}</span>
+        </p>
 
-      <div className="mt-5">
-        <Button asChild className="w-full" variant="secondary">
-          <Link href={`/course/${course.slug}`}>Open course</Link>
-        </Button>
+        <p className="mt-1 text-xs text-muted-foreground">
+          {stale ? (
+            <span className="text-amber-800 dark:text-amber-200">
+              {dict.course.staleVerification} ·{" "}
+              {verificationAgeLabel(course.lastVerifiedAt)}
+            </span>
+          ) : (
+            verificationAgeLabel(course.lastVerifiedAt)
+          )}
+        </p>
+
+        <div className="mt-4">
+          <Button asChild className="w-full" size="sm">
+            <Link href={courseHref}>{dict.course.openCourse}</Link>
+          </Button>
+        </div>
       </div>
     </article>
   );

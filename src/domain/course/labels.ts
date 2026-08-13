@@ -4,6 +4,7 @@ import type {
   DiscoveryStatus,
   PriceType,
 } from "@/domain/course/types";
+import type { Locale } from "@/lib/i18n/config";
 
 export const PRICE_TYPE_LABELS: Record<
   PriceType,
@@ -39,11 +40,52 @@ export const PRICE_TYPE_LABELS: Record<
   },
 };
 
+const PRICE_TYPE_LABELS_VI: Record<
+  PriceType,
+  { label: string; shortHint: string }
+> = {
+  FREE_FULL: {
+    label: "Miễn phí 100%",
+    shortHint: "Truy cập toàn bộ khóa học không mất phí",
+  },
+  FREE_AUDIT: {
+    label: "Học thử miễn phí",
+    shortHint: "Học miễn phí; phần mở rộng có thể trả phí",
+  },
+  FREE_WITH_COUPON: {
+    label: "Cần mã coupon",
+    shortHint: "Cần mã khuyến mãi hợp lệ",
+  },
+  TEMPORARILY_FREE: {
+    label: "Miễn phí có thời hạn",
+    shortHint: "Khuyến mãi có thể kết thúc sớm",
+  },
+  FREE_TRIAL: {
+    label: "Dùng thử miễn phí",
+    shortHint: "Truy cập thử trong thời gian giới hạn",
+  },
+  PAID: {
+    label: "Trả phí",
+    shortHint: "Không phải ưu đãi miễn phí",
+  },
+  UNKNOWN: {
+    label: "Chưa rõ trạng thái",
+    shortHint: "Xác nhận trên trang nền tảng",
+  },
+};
+
 export const CERTIFICATE_TYPE_LABELS: Record<CertificateType, string> = {
   FREE_CERTIFICATE: "Free certificate",
   PAID_CERTIFICATE: "Paid certificate",
   NO_CERTIFICATE: "No certificate",
   UNKNOWN: "Certificate unknown",
+};
+
+const CERTIFICATE_TYPE_LABELS_VI: Record<CertificateType, string> = {
+  FREE_CERTIFICATE: "Chứng chỉ miễn phí",
+  PAID_CERTIFICATE: "Chứng chỉ trả phí",
+  NO_CERTIFICATE: "Không có chứng chỉ",
+  UNKNOWN: "Chưa rõ chứng chỉ",
 };
 
 export const COURSE_STATUS_LABELS: Record<CourseStatus, string> = {
@@ -68,12 +110,18 @@ export const DISCOVERY_STATUS_LABELS: Record<DiscoveryStatus, string> = {
   ERROR: "Error",
 };
 
-export function getPriceTypeLabel(priceType: PriceType) {
-  return PRICE_TYPE_LABELS[priceType];
+export function getPriceTypeLabel(priceType: PriceType, locale: Locale = "en") {
+  const table = locale === "vi" ? PRICE_TYPE_LABELS_VI : PRICE_TYPE_LABELS;
+  return table[priceType];
 }
 
-export function getCertificateTypeLabel(certificateType: CertificateType) {
-  return CERTIFICATE_TYPE_LABELS[certificateType];
+export function getCertificateTypeLabel(
+  certificateType: CertificateType,
+  locale: Locale = "en",
+) {
+  const table =
+    locale === "vi" ? CERTIFICATE_TYPE_LABELS_VI : CERTIFICATE_TYPE_LABELS;
+  return table[certificateType];
 }
 
 export function getCourseStatusLabel(status: CourseStatus) {
@@ -84,8 +132,10 @@ export function getDiscoveryStatusLabel(status: DiscoveryStatus) {
   return DISCOVERY_STATUS_LABELS[status] ?? status;
 }
 
-export function formatLevelLabel(level: string): string {
-  if (!level || level === "UNKNOWN") return "Level unknown";
+export function formatLevelLabel(level: string, locale: Locale = "en"): string {
+  if (!level || level === "UNKNOWN") {
+    return locale === "vi" ? "Trình độ chưa rõ" : "Level unknown";
+  }
   return level
     .toLowerCase()
     .split("_")

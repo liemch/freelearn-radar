@@ -4,6 +4,8 @@ import Link from "next/link";
 import { useEffect } from "react";
 
 import { Button } from "@/components/ui/button";
+import { defaultLocale } from "@/lib/i18n/config";
+import { localePath } from "@/lib/i18n/path";
 
 type ErrorPageProps = {
   error: Error & { digest?: string };
@@ -29,7 +31,7 @@ export default function GlobalError({ error, reset }: ErrorPageProps) {
           Try again
         </Button>
         <Button asChild variant="outline">
-          <Link href="/search">Search courses</Link>
+          <Link href={localePath(defaultLocale, "/search")}>Search courses</Link>
         </Button>
       </div>
       {error.digest ? (

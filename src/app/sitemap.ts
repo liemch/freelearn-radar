@@ -5,8 +5,14 @@ import { listPublishedCourses } from "@/db/repositories/course-repository";
 import { listProviders } from "@/db/repositories/provider-repository";
 import { DURATION_BUCKETS } from "@/domain/course/catalog-query";
 import { listTopicSlugs } from "@/domain/discovery/topic-landings";
+import { locales } from "@/lib/i18n/config";
+import { localePath } from "@/lib/i18n/path";
 import { getServerEnv } from "@/lib/env";
 import { withDb } from "@/lib/db-safe";
+
+function localizedUrls(appUrl: string, path: string): string[] {
+  return locales.map((locale) => `${appUrl}${localePath(locale, path)}`);
+}
 
 export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   let appUrl = "http://localhost:3000";
@@ -25,69 +31,64 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   const now = new Date();
   const year = now.getUTCFullYear();
 
-  // Include current + previous 2 months for historical best pages
   const bestMonths: MetadataRoute.Sitemap = [];
   for (let offset = 0; offset < 3; offset += 1) {
     const date = new Date(Date.UTC(year, now.getUTCMonth() - offset, 1));
     const y = date.getUTCFullYear();
     const m = String(date.getUTCMonth() + 1).padStart(2, "0");
-    bestMonths.push({
-      url: `${appUrl}/best/${y}/${m}`,
-      lastModified: now,
-      changeFrequency: "weekly",
-      priority: offset === 0 ? 0.9 : 0.6,
-    });
+    for (const url of localizedUrls(appUrl, `/best/${y}/${m}`)) {
+      bestMonths.push({
+        url,
+        lastModified: now,
+        changeFrequency: "weekly",
+        priority: offset === 0 ? 0.9 : 0.6,
+      });
+    }
   }
 
+  const staticPaths = [
+    "/",
+    "/search",
+    "/free-certificate-courses",
+    ...Object.values(DURATION_BUCKETS).map((bucket) => `/collections/${bucket.slug}`),
+    ...listTopicSlugs().map((topic) => `/free-courses/${topic}`),
+  ];
+
+  const staticEntries: MetadataRoute.Sitemap = staticPaths.flatMap((path) =>
+    localizedUrls(appUrl, path).map((url) => ({
+      url,
+      lastModified: now,
+      changeFrequency: path === "/" ? ("daily" as const) : ("weekly" as const),
+      priority: path === "/" ? 1 : 0.7,
+    })),
+  );
+
   return [
-    {
-      url: `${appUrl}/`,
-      lastModified: now,
-      changeFrequency: "daily",
-      priority: 1,
-    },
-    {
-      url: `${appUrl}/search`,
-      lastModified: now,
-      changeFrequency: "daily",
-      priority: 0.7,
-    },
-    {
-      url: `${appUrl}/free-certificate-courses`,
-      lastModified: now,
-      changeFrequency: "weekly",
-      priority: 0.8,
-    },
-    ...Object.values(DURATION_BUCKETS).map((bucket) => ({
-      url: `${appUrl}/collections/${bucket.slug}`,
-      lastModified: now,
-      changeFrequency: "weekly" as const,
-      priority: 0.7,
-    })),
-    ...listTopicSlugs().map((topic) => ({
-      url: `${appUrl}/free-courses/${topic}`,
-      lastModified: now,
-      changeFrequency: "weekly" as const,
-      priority: 0.8,
-    })),
+    ...staticEntries,
     ...bestMonths,
-    ...categories.map((category) => ({
-      url: `${appUrl}/category/${category.slug}`,
-      lastModified: now,
-      changeFrequency: "weekly" as const,
-      priority: 0.7,
-    })),
-    ...providers.map((provider) => ({
-      url: `${appUrl}/provider/${provider.slug}`,
-      lastModified: now,
-      changeFrequency: "weekly" as const,
-      priority: 0.65,
-    })),
-    ...courses.map((course) => ({
-      url: `${appUrl}/course/${course.slug}`,
-      lastModified: course.updatedAt ?? now,
-      changeFrequency: "weekly" as const,
-      priority: 0.6,
-    })),
+    ...categories.flatMap((category) =>
+      localizedUrls(appUrl, `/category/${category.slug}`).map((url) => ({
+        url,
+        lastModified: now,
+        changeFrequency: "weekly" as const,
+        priority: 0.7,
+      })),
+    ),
+    ...providers.flatMap((provider) =>
+      localizedUrls(appUrl, `/provider/${provider.slug}`).map((url) => ({
+        url,
+        lastModified: now,
+        changeFrequency: "weekly" as const,
+        priority: 0.65,
+      })),
+    ),
+    ...courses.flatMap((course) =>
+      localizedUrls(appUrl, `/course/${course.slug}`).map((url) => ({
+        url,
+        lastModified: course.updatedAt ?? now,
+        changeFrequency: "weekly" as const,
+        priority: 0.6,
+      })),
+    ),
   ];
 }

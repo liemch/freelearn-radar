@@ -5,11 +5,15 @@ import { SiteFooter } from "@/components/public/site-footer";
 import { SiteHeader } from "@/components/public/site-header";
 import { PageShell } from "@/components/layout/page-shell";
 import { Button } from "@/components/ui/button";
+import { defaultLocale } from "@/lib/i18n/config";
+import { localePath } from "@/lib/i18n/path";
 
 export default function NotFound() {
+  const locale = defaultLocale;
+
   return (
     <main className="flex min-h-screen flex-col bg-background">
-      <SiteHeader />
+      <SiteHeader locale={locale} />
       <PageShell className="flex flex-1 flex-col items-center justify-center py-16 text-center">
         <BrandMark className="mb-6 size-12 text-primary" />
         <h1 className="font-display text-3xl font-semibold tracking-tight">
@@ -21,14 +25,14 @@ export default function NotFound() {
         </p>
         <div className="mt-6 flex flex-wrap justify-center gap-3">
           <Button asChild>
-            <Link href="/search">Search courses</Link>
+            <Link href={localePath(locale, "/search")}>Search courses</Link>
           </Button>
           <Button asChild variant="outline">
-            <Link href="/">Go home</Link>
+            <Link href={localePath(locale, "/")}>Go home</Link>
           </Button>
         </div>
       </PageShell>
-      <SiteFooter />
+      <SiteFooter locale={locale} />
     </main>
   );
 }
