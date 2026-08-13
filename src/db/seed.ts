@@ -185,8 +185,8 @@ async function seed() {
 
   if (process.env.USE_NEON_HTTP === "1" || process.env.USE_NEON_HTTP === "true") {
     console.log("Using Neon HTTP driver (port 443) — works behind firewalls/proxy");
-  } else if (process.env.VERCEL === "1") {
-    console.log("Using Neon HTTP driver on Vercel build");
+  } else {
+    console.log("Using PostgreSQL TCP driver (port 5432)");
   }
 
   await runSeed(db);
