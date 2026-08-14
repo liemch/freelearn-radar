@@ -7,12 +7,26 @@ import { EmptyState } from "@/components/public/empty-state";
 import { Button } from "@/components/ui/button";
 import { getDb } from "@/db";
 import { listCandidates } from "@/db/repositories/candidate-repository";
+import type { DiscoveryStatus } from "@/domain/course/types";
 import { getDiscoveryStatusLabel } from "@/domain/course/labels";
+import {
+  canApproveCandidate,
+  canRejectCandidate,
+} from "@/domain/course/transitions";
 import { getSession } from "@/lib/auth/guards";
 import { getAdminDictionary } from "@/lib/i18n/admin";
 import { getAdminLocale } from "@/lib/i18n/admin-locale";
 
 export const dynamic = "force-dynamic";
+
+/** Queue for human review — hide terminal statuses after reject/approve. */
+const REVIEW_QUEUE_STATUSES = new Set<DiscoveryStatus>([
+  "DISCOVERED",
+  "FETCHED",
+  "ANALYZED",
+  "READY_FOR_REVIEW",
+  "ERROR",
+]);
 
 export default async function AdminCandidatesPage() {
   const session = await getSession();
@@ -23,7 +37,10 @@ export default async function AdminCandidatesPage() {
 
   let candidates: Awaited<ReturnType<typeof listCandidates>> = [];
   try {
-    candidates = await listCandidates(getDb(), { limit: 100 });
+    const all = await listCandidates(getDb(), { limit: 200 });
+    candidates = all.filter((candidate) =>
+      REVIEW_QUEUE_STATUSES.has(candidate.discoveryStatus),
+    );
   } catch {
     candidates = [];
   }
@@ -94,9 +111,14 @@ export default async function AdminCandidatesPage() {
               </div>
               <CandidateActions
                 candidateId={candidate.id}
-                canApprove={
+                canApprove={canApproveCandidate(candidate.discoveryStatus)}
+                canReject={canRejectCandidate(candidate.discoveryStatus)}
+                canReanalyze={
+                  candidate.discoveryStatus === "DISCOVERED" ||
+                  candidate.discoveryStatus === "FETCHED" ||
+                  candidate.discoveryStatus === "ANALYZED" ||
                   candidate.discoveryStatus === "READY_FOR_REVIEW" ||
-                  candidate.discoveryStatus === "ANALYZED"
+                  candidate.discoveryStatus === "ERROR"
                 }
                 labels={actionLabels}
               />

@@ -15,12 +15,16 @@ type CandidateActionsLabels = {
 type CandidateActionsProps = {
   candidateId: string;
   canApprove?: boolean;
+  canReject?: boolean;
+  canReanalyze?: boolean;
   labels: CandidateActionsLabels;
 };
 
 export function CandidateActions({
   candidateId,
   canApprove = true,
+  canReject = true,
+  canReanalyze = true,
   labels,
 }: CandidateActionsProps) {
   const router = useRouter();
@@ -55,6 +59,10 @@ export function CandidateActions({
     }
   }
 
+  if (!canApprove && !canReject && !canReanalyze) {
+    return null;
+  }
+
   return (
     <div className="space-y-2">
       <div className="flex flex-wrap gap-2">
@@ -63,22 +71,26 @@ export function CandidateActions({
             {labels.approve}
           </Button>
         ) : null}
-        <Button
-          size="sm"
-          variant="destructive"
-          disabled={busy}
-          onClick={() => run("reject")}
-        >
-          {labels.reject}
-        </Button>
-        <Button
-          size="sm"
-          variant="secondary"
-          disabled={busy}
-          onClick={() => run("reanalyze")}
-        >
-          {labels.reanalyze}
-        </Button>
+        {canReject ? (
+          <Button
+            size="sm"
+            variant="destructive"
+            disabled={busy}
+            onClick={() => run("reject")}
+          >
+            {labels.reject}
+          </Button>
+        ) : null}
+        {canReanalyze ? (
+          <Button
+            size="sm"
+            variant="secondary"
+            disabled={busy}
+            onClick={() => run("reanalyze")}
+          >
+            {labels.reanalyze}
+          </Button>
+        ) : null}
       </div>
       {error ? <p className="text-xs text-destructive">{error}</p> : null}
     </div>
