@@ -45,18 +45,28 @@ const SEED_PROVIDERS = [
 ] as const;
 
 const SEED_CATEGORIES = [
-  { name: "Artificial Intelligence", slug: "ai" },
-  { name: "Programming", slug: "programming" },
-  { name: "Data Science", slug: "data-science" },
-  { name: "Cybersecurity", slug: "cybersecurity" },
-  { name: "Cloud", slug: "cloud" },
+  { name: "Trí tuệ nhân tạo", slug: "ai" },
+  { name: "Lập trình", slug: "programming" },
+  { name: "Khoa học dữ liệu", slug: "data-science" },
+  { name: "An ninh mạng", slug: "cybersecurity" },
+  { name: "Điện toán đám mây", slug: "cloud" },
   { name: "DevOps", slug: "devops" },
-  { name: "Project Management", slug: "project-management" },
-  { name: "Product Management", slug: "product-management" },
-  { name: "Business", slug: "business" },
+  { name: "Quản lý dự án", slug: "project-management" },
+  { name: "Quản lý sản phẩm", slug: "product-management" },
+  { name: "Kinh doanh & Quản lý", slug: "business" },
   { name: "Marketing", slug: "marketing" },
-  { name: "Design", slug: "design" },
-  { name: "Soft Skills", slug: "soft-skills" },
+  { name: "Thiết kế & Sáng tạo", slug: "design" },
+  { name: "Kỹ năng mềm", slug: "soft-skills" },
+  // M21.1 multi-domain expansion
+  { name: "Tài chính", slug: "finance" },
+  { name: "Phát triển bản thân", slug: "personal-development" },
+  { name: "Cuộc sống & Sức khỏe", slug: "lifestyle-health" },
+  { name: "Ngoại ngữ", slug: "languages" },
+  { name: "Văn phòng & Công việc", slug: "office-productivity" },
+  { name: "Giáo dục", slug: "education" },
+  { name: "Khoa học & Kỹ thuật", slug: "science-engineering" },
+  { name: "Xã hội & Nhân văn", slug: "humanities" },
+  { name: "Nghề nghiệp", slug: "career" },
 ] as const;
 
 /**
@@ -440,6 +450,108 @@ const SEED_DISCOVERY_QUERIES = [
     provider: "google",
     category: "data-science",
     query: "site:developers.google.com/learn data OR bigquery OR analytics",
+  },
+
+  // M21.2 — balanced multi-domain seeds (VI + EN hints; discovery ≠ Truth)
+  {
+    provider: "udemy",
+    category: "soft-skills",
+    query: 'site:udemy.com/course "communication skills" free OR coupon',
+  },
+  {
+    provider: "udemy",
+    category: "soft-skills",
+    query: 'site:udemy.com/course "kỹ năng giao tiếp" OR "public speaking" free',
+  },
+  {
+    provider: "udemy",
+    category: "personal-development",
+    query: 'site:udemy.com/course "time management" free OR coupon',
+  },
+  {
+    provider: "udemy",
+    category: "personal-development",
+    query: 'site:udemy.com/course "quản lý thời gian" OR productivity free',
+  },
+  {
+    provider: "udemy",
+    category: "office-productivity",
+    query: 'site:udemy.com/course excel beginner free OR coupon',
+  },
+  {
+    provider: "udemy",
+    category: "office-productivity",
+    query: 'site:udemy.com/course "Excel cho người mới" OR "microsoft excel" free',
+  },
+  {
+    provider: "udemy",
+    category: "languages",
+    query: 'site:udemy.com/course "english speaking" free OR coupon',
+  },
+  {
+    provider: "udemy",
+    category: "languages",
+    query: 'site:udemy.com/course "tiếng Anh giao tiếp" OR IELTS free',
+  },
+  {
+    provider: "udemy",
+    category: "finance",
+    query: 'site:udemy.com/course "personal finance" OR investing free OR coupon',
+  },
+  {
+    provider: "udemy",
+    category: "lifestyle-health",
+    query: 'site:udemy.com/course mindfulness OR yoga OR nutrition free OR coupon',
+  },
+  {
+    provider: "udemy",
+    category: "career",
+    query: 'site:udemy.com/course resume OR interview OR "job search" free OR coupon',
+  },
+  {
+    provider: "coursera",
+    category: "soft-skills",
+    query: 'site:coursera.org/learn "communication" OR leadership "audit for free"',
+  },
+  {
+    provider: "coursera",
+    category: "business",
+    query: 'site:coursera.org/learn business OR entrepreneurship "enroll for free"',
+  },
+  {
+    provider: "coursera",
+    category: "languages",
+    query: 'site:coursera.org/learn english OR language "audit for free"',
+  },
+  {
+    provider: "coursera",
+    category: "personal-development",
+    query: 'site:coursera.org/learn "personal development" OR success "audit for free"',
+  },
+  {
+    provider: "edx",
+    category: "humanities",
+    query: "site:edx.org/learn history OR philosophy OR psychology free",
+  },
+  {
+    provider: "edx",
+    category: "science-engineering",
+    query: "site:edx.org/learn physics OR chemistry OR engineering free",
+  },
+  {
+    provider: "edx",
+    category: "education",
+    query: "site:edx.org/learn teaching OR education OR pedagogy free",
+  },
+  {
+    provider: "hubspot-academy",
+    category: "marketing",
+    query: "site:academy.hubspot.com marketing OR sales free certification",
+  },
+  {
+    provider: "hubspot-academy",
+    category: "office-productivity",
+    query: "site:academy.hubspot.com service OR CRM free",
   },
 ] as const;
 

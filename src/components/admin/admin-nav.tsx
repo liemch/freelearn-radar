@@ -3,16 +3,19 @@
 import {
   BarChart3,
   BookOpen,
+  Image,
   Inbox,
   LayoutDashboard,
   Layers,
   CircleDollarSign,
   ListFilter,
   Menu,
+  PieChart,
   Radar,
   Search,
   Server,
   Tags,
+  Ticket,
   Users,
   X,
 } from "lucide-react";
@@ -35,7 +38,10 @@ export type AdminNavIcon =
   | "analytics"
   | "search"
   | "embeddings"
-  | "monetization";
+  | "monetization"
+  | "coupons"
+  | "coverage"
+  | "mediaQuality";
 
 export type AdminNavItem = {
   href: string;
@@ -64,6 +70,9 @@ const ICONS: Record<AdminNavIcon, typeof LayoutDashboard> = {
   search: Search,
   embeddings: Layers,
   monetization: CircleDollarSign,
+  coupons: Ticket,
+  coverage: PieChart,
+  mediaQuality: Image,
 };
 
 /**

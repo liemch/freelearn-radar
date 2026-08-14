@@ -5,6 +5,7 @@ import { cn } from "@/lib/utils";
 const TONE: Record<PriceType, string> = {
   FREE_FULL: "bg-emerald-100 text-emerald-950 border-emerald-200",
   FREE_AUDIT: "bg-sky-100 text-sky-950 border-sky-200",
+  FREE_PREVIEW: "bg-slate-100 text-slate-800 border-slate-200",
   FREE_WITH_COUPON: "bg-amber-100 text-amber-950 border-amber-200",
   TEMPORARILY_FREE: "bg-orange-100 text-orange-950 border-orange-200",
   FREE_TRIAL: "bg-yellow-100 text-yellow-950 border-yellow-200",

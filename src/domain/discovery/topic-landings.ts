@@ -140,6 +140,92 @@ export const TOPIC_LANDINGS: TopicLanding[] = [
         "Tuyển chọn các khóa lập trình miễn phí trên nhiều ngôn ngữ và trình độ.",
     },
   },
+  // M21.9 — multi-domain SEO landings (index only when category has data)
+  {
+    slug: "communication",
+    categorySlug: "soft-skills",
+    relatedTopics: ["personal-development", "excel", "english"],
+    en: {
+      title: "Free Communication Courses",
+      heading: "Free communication & soft skills courses",
+      description:
+        "Browse free communication, presentation, and soft-skills courses with clear free-status labels.",
+    },
+    vi: {
+      title: "Khóa học giao tiếp miễn phí",
+      heading: "Khóa học giao tiếp & kỹ năng mềm miễn phí",
+      description:
+        "Khám phá khóa giao tiếp, thuyết trình và kỹ năng mềm miễn phí với nhãn trạng thái miễn phí rõ ràng.",
+    },
+  },
+  {
+    slug: "excel",
+    categorySlug: "office-productivity",
+    relatedTopics: ["communication", "career", "business"],
+    en: {
+      title: "Free Excel Courses",
+      heading: "Free Excel & office productivity courses",
+      description:
+        "Find free Excel and office skills courses for beginners and working professionals.",
+    },
+    vi: {
+      title: "Khóa học Excel miễn phí",
+      heading: "Khóa học Excel & kỹ năng văn phòng miễn phí",
+      description:
+        "Tìm khóa Excel và kỹ năng văn phòng miễn phí cho người mới và người đi làm.",
+    },
+  },
+  {
+    slug: "english",
+    categorySlug: "languages",
+    relatedTopics: ["communication", "career", "personal-development"],
+    en: {
+      title: "Free English Courses",
+      heading: "Free English speaking & language courses",
+      description:
+        "Curated free English and language courses. We show what is free and when it was last verified.",
+    },
+    vi: {
+      title: "Khóa học tiếng Anh miễn phí",
+      heading: "Khóa học tiếng Anh giao tiếp miễn phí",
+      description:
+        "Tuyển chọn khóa tiếng Anh và ngoại ngữ miễn phí. Chúng tôi nêu rõ phần nào miễn phí và thời điểm xác minh.",
+    },
+  },
+  {
+    slug: "personal-development",
+    categorySlug: "personal-development",
+    relatedTopics: ["communication", "career", "excel"],
+    en: {
+      title: "Free Personal Development Courses",
+      heading: "Free personal development courses",
+      description:
+        "Time management, habits, and productivity courses that are free to learn — with verified status.",
+    },
+    vi: {
+      title: "Khóa học phát triển bản thân miễn phí",
+      heading: "Khóa học phát triển bản thân miễn phí",
+      description:
+        "Quản lý thời gian, thói quen và năng suất — các khóa miễn phí với trạng thái đã xác minh.",
+    },
+  },
+  {
+    slug: "finance",
+    categorySlug: "finance",
+    relatedTopics: ["business", "career", "excel"],
+    en: {
+      title: "Free Finance Courses",
+      heading: "Free personal finance courses",
+      description:
+        "Browse free finance and investing primers with transparent free and certificate labels.",
+    },
+    vi: {
+      title: "Khóa học tài chính miễn phí",
+      heading: "Khóa học tài chính cá nhân miễn phí",
+      description:
+        "Khám phá khóa tài chính và đầu tư cơ bản miễn phí, minh bạch nhãn miễn phí và chứng chỉ.",
+    },
+  },
 ];
 
 export function findTopicLanding(slug: string): TopicLanding | null {

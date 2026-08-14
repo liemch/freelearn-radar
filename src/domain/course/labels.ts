@@ -18,9 +18,13 @@ export const PRICE_TYPE_LABELS: Record<
     label: "Free to Audit",
     shortHint: "Learn free; extras may be paid",
   },
+  FREE_PREVIEW: {
+    label: "Free Preview",
+    shortHint: "Preview only — not full free access",
+  },
   FREE_WITH_COUPON: {
-    label: "Coupon Required",
-    shortHint: "Needs a valid promo code",
+    label: "Coupon 100%",
+    shortHint: "Verified 100% off coupon required",
   },
   TEMPORARILY_FREE: {
     label: "Limited-Time Free",
@@ -45,29 +49,27 @@ const PRICE_TYPE_LABELS_VI: Record<
   { label: string; shortHint: string }
 > = {
   FREE_FULL: {
-    label: "Miễn phí 100%",
+    label: "Miễn phí lâu dài",
     shortHint: "Truy cập toàn bộ khóa học không mất phí",
   },
-  /*
-   * "Học thử miễn phí" was almost indistinguishable from FREE_TRIAL's
-   * "Dùng thử miễn phí", yet the two mean opposite things to a learner: audit
-   * access does not expire, a trial does. Naming what is free — the learning —
-   * separates them.
-   */
   FREE_AUDIT: {
-    label: "Học miễn phí",
+    label: "Học miễn phí (audit)",
     shortHint: "Học toàn bộ nội dung miễn phí; chứng chỉ thường phải trả phí",
   },
+  FREE_PREVIEW: {
+    label: "Xem trước miễn phí",
+    shortHint: "Chỉ xem trước — không phải học toàn bộ miễn phí",
+  },
   FREE_WITH_COUPON: {
-    label: "Cần mã coupon",
-    shortHint: "Cần mã khuyến mãi hợp lệ",
+    label: "Coupon 100%",
+    shortHint: "Cần mã giảm 100% đã được xác minh",
   },
   TEMPORARILY_FREE: {
     label: "Miễn phí có thời hạn",
     shortHint: "Khuyến mãi có thể kết thúc sớm",
   },
   FREE_TRIAL: {
-    label: "Dùng thử có hạn",
+    label: "Dùng thử miễn phí",
     shortHint: "Truy cập thử trong thời gian giới hạn",
   },
   PAID: {

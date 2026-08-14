@@ -13,6 +13,7 @@ export const courseStatusEnum = pgEnum("course_status", [
 export const priceTypeEnum = pgEnum("price_type", [
   "FREE_FULL",
   "FREE_AUDIT",
+  "FREE_PREVIEW",
   "FREE_WITH_COUPON",
   "TEMPORARILY_FREE",
   "FREE_TRIAL",
@@ -173,4 +174,50 @@ export const commerceProductGroupEnum = pgEnum("commerce_product_group", [
   "STUDY_ACCESSORY",
   "LAB_NETWORKING_DEVICE",
   "OTHER_LEARNING_RELATED",
+]);
+
+/** M21.3/M21.4 — coupon offer lifecycle (discovery ≠ Truth). */
+export const couponOfferStatusEnum = pgEnum("coupon_offer_status", [
+  "DISCOVERED",
+  "VERIFYING",
+  "ACTIVE_100_OFF",
+  "ACTIVE_DISCOUNTED",
+  "EXPIRED",
+  "INVALID",
+  "BLOCKED",
+  "UNKNOWN",
+]);
+
+export const couponSourceTypeEnum = pgEnum("coupon_source_type", [
+  "HTML",
+  "RSS",
+  "API",
+  "MANUAL",
+]);
+
+export const couponSourceHealthEnum = pgEnum("coupon_source_health", [
+  "HEALTHY",
+  "DEGRADED",
+  "FAILING",
+  "DISABLED",
+  "UNKNOWN",
+]);
+
+/** M21.6 — course image resolution status. */
+export const courseImageStatusEnum = pgEnum("course_image_status", [
+  "OK",
+  "MISSING",
+  "BROKEN",
+  "FALLBACK",
+  "BLOCKED",
+  "PENDING",
+]);
+
+export const courseImageSourceTypeEnum = pgEnum("course_image_source_type", [
+  "OFFICIAL",
+  "TRUSTED_METADATA",
+  "CACHED",
+  "CATEGORY_FALLBACK",
+  "PROVIDER_FALLBACK",
+  "NONE",
 ]);

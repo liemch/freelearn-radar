@@ -29,6 +29,13 @@ vi.mock("@/domain/discovery/discovery-query-service", () => ({
     markDiscoveryQueryFailure(...args),
 }));
 
+const bumpDiscoveryCategoryStats = vi.fn();
+
+vi.mock("@/db/repositories/coupon-repository", () => ({
+  bumpDiscoveryCategoryStats: (...args: unknown[]) =>
+    bumpDiscoveryCategoryStats(...args),
+}));
+
 vi.mock("@/domain/admin/audit-log", () => ({
   writeAuditLog: (...args: unknown[]) => writeAuditLog(...args),
 }));
@@ -138,6 +145,7 @@ describe("ingestSearchResult", () => {
 describe("runDiscoveryBatch", () => {
   beforeEach(() => {
     vi.clearAllMocks();
+    bumpDiscoveryCategoryStats.mockResolvedValue(undefined);
   });
 
   it("processes search results into candidates", async () => {
@@ -180,6 +188,15 @@ describe("runDiscoveryBatch", () => {
       errors: 0,
     });
     expect(markDiscoveryQuerySuccess).toHaveBeenCalledWith({}, "q1");
+    expect(bumpDiscoveryCategoryStats).toHaveBeenCalledWith(
+      {},
+      "ai",
+      expect.objectContaining({
+        queriesRun: 1,
+        candidatesFound: 1,
+        zeroCandidateRuns: 0,
+      }),
+    );
   });
 
   // P1-04 regression: the admin discovery API accepted provider/category and dropped them.

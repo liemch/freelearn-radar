@@ -56,6 +56,13 @@ export function AdminShell({ session, locale, children }: AdminShellProps) {
       label: t.nav.monetization,
       icon: "monetization",
     },
+    { href: "/admin/coupons", label: t.nav.coupons, icon: "coupons" },
+    { href: "/admin/coverage", label: t.nav.coverage, icon: "coverage" },
+    {
+      href: "/admin/media-quality",
+      label: t.nav.mediaQuality,
+      icon: "mediaQuality",
+    },
   ];
 
   const navLabels: AdminNavLabels = {

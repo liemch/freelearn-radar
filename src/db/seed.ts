@@ -33,6 +33,7 @@ import { SEED_COURSES } from "@/db/seed/courses";
 import { deriveFreeDurability } from "@/domain/course/free-durability";
 import { SEED_PROVIDER_POLICIES } from "@/domain/verification/provider-policy";
 import { seedAffiliateMonetization } from "@/db/seed/affiliate";
+import { seedCouponSources } from "@/db/seed/coupon-sources";
 import { hashPassword } from "@/lib/auth/password";
 
 async function seedProviders(db: Db) {
@@ -257,6 +258,7 @@ export async function runSeed(db: Db) {
   await seedCategories(db);
   await seedDiscoveryQueries(db);
   await seedAffiliateMonetization(db);
+  await seedCouponSources(db);
   await seedAdminUsers(db);
   await seedCourses(db);
 }

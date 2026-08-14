@@ -148,6 +148,20 @@ describe("course visual fallback", () => {
     expect(visual.src).toBe("https://cdn.example.com/stored.jpg");
   });
 
+  it("prefers resolved image over storage and source", async () => {
+    const { getCourseVisual } = await import("@/domain/course/course-visual");
+    const visual = getCourseVisual({
+      id: "1b",
+      slug: "resolved",
+      title: "Resolved image",
+      imageResolvedUrl: "https://cdn.example.com/resolved.jpg",
+      imageStorageUrl: "https://cdn.example.com/stored.jpg",
+      imageSourceUrl: "https://cdn.example.com/source.jpg",
+      provider: { name: "Udemy", slug: "udemy" },
+    } as never);
+    expect(visual.src).toBe("https://cdn.example.com/resolved.jpg");
+  });
+
   it("uses provider fallback when image missing", async () => {
     const { getCourseVisual } = await import("@/domain/course/course-visual");
     const visual = getCourseVisual({

@@ -10,11 +10,39 @@ export type CourseStatus =
 export type PriceType =
   | "FREE_FULL"
   | "FREE_AUDIT"
+  | "FREE_PREVIEW"
   | "FREE_WITH_COUPON"
   | "TEMPORARILY_FREE"
   | "FREE_TRIAL"
   | "PAID"
   | "UNKNOWN";
+
+/** M21.4 — coupon offer verification state machine. */
+export type CouponOfferStatus =
+  | "DISCOVERED"
+  | "VERIFYING"
+  | "ACTIVE_100_OFF"
+  | "ACTIVE_DISCOUNTED"
+  | "EXPIRED"
+  | "INVALID"
+  | "BLOCKED"
+  | "UNKNOWN";
+
+export type CourseImageStatus =
+  | "OK"
+  | "MISSING"
+  | "BROKEN"
+  | "FALLBACK"
+  | "BLOCKED"
+  | "PENDING";
+
+export type CourseImageSourceType =
+  | "OFFICIAL"
+  | "TRUSTED_METADATA"
+  | "CACHED"
+  | "CATEGORY_FALLBACK"
+  | "PROVIDER_FALLBACK"
+  | "NONE";
 
 export type CertificateType =
   | "FREE_CERTIFICATE"

@@ -1,7 +1,8 @@
 import type { Locale } from "@/lib/i18n/config";
 import { getDictionary } from "@/lib/i18n/get-dictionary";
 import { localePath } from "@/lib/i18n/path";
-import { currentBestPath } from "@/domain/discovery/monthly-collection";
+import { listTopicSlugs } from "@/domain/discovery/topic-landings";
+import { getServerEnv } from "@/lib/env";
 
 import { BrandMark } from "@/components/brand/brand-mark";
 import { SiteHeaderClient } from "@/components/public/site-header-client";
@@ -10,15 +11,70 @@ type SiteHeaderProps = {
   locale: Locale;
 };
 
+function discoveryUxEnabled(locale: Locale): boolean {
+  try {
+    return getServerEnv().FEATURE_DISCOVERY_UX === "true" || locale === "vi";
+  } catch {
+    return process.env.FEATURE_DISCOVERY_UX === "true" || locale === "vi";
+  }
+}
+
+function learningPathsEnabled(): boolean {
+  try {
+    return getServerEnv().FEATURE_LEARNING_PATHS === "true";
+  } catch {
+    return process.env.FEATURE_LEARNING_PATHS === "true";
+  }
+}
+
 export function SiteHeader({ locale }: SiteHeaderProps) {
   const dict = getDictionary(locale);
-  const bestHref = localePath(locale, currentBestPath());
+  const discoveryUx = discoveryUxEnabled(locale);
+  const learningPaths = learningPathsEnabled();
+  const firstTopic = listTopicSlugs()[0] ?? "ai";
 
-  const links = [
-    { href: bestHref, label: dict.nav.explore },
-    { href: localePath(locale, "/free-courses/ai"), label: dict.nav.categories },
-    { href: localePath(locale, "/search"), label: dict.nav.search },
-  ];
+  const links = discoveryUx
+    ? [
+        { href: localePath(locale, "/search"), label: dict.nav.courses },
+        {
+          href: localePath(locale, "/mien-phi-hom-nay"),
+          label: dict.nav.dailyFree,
+        },
+        {
+          href: localePath(locale, `/free-courses/${firstTopic}`),
+          label: dict.nav.topics,
+        },
+        {
+          href: localePath(locale, "/category/soft-skills"),
+          label: dict.nav.directory,
+        },
+        ...(learningPaths
+          ? [
+              {
+                href: localePath(locale, "/path"),
+                label: dict.nav.learningPaths,
+              },
+            ]
+          : []),
+      ]
+    : [
+        {
+          href: localePath(locale, "/search"),
+          label: dict.nav.search,
+        },
+        {
+          href: localePath(locale, `/free-courses/${firstTopic}`),
+          label: dict.nav.categories,
+        },
+        ...(learningPaths
+          ? [
+              {
+                href: localePath(locale, "/path"),
+                label: dict.nav.learningPaths,
+              },
+            ]
+          : []),
+      ];
 
   return (
     <SiteHeaderClient

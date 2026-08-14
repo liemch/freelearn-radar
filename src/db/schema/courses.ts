@@ -12,6 +12,8 @@ import {
 
 import {
   certificateTypeEnum,
+  courseImageSourceTypeEnum,
+  courseImageStatusEnum,
   courseLevelEnum,
   courseStatusEnum,
   freeDurabilityEnum,
@@ -55,6 +57,18 @@ export const courses = pgTable(
     lastVerifiedAt: timestamp("last_verified_at", { withTimezone: true }),
     imageSourceUrl: text("image_source_url"),
     imageStorageUrl: text("image_storage_url"),
+    imageResolvedUrl: text("image_resolved_url"),
+    imageSourceType: courseImageSourceTypeEnum("image_source_type")
+      .notNull()
+      .default("NONE"),
+    imageStatus: courseImageStatusEnum("image_status")
+      .notNull()
+      .default("MISSING"),
+    imageWidth: integer("image_width"),
+    imageHeight: integer("image_height"),
+    imageHash: text("image_hash"),
+    imageFallbackReason: text("image_fallback_reason"),
+    imageCheckedAt: timestamp("image_checked_at", { withTimezone: true }),
     imageLastVerifiedAt: timestamp("image_last_verified_at", {
       withTimezone: true,
     }),

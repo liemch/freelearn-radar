@@ -4,6 +4,7 @@ import { notFound } from "next/navigation";
 
 import { CourseSection } from "@/components/public/course-section";
 import { EmptyState } from "@/components/public/empty-state";
+import { ForYouSection } from "@/components/public/for-you-section";
 import { HomeHero } from "@/components/public/home-hero";
 import { LocaleHtmlLang } from "@/components/public/locale-html-lang";
 import { SiteFooter } from "@/components/public/site-footer";
@@ -15,11 +16,14 @@ import { listCategories } from "@/db/repositories/category-repository";
 import {
   getCatalogTrustSignals,
   listPublishedCoursesWithProvider,
+  mapCourseIdsToCategorySlugs,
   queryCatalog,
 } from "@/db/repositories/course-repository";
 import { listProviders } from "@/db/repositories/provider-repository";
 import { isEligibleForFreeLists } from "@/domain/course/free-durability";
+import { queryDailyFreeDeals } from "@/domain/discovery/daily-free";
 import { currentBestPath } from "@/domain/discovery/monthly-collection";
+import { HOMEPAGE_QUICK_DOMAIN_SLUGS } from "@/domain/taxonomy/multi-domain";
 import { rankCourses } from "@/domain/ranking/ranking";
 import { isLocale, type Locale } from "@/lib/i18n/config";
 import { getDictionary } from "@/lib/i18n/get-dictionary";
@@ -33,6 +37,22 @@ export const dynamic = "force-dynamic";
 type HomePageProps = {
   params: Promise<{ locale: string }>;
 };
+
+function discoveryUxEnabled(locale: Locale): boolean {
+  try {
+    return getServerEnv().FEATURE_DISCOVERY_UX === "true" || locale === "vi";
+  } catch {
+    return process.env.FEATURE_DISCOVERY_UX === "true" || locale === "vi";
+  }
+}
+
+function interestsFeatureEnabled(): boolean {
+  try {
+    return getServerEnv().FEATURE_INTERESTS === "true";
+  } catch {
+    return process.env.FEATURE_INTERESTS === "true";
+  }
+}
 
 export async function generateMetadata({
   params,
@@ -75,6 +95,8 @@ export default async function HomePage({ params }: HomePageProps) {
   const locale = raw as Locale;
   const dict = getDictionary(locale);
   const bestHref = localePath(locale, currentBestPath());
+  const discoveryUx = discoveryUxEnabled(locale);
+  const interestsEnabled = interestsFeatureEnabled();
 
   const topics = [
     { href: localePath(locale, "/free-courses/python"), label: "Python" },
@@ -85,62 +107,81 @@ export default async function HomePage({ params }: HomePageProps) {
     },
     {
       href: localePath(locale, "/free-courses/data-science"),
-      label: locale === "vi" ? "Data Science" : "Data Science",
+      label: "Data Science",
     },
     {
-      href: localePath(locale, "/free-courses/project-management"),
-      label: locale === "vi" ? "Quản lý dự án" : "Project Management",
+      href: localePath(locale, "/category/soft-skills"),
+      label: locale === "vi" ? "Kỹ năng mềm" : "Soft skills",
     },
   ];
 
-  const [published, categories, providers, freeCert, shortCourses, trust] =
-    await Promise.all([
-      withDb(
-        "home.published",
-        (db) => listPublishedCoursesWithProvider(db, 60),
-        [],
-      ),
-      withDb("home.categories", (db) => listCategories(db), []),
-      withDb("home.providers", (db) => listProviders(db), []),
-      withDb(
-        "home.freeCert",
-        (db) =>
-          queryCatalog(db, {
-            certificateType: "FREE_CERTIFICATE",
-            sort: "recommended",
-            page: 1,
-            pageSize: 6,
-          }),
-        { items: [], total: 0, page: 1, pageSize: 6, totalPages: 1 },
-      ),
-      withDb(
-        "home.short",
-        (db) =>
-          queryCatalog(db, {
-            durationMaxMinutes: 60,
-            sort: "shortest",
-            page: 1,
-            pageSize: 6,
-          }),
-        { items: [], total: 0, page: 1, pageSize: 6, totalPages: 1 },
-      ),
-      withDb("home.trust", (db) => getCatalogTrustSignals(db), {
-        publishedCount: 0,
-        lastVerifiedAt: null,
-      }),
-    ]);
+  const [
+    published,
+    categories,
+    providers,
+    freeCert,
+    shortCourses,
+    trust,
+    dailyFree,
+  ] = await Promise.all([
+    withDb(
+      "home.published",
+      (db) => listPublishedCoursesWithProvider(db, 60),
+      [],
+    ),
+    withDb("home.categories", (db) => listCategories(db), []),
+    withDb("home.providers", (db) => listProviders(db), []),
+    withDb(
+      "home.freeCert",
+      (db) =>
+        queryCatalog(db, {
+          certificateType: "FREE_CERTIFICATE",
+          sort: "recommended",
+          page: 1,
+          pageSize: 6,
+        }),
+      { items: [], total: 0, page: 1, pageSize: 6, totalPages: 1 },
+    ),
+    withDb(
+      "home.short",
+      (db) =>
+        queryCatalog(db, {
+          durationMaxMinutes: 60,
+          sort: "shortest",
+          page: 1,
+          pageSize: 6,
+        }),
+      { items: [], total: 0, page: 1, pageSize: 6, totalPages: 1 },
+    ),
+    withDb("home.trust", (db) => getCatalogTrustSignals(db), {
+      publishedCount: 0,
+      lastVerifiedAt: null,
+    }),
+    withDb(
+      "home.dailyFree",
+      (db) => queryDailyFreeDeals(db, { limit: 6 }),
+      [],
+    ),
+  ]);
+
+  const categoryBySlug = new Map(
+    categories.map((category) => [category.slug, category]),
+  );
+  const quickDomains = HOMEPAGE_QUICK_DOMAIN_SLUGS.map((slug) => {
+    const category = categoryBySlug.get(slug);
+    return category
+      ? { slug, name: category.name, href: localePath(locale, `/category/${slug}`) }
+      : null;
+  }).filter((item): item is NonNullable<typeof item> => item !== null);
 
   const freeEligible = published.filter((course) =>
     isEligibleForFreeLists(course.priceType),
   );
   const ranked = rankCourses(freeEligible);
-  const featured = ranked.slice(0, 6);
-  const promotionalFree = ranked
+  const durableFree = ranked
     .filter(
       (course) =>
-        course.priceType === "TEMPORARILY_FREE" ||
-        course.priceType === "FREE_WITH_COUPON" ||
-        course.priceType === "FREE_FULL",
+        course.priceType === "FREE_FULL" || course.priceType === "FREE_AUDIT",
     )
     .slice(0, 6);
   const recentlyVerified = [...freeEligible]
@@ -151,7 +192,21 @@ export default async function HomePage({ params }: HomePageProps) {
     )
     .slice(0, 6);
 
+  const forYouPool = ranked.slice(0, 24);
+  const forYouCategoryMap = interestsEnabled
+    ? await withDb(
+        "home.forYouCategories",
+        (db) =>
+          mapCourseIdsToCategorySlugs(
+            db,
+            forYouPool.map((course) => course.id),
+          ),
+        new Map<string, string[]>(),
+      )
+    : new Map<string, string[]>();
+
   const hasCourses = published.length > 0;
+  const dailyFreeCourses = dailyFree.map((item) => item.course);
 
   return (
     <main className="flex min-h-screen flex-col">
@@ -180,26 +235,50 @@ export default async function HomePage({ params }: HomePageProps) {
             />
           ) : null}
 
-          {featured.length > 0 ? (
+          {discoveryUx && quickDomains.length > 0 ? (
+            <section className="space-y-3">
+              <div>
+                <h2 className="text-xl font-semibold tracking-tight sm:text-2xl">
+                  {dict.sections.quickDomains}
+                </h2>
+                <p className="mt-1 text-sm text-muted-foreground">
+                  {dict.sections.quickDomainsSub}
+                </p>
+              </div>
+              <ul className="flex flex-wrap gap-2">
+                {quickDomains.map((domain) => (
+                  <li key={domain.slug}>
+                    <Link
+                      href={domain.href}
+                      className="inline-flex min-h-10 items-center rounded-full border border-border bg-card px-3 py-1.5 text-sm font-medium transition hover:border-primary/40 hover:bg-accent hover:text-accent-foreground"
+                    >
+                      {domain.name}
+                    </Link>
+                  </li>
+                ))}
+              </ul>
+            </section>
+          ) : null}
+
+          {dailyFreeCourses.length > 0 ? (
             <CourseSection
               locale={locale}
-              title={dict.sections.freeThisWeek}
-              subtitle={dict.sections.freeThisWeekSub}
-              courses={featured}
-              viewAllHref={localePath(locale, "/search?sort=recommended")}
+              title={dict.sections.dailyFree}
+              subtitle={dict.sections.dailyFreeSub}
+              courses={dailyFreeCourses}
+              viewAllHref={localePath(locale, "/mien-phi-hom-nay")}
               viewAllLabel={dict.sections.viewAll}
               priorityCount={4}
             />
           ) : null}
 
-          {promotionalFree.length > 0 &&
-          promotionalFree.length < featured.length ? (
+          {durableFree.length > 0 ? (
             <CourseSection
               locale={locale}
-              title={dict.sections.bestFree}
-              subtitle={dict.sections.bestFreeSub}
-              courses={promotionalFree}
-              viewAllHref={localePath(locale, "/search?price=TEMPORARILY_FREE")}
+              title={dict.sections.durableFree}
+              subtitle={dict.sections.durableFreeSub}
+              courses={durableFree}
+              viewAllHref={localePath(locale, "/search?price=FREE_FULL")}
               viewAllLabel={dict.sections.viewAll}
             />
           ) : null}
@@ -215,17 +294,33 @@ export default async function HomePage({ params }: HomePageProps) {
             />
           ) : null}
 
+          {interestsEnabled ? (
+            <ForYouSection
+              enabled
+              locale={locale}
+              items={forYouPool.map((course) => ({
+                course,
+                categorySlugs: forYouCategoryMap.get(course.id) ?? [],
+              }))}
+              labels={{
+                title: dict.sections.forYou,
+                subtitle: dict.sections.forYouSub,
+                pickCta: dict.interests.pickCta,
+                change: dict.interests.change,
+                emptyRanked: dict.interests.emptyRanked,
+                interestsTitle: dict.interests.title,
+                interestsDescription: dict.interests.description,
+                save: dict.interests.save,
+                saved: dict.interests.saved,
+              }}
+            />
+          ) : null}
+
           {categories.length > 0 ? (
             <section className="space-y-3">
               <h2 className="text-xl font-semibold tracking-tight sm:text-2xl">
                 {dict.sections.browseTopic}
               </h2>
-              {/*
-                Tiles rather than a scrolling pill rail: topics are a primary
-                entry point, and a horizontal scroller hides most of them on the
-                exact screens where browsing matters most. No counts — deriving
-                an accurate per-category total would cost one query each.
-              */}
               <ul className="grid grid-cols-2 gap-2 sm:grid-cols-3 lg:grid-cols-4">
                 {categories.map((category) => (
                   <li key={category.id}>
@@ -243,6 +338,18 @@ export default async function HomePage({ params }: HomePageProps) {
                 ))}
               </ul>
             </section>
+          ) : null}
+
+          {!discoveryUx && ranked.slice(0, 6).length > 0 ? (
+            <CourseSection
+              locale={locale}
+              title={dict.sections.freeThisWeek}
+              subtitle={dict.sections.freeThisWeekSub}
+              courses={ranked.slice(0, 6)}
+              viewAllHref={localePath(locale, "/search?sort=recommended")}
+              viewAllLabel={dict.sections.viewAll}
+              priorityCount={4}
+            />
           ) : null}
 
           {freeCert.items.length > 0 ? (
@@ -286,11 +393,6 @@ export default async function HomePage({ params }: HomePageProps) {
             </section>
           ) : null}
 
-          {/*
-            Hidden on an empty catalogue: the monthly collection would render as
-            a heading with nothing beneath it, directly under the empty state
-            that already explains the situation.
-          */}
           {hasCourses ? (
             <section className="border-t border-border/50 pt-8">
               <div className="flex flex-wrap items-end justify-between gap-4">

@@ -1,4 +1,5 @@
 import type { Db } from "@/db";
+import { bumpDiscoveryCategoryStats } from "@/db/repositories/coupon-repository";
 import { ingestSearchResult } from "@/domain/candidate/candidate-service";
 import {
   listDueDiscoveryQueries,
@@ -69,6 +70,7 @@ export async function runDiscoveryBatch(
   for (const query of queries) {
     summary.queriesProcessed += 1;
     const domain = inferDomain(query.provider);
+    let createdForQuery = 0;
 
     try {
       const results = await searchProvider.search({
@@ -86,6 +88,7 @@ export async function runDiscoveryBatch(
 
         if (outcome.status === "CREATED") {
           summary.created += 1;
+          createdForQuery += 1;
         } else if (outcome.status === "DUPLICATE") {
           summary.duplicates += 1;
         } else {
@@ -94,6 +97,15 @@ export async function runDiscoveryBatch(
       }
 
       await markDiscoveryQuerySuccess(db, query.id);
+
+      if (query.category) {
+        await bumpDiscoveryCategoryStats(db, query.category, {
+          queriesRun: 1,
+          candidatesFound: createdForQuery,
+          zeroCandidateRuns: createdForQuery === 0 ? 1 : 0,
+          lastDiscoveredAt: createdForQuery > 0 ? new Date() : undefined,
+        });
+      }
     } catch (error) {
       summary.errors += 1;
       await markDiscoveryQueryFailure(db, query.id);

@@ -112,6 +112,48 @@ const baseEnvSchema = z.object({
   FEATURE_MONETIZATION: optionalString,
   FEATURE_COURSE_AFFILIATE: optionalString,
   FEATURE_COMMERCE_AFFILIATE: optionalString,
+  // M21 coupon / discovery / media (flags default OFF)
+  FEATURE_COUPON_DISCOVERY: optionalString,
+  FEATURE_COUPON_PUBLIC_SURFACE: optionalString,
+  FEATURE_MEDIA_RESOLVER: optionalString,
+  FEATURE_INTERESTS: optionalString,
+  FEATURE_DISCOVERY_UX: optionalString,
+  COUPON_DISCOVERY_MAX_PAGES_PER_RUN: z.coerce
+    .number()
+    .int()
+    .positive()
+    .max(50)
+    .default(5),
+  COUPON_DISCOVERY_MAX_CANDIDATES: z.coerce
+    .number()
+    .int()
+    .positive()
+    .max(500)
+    .default(80),
+  COUPON_DISCOVERY_MAX_CANDIDATES_PER_RUN: z.coerce
+    .number()
+    .int()
+    .positive()
+    .max(500)
+    .default(40),
+  COUPON_VERIFY_CONCURRENCY: z.coerce
+    .number()
+    .int()
+    .positive()
+    .max(16)
+    .default(2),
+  COUPON_VERIFY_LIMIT: z.coerce
+    .number()
+    .int()
+    .positive()
+    .max(200)
+    .default(25),
+  IMAGE_RESOLVE_CONCURRENCY: z.coerce
+    .number()
+    .int()
+    .positive()
+    .max(16)
+    .default(4),
   EMAIL_DRY_RUN: z.string().default("true"),
   RESEND_API_KEY: optionalString,
   EMAIL_FROM: optionalString,

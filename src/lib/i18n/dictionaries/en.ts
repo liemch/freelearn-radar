@@ -8,6 +8,11 @@ export const en: Dictionary = {
     search: "Search",
     menu: "Menu",
     close: "Close",
+    courses: "Courses",
+    dailyFree: "Free today",
+    topics: "Topics",
+    directory: "Browse",
+    learningPaths: "Paths",
   },
   hero: {
     eyebrow: "Curated · verified · free to learn",
@@ -44,6 +49,24 @@ export const en: Dictionary = {
     monthlyCollectionSub: "Editorial picks for the current month",
     monthlyCollectionCta: "See this month's best",
     viewAll: "View all",
+    dailyFree: "Free today",
+    dailyFreeSub: "Verified 100% coupons and limited-time free offers",
+    durableFree: "Lasting free",
+    durableFreeSub: "Fully free or stable audit access",
+    forYou: "For you",
+    forYouSub: "Soft suggestions from topics you pick — never overrides search",
+    quickDomains: "Popular domains",
+    quickDomainsSub: "Pick a domain to start browsing",
+  },
+  interests: {
+    title: "Topics I care about",
+    description:
+      "Pick a few domains for soft suggestions. Saved on this device — no account.",
+    save: "Save choices",
+    saved: "Saved",
+    pickCta: "Choose topics of interest",
+    change: "Change topics",
+    emptyRanked: "No courses match your topics yet — browse categories below.",
   },
   empty: {
     catalogTitle: "Fresh courses are on the way",
@@ -165,6 +188,15 @@ export const en: Dictionary = {
     bestEmptyTitle: "No collection for this month yet",
     bestEmptyDescription:
       "We're still verifying courses for this period. Browse the full catalog meanwhile.",
+    dailyFreeHeading: "Free today",
+    dailyFreeIntro:
+      "Verified 100% coupon deals and limited-time free courses. Preview-only offers are excluded.",
+    dailyFreeEmptyTitle: "No free deals today yet",
+    dailyFreeEmptyDescription:
+      "We're still verifying coupons and limited offers. Check back soon or browse lasting free courses.",
+    dailyFreeCta: "Get this free course",
+    coupon100Badge: "Coupon 100%",
+    limitedFreeBadge: "Limited free",
   },
   courseDetail: {
     keyFacts: "Key facts",

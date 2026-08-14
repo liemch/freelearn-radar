@@ -6,6 +6,11 @@ export type Dictionary = {
     search: string;
     menu: string;
     close: string;
+    courses: string;
+    dailyFree: string;
+    topics: string;
+    directory: string;
+    learningPaths: string;
   };
   hero: {
     eyebrow: string;
@@ -49,6 +54,23 @@ export type Dictionary = {
     monthlyCollectionSub: string;
     monthlyCollectionCta: string;
     viewAll: string;
+    dailyFree: string;
+    dailyFreeSub: string;
+    durableFree: string;
+    durableFreeSub: string;
+    forYou: string;
+    forYouSub: string;
+    quickDomains: string;
+    quickDomainsSub: string;
+  };
+  interests: {
+    title: string;
+    description: string;
+    save: string;
+    saved: string;
+    pickCta: string;
+    change: string;
+    emptyRanked: string;
   };
   empty: {
     catalogTitle: string;
@@ -161,6 +183,13 @@ export type Dictionary = {
     bestFallbackNotice: string;
     bestEmptyTitle: string;
     bestEmptyDescription: string;
+    dailyFreeHeading: string;
+    dailyFreeIntro: string;
+    dailyFreeEmptyTitle: string;
+    dailyFreeEmptyDescription: string;
+    dailyFreeCta: string;
+    coupon100Badge: string;
+    limitedFreeBadge: string;
   };
   courseDetail: {
     keyFacts: string;

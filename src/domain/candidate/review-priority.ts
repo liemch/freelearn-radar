@@ -12,6 +12,7 @@ const PRICE_TYPE_SCORES: Record<string, number> = {
   FREE_AUDIT: 30,
   FREE_WITH_COUPON: 20,
   TEMPORARILY_FREE: 15,
+  FREE_PREVIEW: 2,
   FREE_TRIAL: 5,
   PAID: -20,
   UNKNOWN: 0,

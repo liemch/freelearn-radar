@@ -48,6 +48,7 @@ describe("isEligibleForFreeLists", () => {
     ["TEMPORARILY_FREE", true],
     ["UNKNOWN", true],
     ["FREE_TRIAL", false],
+    ["FREE_PREVIEW", false],
     ["PAID", false],
   ] as const)("%s → %s", (price: PriceType, expected) => {
     expect(isEligibleForFreeLists(price)).toBe(expected);
@@ -60,11 +61,14 @@ describe("assertVisibleOnPublicCatalog", () => {
     expect(() => assertVisibleOnPublicCatalog("FREE_AUDIT")).not.toThrow();
   });
 
-  it("rejects PAID and FREE_TRIAL", () => {
+  it("rejects PAID, FREE_TRIAL, and FREE_PREVIEW", () => {
     expect(() => assertVisibleOnPublicCatalog("PAID")).toThrow(
       PublicCatalogVisibilityError,
     );
     expect(() => assertVisibleOnPublicCatalog("FREE_TRIAL")).toThrow(
+      PublicCatalogVisibilityError,
+    );
+    expect(() => assertVisibleOnPublicCatalog("FREE_PREVIEW")).toThrow(
       PublicCatalogVisibilityError,
     );
   });

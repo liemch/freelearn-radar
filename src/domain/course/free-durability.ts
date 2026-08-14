@@ -47,6 +47,7 @@ export function deriveFreeDurability(
  */
 export const FREE_LIST_EXCLUDED_PRICE_TYPES: readonly PriceType[] = [
   "FREE_TRIAL",
+  "FREE_PREVIEW",
   "PAID",
 ];
 
@@ -73,6 +74,10 @@ export function publicCatalogVisibilityMessage(priceType: PriceType): string {
 
   if (priceType === "FREE_TRIAL") {
     return "Free-trial courses are not listed on the public free catalog. Use a full-free or audit price type before publishing.";
+  }
+
+  if (priceType === "FREE_PREVIEW") {
+    return "Preview-only courses are not listed on the public free catalog. Preview is not full free access.";
   }
 
   return `Price type ${priceType} cannot be published to the public free catalog.`;

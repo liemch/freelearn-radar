@@ -44,7 +44,10 @@ describe("localized free status labels", () => {
     const { getPriceTypeLabel, getCertificateTypeLabel } = await import(
       "@/domain/course/labels"
     );
-    expect(getPriceTypeLabel("FREE_FULL", "vi").label).toBe("Miễn phí 100%");
+    expect(getPriceTypeLabel("FREE_FULL", "vi").label).toBe("Miễn phí lâu dài");
+    expect(getPriceTypeLabel("FREE_PREVIEW", "vi").label).toBe(
+      "Xem trước miễn phí",
+    );
     expect(getCertificateTypeLabel("FREE_CERTIFICATE", "vi")).toBe(
       "Chứng chỉ miễn phí",
     );

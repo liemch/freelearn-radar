@@ -21,3 +21,5 @@ export * from "@/db/schema/search-evaluations";
 export * from "@/db/schema/search-benchmark-runs";
 export * from "@/db/schema/course-embeddings";
 export * from "@/db/schema/affiliate";
+export * from "@/db/schema/coupon";
+export * from "@/db/schema/discovery-category-stats";

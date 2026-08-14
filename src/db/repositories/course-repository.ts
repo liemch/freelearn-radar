@@ -2,6 +2,7 @@ import {
   and,
   desc,
   eq,
+  inArray,
   isNotNull,
   notInArray,
   sql,
@@ -737,4 +738,54 @@ export async function countPublishedByProviderSlug(
       and(eq(courses.status, "PUBLISHED"), eq(providers.slug, providerSlug)),
     );
   return rows[0]?.count ?? 0;
+}
+
+/** Primary category slug per course (first join row wins). */
+export async function mapCourseIdsToPrimaryCategorySlug(
+  db: Db,
+  courseIds: string[],
+): Promise<Map<string, string>> {
+  const map = new Map<string, string>();
+  if (courseIds.length === 0) return map;
+
+  const rows = await db
+    .select({
+      courseId: courseCategories.courseId,
+      slug: categories.slug,
+    })
+    .from(courseCategories)
+    .innerJoin(categories, eq(courseCategories.categoryId, categories.id))
+    .where(inArray(courseCategories.courseId, courseIds));
+
+  for (const row of rows) {
+    if (!map.has(row.courseId)) {
+      map.set(row.courseId, row.slug);
+    }
+  }
+  return map;
+}
+
+/** All category slugs per course — for soft interest ranking. */
+export async function mapCourseIdsToCategorySlugs(
+  db: Db,
+  courseIds: string[],
+): Promise<Map<string, string[]>> {
+  const map = new Map<string, string[]>();
+  if (courseIds.length === 0) return map;
+
+  const rows = await db
+    .select({
+      courseId: courseCategories.courseId,
+      slug: categories.slug,
+    })
+    .from(courseCategories)
+    .innerJoin(categories, eq(courseCategories.categoryId, categories.id))
+    .where(inArray(courseCategories.courseId, courseIds));
+
+  for (const row of rows) {
+    const list = map.get(row.courseId) ?? [];
+    list.push(row.slug);
+    map.set(row.courseId, list);
+  }
+  return map;
 }

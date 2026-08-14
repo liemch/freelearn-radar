@@ -39,7 +39,11 @@ function toneFor(seed: string): string {
  * set so a grid of fallbacks looks curated rather than random.
  */
 export function getCourseVisual(course: CourseWithProvider): CourseVisual {
-  const remote = course.imageStorageUrl ?? course.imageSourceUrl ?? null;
+  const remote =
+    course.imageResolvedUrl ??
+    course.imageStorageUrl ??
+    course.imageSourceUrl ??
+    null;
   const shortTitle =
     course.title.length > 64 ? `${course.title.slice(0, 61)}…` : course.title;
 
