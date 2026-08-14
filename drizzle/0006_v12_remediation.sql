@@ -8,9 +8,40 @@
 -- the two, so two concurrent workers can both pass the 24h cooldown check before
 -- either commits. Deduplication must therefore be a constraint, not a
 -- convention: one confirmed event per course per type per UTC day.
+--
+-- Any duplicate already in the table would block the unique index, so they are
+-- collapsed first. These rows are the bug's output, not distinct history: each
+-- records the same transition, for the same course, on the same day. The
+-- earliest is kept because it is when the change was actually first confirmed,
+-- and the detection itself remains traceable in admin_audit_log either way.
 -- ---------------------------------------------------------------------------
+DELETE FROM "course_price_events" AS e
+USING (
+  SELECT
+    "id",
+    row_number() OVER (
+      PARTITION BY
+        "course_id",
+        "event_type",
+        date_trunc('day', "confirmed_at" AT TIME ZONE 'UTC')
+      ORDER BY "confirmed_at", "id"
+    ) AS rn
+  FROM "course_price_events"
+  WHERE "confirmed_at" IS NOT NULL
+) AS d
+WHERE e."id" = d."id" AND d.rn > 1;
+
+-- `date_trunc(text, timestamptz)` is STABLE, not IMMUTABLE — it reads the
+-- session TimeZone — and Postgres refuses a non-immutable function in an index
+-- expression. Pinning the zone makes it immutable and also states the intent
+-- the comment above already claimed: one event per UTC day, not per the
+-- timezone whichever connection happens to be set to.
 CREATE UNIQUE INDEX IF NOT EXISTS "course_price_events_dedupe_idx"
-  ON "course_price_events" ("course_id", "event_type", (date_trunc('day', "confirmed_at")))
+  ON "course_price_events" (
+    "course_id",
+    "event_type",
+    (date_trunc('day', "confirmed_at" AT TIME ZONE 'UTC'))
+  )
   WHERE "confirmed_at" IS NOT NULL;
 
 -- ---------------------------------------------------------------------------

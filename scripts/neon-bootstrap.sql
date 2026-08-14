@@ -464,9 +464,40 @@ CREATE INDEX IF NOT EXISTS "api_usage_log_created_at_idx" ON "api_usage_log" ("c
 -- the two, so two concurrent workers can both pass the 24h cooldown check before
 -- either commits. Deduplication must therefore be a constraint, not a
 -- convention: one confirmed event per course per type per UTC day.
+--
+-- Any duplicate already in the table would block the unique index, so they are
+-- collapsed first. These rows are the bug's output, not distinct history: each
+-- records the same transition, for the same course, on the same day. The
+-- earliest is kept because it is when the change was actually first confirmed,
+-- and the detection itself remains traceable in admin_audit_log either way.
 -- ---------------------------------------------------------------------------
+DELETE FROM "course_price_events" AS e
+USING (
+  SELECT
+    "id",
+    row_number() OVER (
+      PARTITION BY
+        "course_id",
+        "event_type",
+        date_trunc('day', "confirmed_at" AT TIME ZONE 'UTC')
+      ORDER BY "confirmed_at", "id"
+    ) AS rn
+  FROM "course_price_events"
+  WHERE "confirmed_at" IS NOT NULL
+) AS d
+WHERE e."id" = d."id" AND d.rn > 1;
+
+-- `date_trunc(text, timestamptz)` is STABLE, not IMMUTABLE — it reads the
+-- session TimeZone — and Postgres refuses a non-immutable function in an index
+-- expression. Pinning the zone makes it immutable and also states the intent
+-- the comment above already claimed: one event per UTC day, not per the
+-- timezone whichever connection happens to be set to.
 CREATE UNIQUE INDEX IF NOT EXISTS "course_price_events_dedupe_idx"
-  ON "course_price_events" ("course_id", "event_type", (date_trunc('day', "confirmed_at")))
+  ON "course_price_events" (
+    "course_id",
+    "event_type",
+    (date_trunc('day', "confirmed_at" AT TIME ZONE 'UTC'))
+  )
   WHERE "confirmed_at" IS NOT NULL;
 
 -- ---------------------------------------------------------------------------
@@ -522,8 +553,8 @@ INSERT INTO "drizzle"."__drizzle_migrations" ("hash", "created_at")
 SELECT '26542c8d8683632c94f981d25f25d0505a6591c959425ccc8a086bca991ceeab', 1723881600000
 WHERE NOT EXISTS (SELECT 1 FROM "drizzle"."__drizzle_migrations" WHERE hash = '26542c8d8683632c94f981d25f25d0505a6591c959425ccc8a086bca991ceeab');
 INSERT INTO "drizzle"."__drizzle_migrations" ("hash", "created_at")
-SELECT '79cf972fccd3bcca6f91c45b6d460c81493a033c3a17c763fc0f793a07a3e586', 1723968000000
-WHERE NOT EXISTS (SELECT 1 FROM "drizzle"."__drizzle_migrations" WHERE hash = '79cf972fccd3bcca6f91c45b6d460c81493a033c3a17c763fc0f793a07a3e586');
+SELECT '150d5b1100ffc6b3ebf1854642023c60e87c22fc1cfeb080f2f5667ec54c2ace', 1723968000000
+WHERE NOT EXISTS (SELECT 1 FROM "drizzle"."__drizzle_migrations" WHERE hash = '150d5b1100ffc6b3ebf1854642023c60e87c22fc1cfeb080f2f5667ec54c2ace');
 
 -- ========== SEED: providers ==========
 INSERT INTO "providers" ("name", "slug", "domain") VALUES
