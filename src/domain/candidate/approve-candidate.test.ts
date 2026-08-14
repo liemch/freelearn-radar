@@ -30,6 +30,12 @@ vi.mock("@/db/repositories/provider-repository", () => ({
   listProviders: (...args: unknown[]) => listProviders(...args),
 }));
 
+// No policies, so these cases exercise the evidence/AI branch of certificate
+// resolution. Policy precedence itself is covered in provider-policy.test.ts.
+vi.mock("@/db/repositories/provider-policy-repository", () => ({
+  listProviderPolicyRules: vi.fn().mockResolvedValue([]),
+}));
+
 vi.mock("@/db/repositories/verification-repository", () => ({
   createVerification: vi.fn().mockResolvedValue({ id: "ver-1" }),
 }));

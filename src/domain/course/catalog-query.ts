@@ -1,3 +1,4 @@
+import { isEligibleForFreeLists } from "@/domain/course/free-durability";
 import type {
   CertificateType,
   CourseLevel,
@@ -142,15 +143,24 @@ const CERTS = new Set<CertificateType>([
   "UNKNOWN",
 ]);
 
-const PRICES = new Set<PriceType>([
-  "FREE_FULL",
-  "FREE_AUDIT",
-  "FREE_WITH_COUPON",
-  "TEMPORARILY_FREE",
-  "FREE_TRIAL",
-  "PAID",
-  "UNKNOWN",
-]);
+/**
+ * Price values a public visitor may filter by. FREE_TRIAL and PAID are absent by
+ * design (§66.4) — a hand-typed ?price=FREE_TRIAL is dropped here rather than
+ * rendering a free-labelled page with zero results.
+ */
+const PRICES = new Set<PriceType>(
+  (
+    [
+      "FREE_FULL",
+      "FREE_AUDIT",
+      "FREE_WITH_COUPON",
+      "TEMPORARILY_FREE",
+      "FREE_TRIAL",
+      "PAID",
+      "UNKNOWN",
+    ] as const
+  ).filter(isEligibleForFreeLists),
+);
 
 export function buildCatalogQuery(searchParams: URLSearchParams): CatalogFilters {
   const levelRaw = searchParams.get("level");

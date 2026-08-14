@@ -9,6 +9,7 @@ import {
   buildCatalogConditions,
   sortExpression,
 } from "@/db/repositories/course-repository";
+import { buildCatalogQuery } from "@/domain/course/catalog-query";
 
 /**
  * Generates the real catalog SQL without executing it. `postgres()` does not open a
@@ -93,9 +94,45 @@ describe("catalog search", () => {
     expect(params).toEqual(expect.arrayContaining(["FREE_TRIAL", "PAID"]));
   });
 
-  it("does not apply free-list exclusion when priceType is explicit", () => {
+  // Regression: the exclusion used to be an `else if`, so any explicit ?price=
+  // disabled it and /free-courses/ai?price=FREE_TRIAL listed trials as free (§66.4).
+  it("keeps the free-list exclusion even when priceType is explicit", () => {
     const { sql, params } = catalogSql({ priceType: "FREE_TRIAL" });
-    expect(params).toContain("FREE_TRIAL");
+    expect(sql.toLowerCase()).toMatch(/not in/i);
+    expect(params).toEqual(expect.arrayContaining(["FREE_TRIAL", "PAID"]));
+  });
+
+  it("still narrows to an allowed explicit priceType", () => {
+    const { sql, params } = catalogSql({ priceType: "FREE_AUDIT" });
+    expect(params).toContain("FREE_AUDIT");
+    expect(sql.toLowerCase()).toMatch(/not in/i);
+  });
+
+  it("drops the free-list exclusion for admin (publishedOnly: false)", () => {
+    const conditions = buildCatalogConditions(
+      { priceType: "PAID" },
+      { publishedOnly: false },
+    );
+    const { sql } = db
+      .select({ course: courses })
+      .from(courses)
+      .where(and(...conditions))
+      .toSQL();
+
     expect(sql.toLowerCase()).not.toMatch(/not in/i);
+  });
+});
+
+describe("public price filter parsing", () => {
+  it.each(["FREE_TRIAL", "PAID"])("ignores ?price=%s", (price) => {
+    const filters = buildCatalogQuery(new URLSearchParams({ price }));
+    expect(filters.priceType).toBeUndefined();
+  });
+
+  it("accepts a genuinely free price filter", () => {
+    const filters = buildCatalogQuery(
+      new URLSearchParams({ price: "FREE_AUDIT" }),
+    );
+    expect(filters.priceType).toBe("FREE_AUDIT");
   });
 });

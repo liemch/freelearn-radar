@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 
 import {
+  assertCertificateResolved,
   assertPriceTypeAllowed,
   resolveCertificateWithPolicy,
   SEED_PROVIDER_POLICIES,
@@ -136,5 +137,100 @@ describe("assertPriceTypeAllowed", () => {
   it("allows other price types from any source", () => {
     expect(() => assertPriceTypeAllowed("AI", "FREE_FULL")).not.toThrow();
     expect(() => assertPriceTypeAllowed("SEARCH", "FREE_TRIAL")).not.toThrow();
+  });
+});
+
+describe("database-backed policies (§66.2)", () => {
+  const evidenceText = "Enroll now. Certificate details are not stated here.";
+
+  it("lets a DB policy govern instead of the hardcoded seed set", () => {
+    // Seed says udemy + FREE_FULL → NO_CERTIFICATE. An operator editing the
+    // provider_policies row must be able to change that outcome.
+    const resolved = resolveCertificateWithPolicy({
+      providerSlug: "udemy",
+      priceType: "FREE_FULL",
+      evidenceText,
+      policies: [
+        {
+          providerSlug: "udemy",
+          priceType: "FREE_FULL",
+          certificateType: "FREE_CERTIFICATE",
+          active: true,
+        },
+      ],
+    });
+
+    expect(resolved.certificateType).toBe("FREE_CERTIFICATE");
+    expect(resolved.matchedSignals).toContain("provider_policy");
+  });
+
+  it("ignores a policy whose effective_from is in the future", () => {
+    const resolved = resolveCertificateWithPolicy({
+      providerSlug: "udemy",
+      priceType: "FREE_FULL",
+      evidenceText,
+      now: new Date("2026-01-01T00:00:00Z"),
+      policies: [
+        {
+          providerSlug: "udemy",
+          priceType: "FREE_FULL",
+          certificateType: "FREE_CERTIFICATE",
+          effectiveFrom: new Date("2026-06-01T00:00:00Z"),
+          active: true,
+        },
+      ],
+    });
+
+    expect(resolved.matchedSignals).not.toContain("provider_policy");
+  });
+
+  it("applies a policy once its effective_from has passed", () => {
+    const resolved = resolveCertificateWithPolicy({
+      providerSlug: "udemy",
+      priceType: "FREE_FULL",
+      evidenceText,
+      now: new Date("2026-07-01T00:00:00Z"),
+      policies: [
+        {
+          providerSlug: "udemy",
+          priceType: "FREE_FULL",
+          certificateType: "FREE_CERTIFICATE",
+          effectiveFrom: new Date("2026-06-01T00:00:00Z"),
+          active: true,
+        },
+      ],
+    });
+
+    expect(resolved.certificateType).toBe("FREE_CERTIFICATE");
+  });
+
+  it("resolves the audit certificate for Coursera and edX from seed policy", () => {
+    for (const slug of ["coursera", "edx"]) {
+      const resolved = resolveCertificateWithPolicy({
+        providerSlug: slug,
+        priceType: "FREE_AUDIT",
+        evidenceText,
+      });
+
+      expect(resolved.certificateType).toBe("PAID_CERTIFICATE");
+    }
+  });
+});
+
+describe("assertCertificateResolved", () => {
+  it("rejects FREE_AUDIT paired with an UNKNOWN certificate", () => {
+    expect(() => assertCertificateResolved("FREE_AUDIT", "UNKNOWN")).toThrow(
+      /FREE_AUDIT/,
+    );
+  });
+
+  it("accepts FREE_AUDIT once the certificate is known", () => {
+    expect(() =>
+      assertCertificateResolved("FREE_AUDIT", "PAID_CERTIFICATE"),
+    ).not.toThrow();
+  });
+
+  it("leaves other price types alone", () => {
+    expect(() => assertCertificateResolved("FREE_FULL", "UNKNOWN")).not.toThrow();
   });
 });

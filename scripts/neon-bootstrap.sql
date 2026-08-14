@@ -1,6 +1,10 @@
 -- FreeLearn Radar — manual bootstrap for Neon SQL Editor (FALLBACK ONLY)
 --
--- Prefer automated deploy instead:
+-- GENERATED FILE — do not edit by hand.
+-- Regenerate with: npm run db:bootstrap:generate
+-- Source of truth: drizzle/*.sql (ordered by drizzle/meta/_journal.json)
+--
+-- Prefer the automated deploy instead:
 --   vercel-build runs `db:migrate:run` + `db:seed` on each Vercel deploy (idempotent).
 --
 -- Use this file only when:
@@ -8,8 +12,9 @@
 --   - you cannot deploy and need a one-shot SQL paste in Neon SQL Editor.
 --
 -- Neon SQL Editor: paste the ENTIRE file → Run once (not line by line).
+-- Afterwards run `npm run db:seed` to load providers, categories, and queries.
 
--- ========== MIGRATIONS (0000) ==========
+-- ========== MIGRATION 0000_initial_schema ==========
 CREATE TYPE "public"."user_role" AS ENUM('ADMIN', 'EDITOR');
 CREATE TYPE "public"."course_status" AS ENUM('DRAFT', 'PUBLISHED', 'EXPIRED', 'UNAVAILABLE', 'ARCHIVED');
 CREATE TYPE "public"."price_type" AS ENUM('FREE_FULL', 'FREE_AUDIT', 'FREE_WITH_COUPON', 'TEMPORARILY_FREE', 'FREE_TRIAL', 'PAID', 'UNKNOWN');
@@ -20,7 +25,7 @@ CREATE TYPE "public"."source_type" AS ENUM('SEARCH', 'MANUAL');
 CREATE TYPE "public"."verification_status" AS ENUM('PENDING', 'VERIFIED', 'FAILED', 'EXPIRED');
 CREATE TYPE "public"."verification_method" AS ENUM('SEARCH', 'PAGE_METADATA', 'AI', 'MANUAL');
 
-CREATE TABLE IF NOT EXISTS "users" (
+CREATE TABLE "users" (
   "id" uuid PRIMARY KEY DEFAULT gen_random_uuid() NOT NULL,
   "email" text NOT NULL,
   "name" text NOT NULL,
@@ -30,7 +35,7 @@ CREATE TABLE IF NOT EXISTS "users" (
   "updated_at" timestamp with time zone DEFAULT now() NOT NULL
 );
 
-CREATE TABLE IF NOT EXISTS "providers" (
+CREATE TABLE "providers" (
   "id" uuid PRIMARY KEY DEFAULT gen_random_uuid() NOT NULL,
   "name" text NOT NULL,
   "slug" text NOT NULL,
@@ -43,14 +48,14 @@ CREATE TABLE IF NOT EXISTS "providers" (
   "updated_at" timestamp with time zone DEFAULT now() NOT NULL
 );
 
-CREATE TABLE IF NOT EXISTS "categories" (
+CREATE TABLE "categories" (
   "id" uuid PRIMARY KEY DEFAULT gen_random_uuid() NOT NULL,
   "name" text NOT NULL,
   "slug" text NOT NULL,
   "description" text
 );
 
-CREATE TABLE IF NOT EXISTS "courses" (
+CREATE TABLE "courses" (
   "id" uuid PRIMARY KEY DEFAULT gen_random_uuid() NOT NULL,
   "slug" text NOT NULL,
   "title" text NOT NULL,
@@ -81,13 +86,13 @@ CREATE TABLE IF NOT EXISTS "courses" (
   "updated_at" timestamp with time zone DEFAULT now() NOT NULL
 );
 
-CREATE TABLE IF NOT EXISTS "course_categories" (
+CREATE TABLE "course_categories" (
   "course_id" uuid NOT NULL,
   "category_id" uuid NOT NULL,
   CONSTRAINT "course_categories_course_id_category_id_pk" PRIMARY KEY("course_id","category_id")
 );
 
-CREATE TABLE IF NOT EXISTS "course_candidates" (
+CREATE TABLE "course_candidates" (
   "id" uuid PRIMARY KEY DEFAULT gen_random_uuid() NOT NULL,
   "source_type" "source_type" DEFAULT 'SEARCH' NOT NULL,
   "search_query" text,
@@ -104,14 +109,10 @@ CREATE TABLE IF NOT EXISTS "course_candidates" (
   "analyzed_at" timestamp with time zone,
   "approved_at" timestamp with time zone,
   "rejected_at" timestamp with time zone,
-  "error_message" text,
-  "source_evidence_json" jsonb,
-  "source_fetched_at" timestamp with time zone,
-  "source_final_url" text,
-  "source_image_url" text
+  "error_message" text
 );
 
-CREATE TABLE IF NOT EXISTS "course_verifications" (
+CREATE TABLE "course_verifications" (
   "id" uuid PRIMARY KEY DEFAULT gen_random_uuid() NOT NULL,
   "course_id" uuid NOT NULL,
   "status" "verification_status" DEFAULT 'PENDING' NOT NULL,
@@ -123,7 +124,7 @@ CREATE TABLE IF NOT EXISTS "course_verifications" (
   "verification_method" "verification_method" NOT NULL
 );
 
-CREATE TABLE IF NOT EXISTS "discovery_queries" (
+CREATE TABLE "discovery_queries" (
   "id" uuid PRIMARY KEY DEFAULT gen_random_uuid() NOT NULL,
   "provider" text NOT NULL,
   "category" text NOT NULL,
@@ -135,7 +136,7 @@ CREATE TABLE IF NOT EXISTS "discovery_queries" (
   "failure_count" integer DEFAULT 0 NOT NULL
 );
 
-CREATE TABLE IF NOT EXISTS "outbound_clicks" (
+CREATE TABLE "outbound_clicks" (
   "id" uuid PRIMARY KEY DEFAULT gen_random_uuid() NOT NULL,
   "course_id" uuid NOT NULL,
   "provider_id" uuid NOT NULL,
@@ -144,113 +145,65 @@ CREATE TABLE IF NOT EXISTS "outbound_clicks" (
   "clicked_at" timestamp with time zone DEFAULT now() NOT NULL
 );
 
-DO $$ BEGIN
-  ALTER TABLE "courses" ADD CONSTRAINT "courses_provider_id_providers_id_fk" FOREIGN KEY ("provider_id") REFERENCES "public"."providers"("id") ON DELETE restrict ON UPDATE no action;
-EXCEPTION WHEN duplicate_object THEN NULL; END $$;
-DO $$ BEGIN
-  ALTER TABLE "course_categories" ADD CONSTRAINT "course_categories_course_id_courses_id_fk" FOREIGN KEY ("course_id") REFERENCES "public"."courses"("id") ON DELETE cascade ON UPDATE no action;
-EXCEPTION WHEN duplicate_object THEN NULL; END $$;
-DO $$ BEGIN
-  ALTER TABLE "course_categories" ADD CONSTRAINT "course_categories_category_id_categories_id_fk" FOREIGN KEY ("category_id") REFERENCES "public"."categories"("id") ON DELETE cascade ON UPDATE no action;
-EXCEPTION WHEN duplicate_object THEN NULL; END $$;
-DO $$ BEGIN
-  ALTER TABLE "course_verifications" ADD CONSTRAINT "course_verifications_course_id_courses_id_fk" FOREIGN KEY ("course_id") REFERENCES "public"."courses"("id") ON DELETE cascade ON UPDATE no action;
-EXCEPTION WHEN duplicate_object THEN NULL; END $$;
-DO $$ BEGIN
-  ALTER TABLE "outbound_clicks" ADD CONSTRAINT "outbound_clicks_course_id_courses_id_fk" FOREIGN KEY ("course_id") REFERENCES "public"."courses"("id") ON DELETE cascade ON UPDATE no action;
-EXCEPTION WHEN duplicate_object THEN NULL; END $$;
-DO $$ BEGIN
-  ALTER TABLE "outbound_clicks" ADD CONSTRAINT "outbound_clicks_provider_id_providers_id_fk" FOREIGN KEY ("provider_id") REFERENCES "public"."providers"("id") ON DELETE restrict ON UPDATE no action;
-EXCEPTION WHEN duplicate_object THEN NULL; END $$;
+ALTER TABLE "courses" ADD CONSTRAINT "courses_provider_id_providers_id_fk" FOREIGN KEY ("provider_id") REFERENCES "public"."providers"("id") ON DELETE restrict ON UPDATE no action;
+ALTER TABLE "course_categories" ADD CONSTRAINT "course_categories_course_id_courses_id_fk" FOREIGN KEY ("course_id") REFERENCES "public"."courses"("id") ON DELETE cascade ON UPDATE no action;
+ALTER TABLE "course_categories" ADD CONSTRAINT "course_categories_category_id_categories_id_fk" FOREIGN KEY ("category_id") REFERENCES "public"."categories"("id") ON DELETE cascade ON UPDATE no action;
+ALTER TABLE "course_verifications" ADD CONSTRAINT "course_verifications_course_id_courses_id_fk" FOREIGN KEY ("course_id") REFERENCES "public"."courses"("id") ON DELETE cascade ON UPDATE no action;
+ALTER TABLE "outbound_clicks" ADD CONSTRAINT "outbound_clicks_course_id_courses_id_fk" FOREIGN KEY ("course_id") REFERENCES "public"."courses"("id") ON DELETE cascade ON UPDATE no action;
+ALTER TABLE "outbound_clicks" ADD CONSTRAINT "outbound_clicks_provider_id_providers_id_fk" FOREIGN KEY ("provider_id") REFERENCES "public"."providers"("id") ON DELETE restrict ON UPDATE no action;
 
-CREATE UNIQUE INDEX IF NOT EXISTS "users_email_unique" ON "users" USING btree ("email");
-CREATE UNIQUE INDEX IF NOT EXISTS "providers_slug_unique" ON "providers" USING btree ("slug");
-CREATE UNIQUE INDEX IF NOT EXISTS "providers_domain_unique" ON "providers" USING btree ("domain");
-CREATE UNIQUE INDEX IF NOT EXISTS "categories_slug_unique" ON "categories" USING btree ("slug");
-CREATE UNIQUE INDEX IF NOT EXISTS "courses_slug_unique" ON "courses" USING btree ("slug");
-CREATE UNIQUE INDEX IF NOT EXISTS "courses_canonical_url_unique" ON "courses" USING btree ("canonical_url");
-CREATE UNIQUE INDEX IF NOT EXISTS "course_candidates_canonical_url_unique" ON "course_candidates" USING btree ("canonical_url");
+CREATE UNIQUE INDEX "users_email_unique" ON "users" USING btree ("email");
+CREATE UNIQUE INDEX "providers_slug_unique" ON "providers" USING btree ("slug");
+CREATE UNIQUE INDEX "providers_domain_unique" ON "providers" USING btree ("domain");
+CREATE UNIQUE INDEX "categories_slug_unique" ON "categories" USING btree ("slug");
+CREATE UNIQUE INDEX "courses_slug_unique" ON "courses" USING btree ("slug");
+CREATE UNIQUE INDEX "courses_canonical_url_unique" ON "courses" USING btree ("canonical_url");
+CREATE UNIQUE INDEX "course_candidates_canonical_url_unique" ON "course_candidates" USING btree ("canonical_url");
 
--- ========== MIGRATIONS (0001) ==========
-CREATE INDEX IF NOT EXISTS "courses_status_published_at_idx" ON "courses" ("status", "published_at" DESC NULLS LAST);
-CREATE INDEX IF NOT EXISTS "courses_status_quality_score_idx" ON "courses" ("status", "quality_score" DESC NULLS LAST);
-CREATE INDEX IF NOT EXISTS "course_candidates_discovery_status_discovered_at_idx" ON "course_candidates" ("discovery_status", "discovered_at" DESC);
-CREATE INDEX IF NOT EXISTS "outbound_clicks_course_id_idx" ON "outbound_clicks" ("course_id");
-CREATE INDEX IF NOT EXISTS "outbound_clicks_provider_id_idx" ON "outbound_clicks" ("provider_id");
-CREATE INDEX IF NOT EXISTS "outbound_clicks_clicked_at_idx" ON "outbound_clicks" ("clicked_at" DESC);
-CREATE INDEX IF NOT EXISTS "discovery_queries_enabled_next_run_at_idx" ON "discovery_queries" ("enabled", "next_run_at");
+-- ========== MIGRATION 0001_add_query_indexes ==========
+CREATE INDEX IF NOT EXISTS "courses_status_published_at_idx"
+  ON "courses" ("status", "published_at" DESC NULLS LAST);
 
--- ========== MIGRATIONS (0002) ==========
+CREATE INDEX IF NOT EXISTS "courses_status_quality_score_idx"
+  ON "courses" ("status", "quality_score" DESC NULLS LAST);
+
+CREATE INDEX IF NOT EXISTS "course_candidates_discovery_status_discovered_at_idx"
+  ON "course_candidates" ("discovery_status", "discovered_at" DESC);
+
+CREATE INDEX IF NOT EXISTS "outbound_clicks_course_id_idx"
+  ON "outbound_clicks" ("course_id");
+
+CREATE INDEX IF NOT EXISTS "outbound_clicks_provider_id_idx"
+  ON "outbound_clicks" ("provider_id");
+
+CREATE INDEX IF NOT EXISTS "outbound_clicks_clicked_at_idx"
+  ON "outbound_clicks" ("clicked_at" DESC);
+
+CREATE INDEX IF NOT EXISTS "discovery_queries_enabled_next_run_at_idx"
+  ON "discovery_queries" ("enabled", "next_run_at");
+
+-- ========== MIGRATION 0002_verification_evidence ==========
+-- M16: activate verification history evidence fields + lookup index
 ALTER TABLE "course_verifications" ADD COLUMN IF NOT EXISTS "evidence_json" jsonb DEFAULT '[]'::jsonb;
 ALTER TABLE "course_verifications" ADD COLUMN IF NOT EXISTS "notes" text;
 ALTER TABLE "course_verifications" ADD COLUMN IF NOT EXISTS "change_summary" text;
 CREATE INDEX IF NOT EXISTS "course_verifications_course_verified_idx" ON "course_verifications" ("course_id", "verified_at");
 
--- ========== DRIZZLE MIGRATION TRACKING ==========
-CREATE SCHEMA IF NOT EXISTS "drizzle";
-CREATE TABLE IF NOT EXISTS "drizzle"."__drizzle_migrations" (
-  id SERIAL PRIMARY KEY,
-  hash text NOT NULL,
-  created_at bigint
-);
-INSERT INTO "drizzle"."__drizzle_migrations" ("hash", "created_at")
-SELECT 'e19d994c15aa446daaa43ef9ceb49b4f1ef0157be7ba025e134df31abd0d2b5a', 1723449600000
-WHERE NOT EXISTS (SELECT 1 FROM "drizzle"."__drizzle_migrations" WHERE hash = 'e19d994c15aa446daaa43ef9ceb49b4f1ef0157be7ba025e134df31abd0d2b5a');
-INSERT INTO "drizzle"."__drizzle_migrations" ("hash", "created_at")
-SELECT '3a2f50159856b92acffc170a058e84004572120e37e215e0e2cc9560ec097d7f', 1723536000000
-WHERE NOT EXISTS (SELECT 1 FROM "drizzle"."__drizzle_migrations" WHERE hash = '3a2f50159856b92acffc170a058e84004572120e37e215e0e2cc9560ec097d7f');
-INSERT INTO "drizzle"."__drizzle_migrations" ("hash", "created_at")
-SELECT 'b633f43170c93e82a5543eeef2cf399bfa6e5663b4f336842d24a34b322970da', 1723622400000
-WHERE NOT EXISTS (SELECT 1 FROM "drizzle"."__drizzle_migrations" WHERE hash = 'b633f43170c93e82a5543eeef2cf399bfa6e5663b4f336842d24a34b322970da');
+-- ========== MIGRATION 0003_course_images ==========
+-- M18.2: course image metadata
+ALTER TABLE "courses" ADD COLUMN IF NOT EXISTS "image_source_url" text;
+ALTER TABLE "courses" ADD COLUMN IF NOT EXISTS "image_storage_url" text;
+ALTER TABLE "courses" ADD COLUMN IF NOT EXISTS "image_last_verified_at" timestamp with time zone;
+ALTER TABLE "courses" ADD COLUMN IF NOT EXISTS "image_policy" text DEFAULT 'REMOTE_ONLY';
 
--- ========== SEED: providers ==========
-INSERT INTO "providers" ("name", "slug", "domain") VALUES
-  ('Coursera', 'coursera', 'coursera.org'),
-  ('Udemy', 'udemy', 'udemy.com'),
-  ('edX', 'edx', 'edx.org'),
-  ('Microsoft Learn', 'microsoft-learn', 'learn.microsoft.com'),
-  ('freeCodeCamp', 'freecodecamp', 'freecodecamp.org'),
-  ('AWS', 'aws', 'aws.amazon.com'),
-  ('Google', 'google', 'developers.google.com'),
-  ('LinkedIn Learning', 'linkedin-learning', 'linkedin.com')
-ON CONFLICT ("slug") DO NOTHING;
+-- ========== MIGRATION 0004_candidate_source_fetch ==========
+-- M18.4: persist course source fetch evidence on candidates
+ALTER TABLE "course_candidates" ADD COLUMN IF NOT EXISTS "source_evidence_json" jsonb;
+ALTER TABLE "course_candidates" ADD COLUMN IF NOT EXISTS "source_fetched_at" timestamp with time zone;
+ALTER TABLE "course_candidates" ADD COLUMN IF NOT EXISTS "source_final_url" text;
+ALTER TABLE "course_candidates" ADD COLUMN IF NOT EXISTS "source_image_url" text;
 
--- ========== SEED: categories ==========
-INSERT INTO "categories" ("name", "slug", "description") VALUES
-  ('Artificial Intelligence', 'ai', 'Free artificial intelligence courses curated by FreeLearn Radar.'),
-  ('Programming', 'programming', 'Free programming courses curated by FreeLearn Radar.'),
-  ('Data Science', 'data-science', 'Free data science courses curated by FreeLearn Radar.'),
-  ('Cybersecurity', 'cybersecurity', 'Free cybersecurity courses curated by FreeLearn Radar.'),
-  ('Cloud', 'cloud', 'Free cloud courses curated by FreeLearn Radar.'),
-  ('DevOps', 'devops', 'Free devops courses curated by FreeLearn Radar.'),
-  ('Project Management', 'project-management', 'Free project management courses curated by FreeLearn Radar.'),
-  ('Product Management', 'product-management', 'Free product management courses curated by FreeLearn Radar.'),
-  ('Business', 'business', 'Free business courses curated by FreeLearn Radar.'),
-  ('Marketing', 'marketing', 'Free marketing courses curated by FreeLearn Radar.'),
-  ('Design', 'design', 'Free design courses curated by FreeLearn Radar.'),
-  ('Soft Skills', 'soft-skills', 'Free soft skills courses curated by FreeLearn Radar.')
-ON CONFLICT ("slug") DO NOTHING;
-
--- ========== SEED: discovery queries ==========
-INSERT INTO "discovery_queries" ("provider", "category", "query") VALUES
-  ('coursera', 'ai', 'site:coursera.org/learn "free" artificial intelligence course'),
-  ('udemy', 'programming', 'site:udemy.com/course "free" python course'),
-  ('edx', 'cybersecurity', 'site:edx.org/learn cybersecurity free course'),
-  ('microsoft-learn', 'cloud', 'site:learn.microsoft.com AI learning path'),
-  ('freecodecamp', 'data-science', 'site:freecodecamp.org learn data analysis');
-
--- ========== SEED: admin user ==========
--- Email: admin@example.com | Password: FreeLearnRadar2026!
-INSERT INTO "users" ("email", "name", "password_hash", "role")
-VALUES (
-  'admin@example.com',
-  'Admin',
-  '$2b$12$/RzasQ3Re0V3P9FzmgmxT.FzRI7ogGlrqzuTqrsLZK2xvw3vtgkLu',
-  'ADMIN'
-)
-ON CONFLICT ("email") DO NOTHING;
-
--- ========== M19 (0005) ==========
+-- ========== MIGRATION 0005_m19_coverage_truth_time ==========
 -- M19: coverage / truth / time schema foundation
 
 -- Extend existing enum
@@ -499,3 +452,120 @@ EXCEPTION WHEN duplicate_object THEN NULL; END $$;
 
 CREATE INDEX IF NOT EXISTS "api_usage_log_kind_created_at_idx" ON "api_usage_log" ("kind", "created_at");
 CREATE INDEX IF NOT EXISTS "api_usage_log_created_at_idx" ON "api_usage_log" ("created_at");
+
+-- ========== MIGRATION 0006_v12_remediation ==========
+-- v1.2 remediation (docs/V1_2_REMEDIATION_PLAN.md)
+-- Additive and idempotent: safe to re-run, no table rewrites, no data loss.
+
+-- ---------------------------------------------------------------------------
+-- R2.4 / DAT-01 — event idempotency at the database
+--
+-- Detection reads recent events and then inserts, with no transaction between
+-- the two, so two concurrent workers can both pass the 24h cooldown check before
+-- either commits. Deduplication must therefore be a constraint, not a
+-- convention: one confirmed event per course per type per UTC day.
+-- ---------------------------------------------------------------------------
+CREATE UNIQUE INDEX IF NOT EXISTS "course_price_events_dedupe_idx"
+  ON "course_price_events" ("course_id", "event_type", (date_trunc('day', "confirmed_at")))
+  WHERE "confirmed_at" IS NOT NULL;
+
+-- ---------------------------------------------------------------------------
+-- R3 / DAT-03 — tracker ordering
+--
+-- The public tracker orders by confirmed_at DESC; the existing composite stops
+-- at event_type.
+-- ---------------------------------------------------------------------------
+CREATE INDEX IF NOT EXISTS "course_price_events_course_type_confirmed_idx"
+  ON "course_price_events" ("course_id", "event_type", "confirmed_at" DESC);
+
+-- ---------------------------------------------------------------------------
+-- R2.6 / DAT-03 — watch token lookups
+--
+-- Confirmation and unsubscribe both look a token up directly. Without an index
+-- every click is a sequential scan.
+--
+-- NOTE: tokens are stored hashed from this release onward (SEC-02). Any token
+-- issued before this migration no longer validates. Price alerts have never been
+-- enabled in production (FEATURE_PRICE_ALERTS defaults off, EMAIL_DRY_RUN
+-- defaults true), so no delivered link is affected; if that assumption is wrong
+-- for a given deployment, affected subscribers simply re-subscribe.
+-- ---------------------------------------------------------------------------
+CREATE INDEX IF NOT EXISTS "course_watches_confirm_token_idx"
+  ON "course_watches" ("confirm_token");
+
+CREATE INDEX IF NOT EXISTS "course_watches_unsubscribe_token_idx"
+  ON "course_watches" ("unsubscribe_token");
+
+-- ========== DRIZZLE MIGRATION TRACKING ==========
+CREATE SCHEMA IF NOT EXISTS "drizzle";
+CREATE TABLE IF NOT EXISTS "drizzle"."__drizzle_migrations" (
+  id SERIAL PRIMARY KEY,
+  hash text NOT NULL,
+  created_at bigint
+);
+INSERT INTO "drizzle"."__drizzle_migrations" ("hash", "created_at")
+SELECT 'e19d994c15aa446daaa43ef9ceb49b4f1ef0157be7ba025e134df31abd0d2b5a', 1723449600000
+WHERE NOT EXISTS (SELECT 1 FROM "drizzle"."__drizzle_migrations" WHERE hash = 'e19d994c15aa446daaa43ef9ceb49b4f1ef0157be7ba025e134df31abd0d2b5a');
+INSERT INTO "drizzle"."__drizzle_migrations" ("hash", "created_at")
+SELECT '3a2f50159856b92acffc170a058e84004572120e37e215e0e2cc9560ec097d7f', 1723536000000
+WHERE NOT EXISTS (SELECT 1 FROM "drizzle"."__drizzle_migrations" WHERE hash = '3a2f50159856b92acffc170a058e84004572120e37e215e0e2cc9560ec097d7f');
+INSERT INTO "drizzle"."__drizzle_migrations" ("hash", "created_at")
+SELECT 'b633f43170c93e82a5543eeef2cf399bfa6e5663b4f336842d24a34b322970da', 1723622400000
+WHERE NOT EXISTS (SELECT 1 FROM "drizzle"."__drizzle_migrations" WHERE hash = 'b633f43170c93e82a5543eeef2cf399bfa6e5663b4f336842d24a34b322970da');
+INSERT INTO "drizzle"."__drizzle_migrations" ("hash", "created_at")
+SELECT 'df4a2645f3d2e18221448c5184f61ac3d169e6080225993cdf5fa5469d01c559', 1723708800000
+WHERE NOT EXISTS (SELECT 1 FROM "drizzle"."__drizzle_migrations" WHERE hash = 'df4a2645f3d2e18221448c5184f61ac3d169e6080225993cdf5fa5469d01c559');
+INSERT INTO "drizzle"."__drizzle_migrations" ("hash", "created_at")
+SELECT '59762599af669989db83bd79d34043bc41dc2e47b754e821646df04cc71d5d7d', 1723795200000
+WHERE NOT EXISTS (SELECT 1 FROM "drizzle"."__drizzle_migrations" WHERE hash = '59762599af669989db83bd79d34043bc41dc2e47b754e821646df04cc71d5d7d');
+INSERT INTO "drizzle"."__drizzle_migrations" ("hash", "created_at")
+SELECT '26542c8d8683632c94f981d25f25d0505a6591c959425ccc8a086bca991ceeab', 1723881600000
+WHERE NOT EXISTS (SELECT 1 FROM "drizzle"."__drizzle_migrations" WHERE hash = '26542c8d8683632c94f981d25f25d0505a6591c959425ccc8a086bca991ceeab');
+INSERT INTO "drizzle"."__drizzle_migrations" ("hash", "created_at")
+SELECT '79cf972fccd3bcca6f91c45b6d460c81493a033c3a17c763fc0f793a07a3e586', 1723968000000
+WHERE NOT EXISTS (SELECT 1 FROM "drizzle"."__drizzle_migrations" WHERE hash = '79cf972fccd3bcca6f91c45b6d460c81493a033c3a17c763fc0f793a07a3e586');
+
+-- ========== SEED: providers ==========
+INSERT INTO "providers" ("name", "slug", "domain") VALUES
+  ('Coursera', 'coursera', 'coursera.org'),
+  ('Udemy', 'udemy', 'udemy.com'),
+  ('edX', 'edx', 'edx.org'),
+  ('Microsoft Learn', 'microsoft-learn', 'learn.microsoft.com'),
+  ('freeCodeCamp', 'freecodecamp', 'freecodecamp.org'),
+  ('AWS', 'aws', 'aws.amazon.com'),
+  ('Google', 'google', 'developers.google.com'),
+  ('LinkedIn Learning', 'linkedin-learning', 'linkedin.com')
+ON CONFLICT ("slug") DO NOTHING;
+
+-- ========== SEED: categories ==========
+INSERT INTO "categories" ("name", "slug", "description") VALUES
+  ('Artificial Intelligence', 'ai', 'Free artificial intelligence courses curated by FreeLearn Radar.'),
+  ('Programming', 'programming', 'Free programming courses curated by FreeLearn Radar.'),
+  ('Data Science', 'data-science', 'Free data science courses curated by FreeLearn Radar.'),
+  ('Cybersecurity', 'cybersecurity', 'Free cybersecurity courses curated by FreeLearn Radar.'),
+  ('Cloud', 'cloud', 'Free cloud courses curated by FreeLearn Radar.'),
+  ('DevOps', 'devops', 'Free devops courses curated by FreeLearn Radar.'),
+  ('Project Management', 'project-management', 'Free project management courses curated by FreeLearn Radar.'),
+  ('Product Management', 'product-management', 'Free product management courses curated by FreeLearn Radar.'),
+  ('Business', 'business', 'Free business courses curated by FreeLearn Radar.'),
+  ('Marketing', 'marketing', 'Free marketing courses curated by FreeLearn Radar.'),
+  ('Design', 'design', 'Free design courses curated by FreeLearn Radar.'),
+  ('Soft Skills', 'soft-skills', 'Free soft skills courses curated by FreeLearn Radar.')
+ON CONFLICT ("slug") DO NOTHING;
+
+-- ========== SEED: discovery queries ==========
+-- Intentionally omitted. The query set is large and changes often; running
+-- `npm run db:seed` keeps it in step with src/db/seed/data.ts instead of
+-- drifting inside this file.
+
+-- ========== SEED: admin user ==========
+-- Email: admin@example.com | Password: FreeLearnRadar2026!
+-- Change this password immediately after first login.
+INSERT INTO "users" ("email", "name", "password_hash", "role")
+VALUES (
+  'admin@example.com',
+  'Admin',
+  '$2b$12$/RzasQ3Re0V3P9FzmgmxT.FzRI7ogGlrqzuTqrsLZK2xvw3vtgkLu',
+  'ADMIN'
+)
+ON CONFLICT ("email") DO NOTHING;

@@ -15,6 +15,8 @@ export type ProviderPolicyRule = {
   certificateType: CertificateType;
   evidenceUrl?: string | null;
   policyNote?: string | null;
+  /** A policy dated in the future does not yet govern classification (§66.2). */
+  effectiveFrom?: Date | null;
   active?: boolean;
 };
 
@@ -60,6 +62,25 @@ export const SEED_PROVIDER_POLICIES: ProviderPolicyRule[] = [
     policyNote: "freeCodeCamp issues free certificates on curriculum completion",
     active: true,
   },
+  {
+    providerSlug: "coursera",
+    priceType: "FREE_AUDIT",
+    certificateType: "PAID_CERTIFICATE",
+    evidenceUrl:
+      "https://www.coursera.support/s/article/209819033-Audit-a-course",
+    policyNote:
+      "Coursera audit gives free access to course content; the certificate requires payment",
+    active: true,
+  },
+  {
+    providerSlug: "edx",
+    priceType: "FREE_AUDIT",
+    certificateType: "PAID_CERTIFICATE",
+    evidenceUrl: "https://www.edx.org/verified-certificate",
+    policyNote:
+      "edX audit track gives free access to course content; the verified certificate requires payment",
+    active: true,
+  },
 ];
 
 /**
@@ -72,6 +93,27 @@ export function assertPriceTypeAllowed(
   if (priceType === "FREE_WITH_COUPON" && source !== "MANUAL") {
     throw new Error(
       `FREE_WITH_COUPON may only be set via MANUAL (got source=${source})`,
+    );
+  }
+}
+
+/**
+ * §66.4: an audit-model course always has a certificate story — either the
+ * certificate is paid, or there is none. Leaving it UNKNOWN publishes a page that
+ * cannot answer the question a visitor came to ask, so the value must be resolved
+ * before the pairing is written.
+ *
+ * Deliberately not auto-filled: guessing PAID_CERTIFICATE for an unrecognised
+ * provider would assert a fact the system has no evidence for. Provider policy
+ * covers the known cases; everything else is escalated to a human.
+ */
+export function assertCertificateResolved(
+  priceType: PriceType,
+  certificateType: CertificateType,
+): void {
+  if (priceType === "FREE_AUDIT" && certificateType === "UNKNOWN") {
+    throw new Error(
+      "FREE_AUDIT requires a resolved certificate type (§66.4); set it explicitly or add a provider policy",
     );
   }
 }
@@ -91,9 +133,13 @@ export function resolveCertificateWithPolicy(input: {
   aiSuggestion?: CertificateType | null;
   aiConfidence?: number | null;
   policies?: ProviderPolicyRule[];
+  now?: Date;
 }): CertificateClassification {
+  const now = input.now ?? new Date();
   const policies = (input.policies ?? SEED_PROVIDER_POLICIES).filter(
-    (policy) => policy.active !== false,
+    (policy) =>
+      policy.active !== false &&
+      (!policy.effectiveFrom || policy.effectiveFrom <= now),
   );
   const slug = (input.providerSlug ?? "").toLowerCase().trim();
   const priceType = input.priceType ?? null;

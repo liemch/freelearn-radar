@@ -1,4 +1,4 @@
-import { and, asc, desc, eq, gte, sql } from "drizzle-orm";
+import { and, asc, desc, eq, gte, notInArray, sql } from "drizzle-orm";
 
 import type { Db } from "@/db";
 import {
@@ -8,6 +8,7 @@ import {
   topicTags,
   type TopicTag,
 } from "@/db/schema";
+import { FREE_LIST_EXCLUDED_PRICE_TYPES } from "@/domain/course/free-durability";
 import { courseAnalysisSchema } from "@/services/ai/ai-provider";
 import { slugify } from "@/lib/slug";
 
@@ -192,7 +193,12 @@ export async function listPublishedCoursesForTopicTag(
     .innerJoin(courses, eq(courseTopicTags.courseId, courses.id))
     .innerJoin(providers, eq(courses.providerId, providers.id))
     .where(
-      and(eq(courseTopicTags.tagId, tagId), eq(courses.status, "PUBLISHED")),
+      and(
+        eq(courseTopicTags.tagId, tagId),
+        eq(courses.status, "PUBLISHED"),
+        // Topic pages are free-labelled surfaces (§66.4).
+        notInArray(courses.priceType, [...FREE_LIST_EXCLUDED_PRICE_TYPES]),
+      ),
     )
     .orderBy(desc(courses.qualityScore), desc(courses.publishedAt))
     .limit(limit);

@@ -7,6 +7,8 @@ export type EmailInput = {
   html: string;
   text?: string;
   tags?: string[];
+  /** RFC 8058 one-click unsubscribe; required for good inbox placement. */
+  listUnsubscribeUrl?: string;
 };
 
 export type EmailSendResult = {
@@ -36,12 +38,20 @@ export class ResendEmailProvider implements EmailProvider {
   constructor(
     private readonly apiKey: string,
     private readonly from: string,
+    private readonly timeoutMs: number,
+    private readonly replyTo: string | null = null,
   ) {}
 
   async sendEmail(input: EmailInput): Promise<EmailSendResult> {
+    // Every other outbound dependency is bounded; a hung connection here would
+    // otherwise hold the monitor cron until the platform kills it.
+    const controller = new AbortController();
+    const timer = setTimeout(() => controller.abort(), this.timeoutMs);
+
     try {
       const response = await fetch("https://api.resend.com/emails", {
         method: "POST",
+        signal: controller.signal,
         headers: {
           Authorization: `Bearer ${this.apiKey}`,
           "Content-Type": "application/json",
@@ -49,10 +59,19 @@ export class ResendEmailProvider implements EmailProvider {
         body: JSON.stringify({
           from: this.from,
           to: [input.to],
+          ...(this.replyTo ? { reply_to: this.replyTo } : {}),
           subject: input.subject,
           html: input.html,
           text: input.text,
           tags: input.tags?.map((name) => ({ name })),
+          ...(input.listUnsubscribeUrl
+            ? {
+                headers: {
+                  "List-Unsubscribe": `<${input.listUnsubscribeUrl}>`,
+                  "List-Unsubscribe-Post": "List-Unsubscribe=One-Click",
+                },
+              }
+            : {}),
         }),
       });
 
@@ -69,8 +88,15 @@ export class ResendEmailProvider implements EmailProvider {
     } catch (error) {
       return {
         ok: false,
-        error: error instanceof Error ? error.message : "send failed",
+        error:
+          error instanceof Error && error.name === "AbortError"
+            ? `Resend timed out after ${this.timeoutMs}ms`
+            : error instanceof Error
+              ? error.message
+              : "send failed",
       };
+    } finally {
+      clearTimeout(timer);
     }
   }
 }
@@ -92,7 +118,12 @@ export function getEmailProvider(): EmailProvider {
   }
 
   const from = env.EMAIL_FROM || "alerts@freelearnradar.com";
-  cached = new ResendEmailProvider(env.RESEND_API_KEY, from);
+  cached = new ResendEmailProvider(
+    env.RESEND_API_KEY,
+    from,
+    env.EMAIL_REQUEST_TIMEOUT_MS,
+    env.EMAIL_REPLY_TO || null,
+  );
   return cached;
 }
 

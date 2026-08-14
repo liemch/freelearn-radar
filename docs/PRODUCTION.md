@@ -21,7 +21,7 @@ NVIDIA_MODEL=nvidia/nemotron-3-super-120b-a12b
 
 CRON_SECRET=                 # required for /api/cron/discover
 
-DISCOVERY_QUERY_LIMIT=15
+DISCOVERY_QUERY_LIMIT=25
 DISCOVERY_RESULT_LIMIT=5
 AI_ANALYSIS_LIMIT=30
 ```

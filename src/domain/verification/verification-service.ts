@@ -14,6 +14,7 @@ import {
   assertPriceTypeAllowed,
   resolveCertificateWithPolicy,
   type PriceTypeSource,
+  type ProviderPolicyRule,
 } from "@/domain/verification/provider-policy";
 import { resolvePriceType } from "@/domain/verification/free-status";
 import { assessCourseTrust } from "@/domain/verification/trust";
@@ -75,6 +76,8 @@ export function produceVerificationResult(
   course: CourseVerificationSnapshot,
   evidenceInput: VerificationEvidenceInput,
   now = new Date(),
+  /** DB-backed policies; omitted in unit tests, which fall back to the seed set. */
+  policies?: ProviderPolicyRule[],
 ): VerificationResult {
   const method = evidenceInput.method ?? "PAGE_METADATA";
   const text = evidenceInput.text ?? "";
@@ -127,6 +130,8 @@ export function produceVerificationResult(
     evidenceText: text,
     aiSuggestion: evidenceInput.aiCertificateType,
     aiConfidence: evidenceInput.aiConfidence,
+    policies,
+    now,
   });
 
   const availability = evidenceInput.availability ?? "UNKNOWN";

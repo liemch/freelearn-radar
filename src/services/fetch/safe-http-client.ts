@@ -5,6 +5,8 @@ export type SafeHttpFetchOptions = {
   maxRedirects?: number;
   maxBytes?: number;
   accept?: string;
+  /** Overridden in production by MONITOR_USER_AGENT so operators can be reached. */
+  userAgent?: string;
   fetchImpl?: typeof fetch;
 };
 
@@ -32,6 +34,8 @@ export type SafeHttpFetchResult = SafeHttpFetchSuccess | SafeHttpFetchFailure;
 const DEFAULT_TIMEOUT_MS = 10_000;
 const DEFAULT_MAX_REDIRECTS = 5;
 const DEFAULT_MAX_BYTES = 512 * 1024;
+const DEFAULT_USER_AGENT =
+  "FreeLearnRadarBot/1.0 (+https://freelearnradar.com/about; course availability monitor)";
 
 function isRedirect(status: number): boolean {
   return status === 301 || status === 302 || status === 303 || status === 307 || status === 308;
@@ -50,6 +54,7 @@ export async function safeHttpGet(
   const maxBytes = options.maxBytes ?? DEFAULT_MAX_BYTES;
   const fetchImpl = options.fetchImpl ?? fetch;
   const accept = options.accept ?? "text/html,application/xhtml+xml;q=0.9,*/*;q=0.1";
+  const userAgent = options.userAgent ?? DEFAULT_USER_AGENT;
   const fetchedAt = new Date();
   const redirectChain: string[] = [];
 
@@ -76,7 +81,7 @@ export async function safeHttpGet(
         signal: controller.signal,
         headers: {
           Accept: accept,
-          "User-Agent": "FreeLearnRadarSourceFetcher/1.0 (+https://freelearnradar.local)",
+          "User-Agent": userAgent,
         },
       });
 

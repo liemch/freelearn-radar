@@ -235,6 +235,7 @@ export async function observeCourse(
       timeoutMs: options.timeoutMs ?? env.SOURCE_FETCH_TIMEOUT_MS,
       maxRedirects: options.maxRedirects ?? env.SOURCE_MAX_REDIRECTS,
       maxBytes: options.maxBytes ?? env.SOURCE_MAX_RESPONSE_BYTES,
+      userAgent: env.MONITOR_USER_AGENT,
       fetchImpl: options.fetchImpl,
     });
   }
@@ -261,7 +262,7 @@ export async function observeCourse(
     priceType: classifications.priceType,
     priceAmount: null,
     currency: null,
-    observedRegion: options.observedRegion ?? null,
+    observedRegion: options.observedRegion ?? env.MONITOR_OBSERVED_REGION,
     certificateType: classifications.certificateType,
     enrollmentOpen: null,
     evidenceUrl: result.finalUrl ?? course.canonicalUrl,

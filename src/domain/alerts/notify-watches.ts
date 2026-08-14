@@ -2,6 +2,7 @@ import { and, eq } from "drizzle-orm";
 
 import type { Db } from "@/db";
 import { courseWatches, courses, type CoursePriceEvent } from "@/db/schema";
+import { deriveUnsubscribeToken } from "@/domain/alerts/watch-token";
 import { getEmailProvider } from "@/services/email/email-provider";
 import { getServerEnv } from "@/lib/env";
 import { logger } from "@/lib/logger";
@@ -45,6 +46,9 @@ export async function notifyWatchesForEvents(
 
   const email = getEmailProvider();
   const appUrl = env.APP_URL.replace(/\/$/, "");
+  // A single popular course going free must not be able to exhaust the whole
+  // sending quota in one batch.
+  let remainingBudget = env.EMAIL_DAILY_BUDGET;
 
   for (const event of wentFree) {
     const watches = await db
@@ -75,11 +79,21 @@ export async function notifyWatchesForEvents(
 
     for (const watch of watches) {
       summary.considered += 1;
+
+      if (remainingBudget <= 0) {
+        summary.skipped += 1;
+        logger.warn("alerts.notify.budget_exhausted", {
+          watchId: watch.id,
+          budget: env.EMAIL_DAILY_BUDGET,
+        });
+        continue;
+      }
+
       const locale = (watch.locale === "vi" ? "vi" : "en") as Locale;
       const courseUrl = `${appUrl}${localePath(locale, `/course/${course.slug}`)}`;
-      const unsubUrl = watch.unsubscribeToken
-        ? `${appUrl}/api/watches/unsubscribe?token=${encodeURIComponent(watch.unsubscribeToken)}`
-        : null;
+      const unsubUrl = `${appUrl}/api/watches/unsubscribe?w=${encodeURIComponent(
+        watch.id,
+      )}&t=${deriveUnsubscribeToken(watch.id)}`;
 
       const subject =
         locale === "vi"
@@ -88,12 +102,8 @@ export async function notifyWatchesForEvents(
 
       const text =
         locale === "vi"
-          ? `Khóa học “${course.title}” vừa được đánh dấu miễn phí.\nXem: ${courseUrl}${
-              unsubUrl ? `\nHủy đăng ký: ${unsubUrl}` : ""
-            }`
-          : `“${course.title}” was just marked free again.\nView: ${courseUrl}${
-              unsubUrl ? `\nUnsubscribe: ${unsubUrl}` : ""
-            }`;
+          ? `Khóa học “${course.title}” vừa được đánh dấu miễn phí.\nXem: ${courseUrl}\nHủy đăng ký: ${unsubUrl}`
+          : `“${course.title}” was just marked free again.\nView: ${courseUrl}\nUnsubscribe: ${unsubUrl}`;
 
       const html = `<p>${text.replace(/\n/g, "<br/>")}</p>`;
 
@@ -104,6 +114,7 @@ export async function notifyWatchesForEvents(
           html,
           text,
           tags: ["COURSE_WENT_FREE"],
+          listUnsubscribeUrl: unsubUrl,
         });
 
         if (!result.ok) {
@@ -124,6 +135,7 @@ export async function notifyWatchesForEvents(
           .where(eq(courseWatches.id, watch.id));
 
         summary.sent += 1;
+        remainingBudget -= 1;
       } catch (error) {
         summary.errors += 1;
         logger.warn("alerts.notify.error", {

@@ -25,7 +25,7 @@ const baseEnvSchema = z.object({
   NVIDIA_MODEL: optionalString,
   AI_REQUEST_TIMEOUT_MS: z.coerce.number().int().positive().default(45_000),
   TAVILY_API_KEY: optionalString,
-  DISCOVERY_QUERY_LIMIT: z.coerce.number().int().positive().default(15),
+  DISCOVERY_QUERY_LIMIT: z.coerce.number().int().positive().max(200).default(25),
   DISCOVERY_RESULT_LIMIT: z.coerce.number().int().positive().default(5),
   AI_ANALYSIS_LIMIT: z.coerce.number().int().positive().default(30),
   MAX_VERIFICATIONS_PER_RUN: z.coerce.number().int().positive().default(25),
@@ -37,17 +37,58 @@ const baseEnvSchema = z.object({
     .positive()
     .default(512 * 1024),
   SOURCE_MAX_REDIRECTS: z.coerce.number().int().positive().default(5),
-  MONITOR_DAILY_FETCH_BUDGET: z.coerce.number().int().positive().default(50),
-  MONITOR_CONCURRENCY: z.coerce.number().int().positive().default(2),
+  // Upper bounds are deliberate: these govern outbound traffic to third-party
+  // course pages, and a mistyped value should fail validation rather than
+  // hammer a provider.
+  MONITOR_DAILY_FETCH_BUDGET: z.coerce
+    .number()
+    .int()
+    .positive()
+    .max(5_000)
+    .default(50),
+  MONITOR_CONCURRENCY: z.coerce.number().int().positive().max(16).default(2),
+  MONITOR_PER_DOMAIN_RPM: z.coerce
+    .number()
+    .int()
+    .positive()
+    .max(600)
+    .default(20),
+  MONITOR_USER_AGENT: z
+    .string()
+    .default(
+      "FreeLearnRadarBot/1.0 (+https://freelearnradar.com/about; course availability monitor)",
+    ),
+  /**
+   * Market whose pricing this deployment observes. Price observations from
+   * different regions are not comparable (§69.3), so every observation is
+   * stamped with this value and events only confirm within one region.
+   */
+  MONITOR_OBSERVED_REGION: z.string().min(1).default("US"),
   MONITOR_WORKER_VERSION: z.string().default("m19.5"),
+  /** Set to "false" to stop all outbound monitoring without a redeploy. */
+  MONITOR_ENABLED: z.string().default("true"),
   FEATURE_TRACKER_UI: optionalString,
   FEATURE_PRICE_ALERTS: optionalString,
-  FEATURE_PUBLIC_FEED: optionalString,
+  // FEATURE_PUBLIC_FEED intentionally absent: the RSS feed and /api/public/events
+  // it was meant to gate do not exist, and a flag that gates nothing reads as a
+  // shipped feature that has been switched off.
   FEATURE_AUTO_STATUS: optionalString,
   FEATURE_TOPIC_PAGES: optionalString,
   EMAIL_DRY_RUN: z.string().default("true"),
   RESEND_API_KEY: optionalString,
   EMAIL_FROM: optionalString,
+  EMAIL_REPLY_TO: optionalString,
+  EMAIL_DAILY_BUDGET: z.coerce
+    .number()
+    .int()
+    .positive()
+    .max(100_000)
+    .default(500),
+  EMAIL_REQUEST_TIMEOUT_MS: z.coerce
+    .number()
+    .int()
+    .positive()
+    .default(10_000),
 });
 
 export type ServerEnv = z.infer<typeof baseEnvSchema>;

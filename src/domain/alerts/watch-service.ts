@@ -1,5 +1,3 @@
-import { randomBytes } from "node:crypto";
-
 import { and, eq } from "drizzle-orm";
 
 import type { Db } from "@/db";
@@ -8,10 +6,14 @@ import {
   type CourseWatch,
 } from "@/db/schema";
 import { findCourseById } from "@/db/repositories/course-repository";
+import {
+  generateWatchToken,
+  hashWatchToken,
+  isConfirmTokenExpired,
+  verifyUnsubscribeToken,
+} from "@/domain/alerts/watch-token";
 
-export function generateWatchToken(): string {
-  return randomBytes(32).toString("hex");
-}
+export { generateWatchToken };
 
 export type RequestWatchInput = {
   courseId: string;
@@ -19,17 +21,27 @@ export type RequestWatchInput = {
   locale?: string | null;
 };
 
+export type RequestWatchResult = {
+  watch: CourseWatch;
+  /**
+   * Plaintext, returned exactly once for the confirmation email. Only its digest
+   * is persisted, so this is the sole opportunity to send it.
+   */
+  confirmToken: string | null;
+};
+
 function normalizeEmail(email: string): string {
   return email.trim().toLowerCase();
 }
 
 /**
- * Create or refresh a PENDING watch with confirm + unsubscribe tokens.
+ * Create or refresh a PENDING watch. The caller receives the plaintext confirm
+ * token to email; the row stores only its hash.
  */
 export async function requestWatch(
   db: Db,
   input: RequestWatchInput,
-): Promise<CourseWatch> {
+): Promise<RequestWatchResult> {
   const email = normalizeEmail(input.email);
   if (!email || !email.includes("@")) {
     throw new Error("Invalid email");
@@ -41,7 +53,6 @@ export async function requestWatch(
   }
 
   const confirmToken = generateWatchToken();
-  const unsubscribeToken = generateWatchToken();
   const locale = input.locale?.trim() || null;
 
   const existing = await db
@@ -57,17 +68,18 @@ export async function requestWatch(
 
   const row = existing[0];
   if (row) {
+    // Already subscribed: do not reissue a token, and do not re-send mail.
     if (row.status === "CONFIRMED" || row.status === "NOTIFIED") {
-      return row;
+      return { watch: row, confirmToken: null };
     }
 
     const updated = await db
       .update(courseWatches)
       .set({
         status: "PENDING",
-        confirmToken,
-        unsubscribeToken,
+        confirmToken: hashWatchToken(confirmToken),
         locale,
+        createdAt: new Date(),
         confirmedAt: null,
         notifiedAt: null,
       })
@@ -76,7 +88,7 @@ export async function requestWatch(
 
     const next = updated[0];
     if (!next) throw new Error("Failed to update watch");
-    return next;
+    return { watch: next, confirmToken };
   }
 
   const inserted = await db
@@ -86,14 +98,13 @@ export async function requestWatch(
       email,
       locale,
       status: "PENDING",
-      confirmToken,
-      unsubscribeToken,
+      confirmToken: hashWatchToken(confirmToken),
     })
     .returning();
 
   const created = inserted[0];
   if (!created) throw new Error("Failed to create watch");
-  return created;
+  return { watch: created, confirmToken };
 }
 
 export async function confirmWatch(
@@ -106,13 +117,14 @@ export async function confirmWatch(
   const rows = await db
     .select()
     .from(courseWatches)
-    .where(eq(courseWatches.confirmToken, trimmed))
+    .where(eq(courseWatches.confirmToken, hashWatchToken(trimmed)))
     .limit(1);
 
   const row = rows[0];
   if (!row) return null;
   if (row.status === "UNSUBSCRIBED") return row;
   if (row.status === "CONFIRMED" || row.status === "NOTIFIED") return row;
+  if (isConfirmTokenExpired(row.createdAt)) return null;
 
   const updated = await db
     .update(courseWatches)
@@ -127,21 +139,18 @@ export async function confirmWatch(
   return updated[0] ?? null;
 }
 
+/**
+ * Unsubscribe is addressed by watch id and authenticated by a derived token, so
+ * an unsubscribe link stays valid for the life of the subscription without any
+ * credential being stored.
+ */
 export async function unsubscribeWatch(
   db: Db,
+  watchId: string,
   token: string,
 ): Promise<CourseWatch | null> {
-  const trimmed = token.trim();
-  if (!trimmed) return null;
-
-  const rows = await db
-    .select()
-    .from(courseWatches)
-    .where(eq(courseWatches.unsubscribeToken, trimmed))
-    .limit(1);
-
-  const row = rows[0];
-  if (!row) return null;
+  if (!watchId.trim() || !token.trim()) return null;
+  if (!verifyUnsubscribeToken(watchId, token)) return null;
 
   const updated = await db
     .update(courseWatches)
@@ -149,17 +158,8 @@ export async function unsubscribeWatch(
       status: "UNSUBSCRIBED",
       confirmToken: null,
     })
-    .where(eq(courseWatches.id, row.id))
+    .where(eq(courseWatches.id, watchId))
     .returning();
 
   return updated[0] ?? null;
-}
-
-export async function findWatchByConfirmToken(db: Db, token: string) {
-  const rows = await db
-    .select()
-    .from(courseWatches)
-    .where(eq(courseWatches.confirmToken, token.trim()))
-    .limit(1);
-  return rows[0] ?? null;
 }

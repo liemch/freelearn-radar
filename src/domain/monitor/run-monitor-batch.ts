@@ -9,6 +9,7 @@ import {
 } from "@/db/schema";
 import { notifyWatchesForEvents } from "@/domain/alerts/notify-watches";
 import { detectPriceEvents } from "@/domain/monitor/detect-events";
+import { DomainRateLimiter } from "@/domain/monitor/domain-rate-limiter";
 import {
   observeCourse,
   type CourseForObservation,
@@ -29,6 +30,7 @@ export type RunMonitorBatchOptions = {
   concurrency?: number;
   now?: Date;
   detectEvents?: boolean;
+  perDomainRpm?: number;
 };
 
 const TIER_ORDER = sql`case ${courses.trackingTier}
@@ -136,7 +138,17 @@ export async function runMonitorBatch(
   const detect =
     options.detectEvents ?? true; /* always detect; auto-status gated separately */
 
+  // Kill switch: an operator must be able to stop outbound traffic without a
+  // redeploy when a provider complains.
+  if (env.MONITOR_ENABLED === "false") {
+    logger.warn("monitor.batch", { status: "disabled" });
+    return { considered: 0, observed: 0, blocked: 0, events: 0, errors: 0 };
+  }
+
   const due = await selectDueCoursesForMonitor(db, limit, now);
+  const rateLimiter = new DomainRateLimiter(
+    options.perDomainRpm ?? env.MONITOR_PER_DOMAIN_RPM,
+  );
   const summary: MonitorBatchSummary = {
     considered: due.length,
     observed: 0,
@@ -160,7 +172,14 @@ export async function runMonitorBatch(
     };
 
     try {
-      const observation = await observeCourse(db, course, { now });
+      await rateLimiter.acquire(course.provider?.domain ?? null);
+
+      const observation = await observeCourse(db, course, {
+        now,
+        // Stamping the region is what makes the §69.3 same-region rule
+        // enforceable; unstamped observations can never confirm an event.
+        observedRegion: env.MONITOR_OBSERVED_REGION,
+      });
       tallies.observed = 1;
       if (observation.fetchStatus === "BLOCKED") {
         tallies.blocked = 1;

@@ -7,16 +7,23 @@ import {
   type NewCoursePriceEvent,
 } from "@/db/schema";
 
+/**
+ * Returns null when a concurrent run already recorded the same transition for the
+ * same course on the same day. The partial unique index (migration 0006) is what
+ * makes that safe: the application-level cooldown check is a SELECT followed by an
+ * INSERT, so two workers can both pass it before either commits.
+ */
 export async function insertPriceEvent(
   db: Db,
   input: NewCoursePriceEvent,
-): Promise<CoursePriceEvent> {
-  const rows = await db.insert(coursePriceEvents).values(input).returning();
-  const row = rows[0];
-  if (!row) {
-    throw new Error("Failed to insert price event");
-  }
-  return row;
+): Promise<CoursePriceEvent | null> {
+  const rows = await db
+    .insert(coursePriceEvents)
+    .values(input)
+    .onConflictDoNothing()
+    .returning();
+
+  return rows[0] ?? null;
 }
 
 export async function listUnconfirmed(

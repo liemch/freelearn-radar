@@ -36,6 +36,14 @@ export const coursePriceEvents = pgTable(
       table.courseId,
       table.eventType,
     ),
+    index("course_price_events_course_type_confirmed_idx").on(
+      table.courseId,
+      table.eventType,
+      table.confirmedAt.desc(),
+    ),
+    // The dedupe guarantee is a partial unique index over an expression
+    // (date_trunc on confirmed_at), which Drizzle cannot express here. It lives
+    // in migration 0006 and is what makes insertPriceEvent's ON CONFLICT work.
   ],
 );
 

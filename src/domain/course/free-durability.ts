@@ -41,9 +41,19 @@ export function deriveFreeDurability(
 }
 
 /**
+ * Price types that must never reach a free-labelled surface (project plan §66.4).
+ * Single source of truth: catalog SQL, topic pages, and the monthly collection all
+ * derive their exclusion from this list rather than repeating the literals.
+ */
+export const FREE_LIST_EXCLUDED_PRICE_TYPES: readonly PriceType[] = [
+  "FREE_TRIAL",
+  "PAID",
+];
+
+/**
  * FREE_TRIAL is never free; PAID is never free.
  * Used by catalog default free listings (project plan §66.4).
  */
 export function isEligibleForFreeLists(priceType: PriceType): boolean {
-  return priceType !== "FREE_TRIAL" && priceType !== "PAID";
+  return !FREE_LIST_EXCLUDED_PRICE_TYPES.includes(priceType);
 }

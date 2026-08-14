@@ -4,9 +4,12 @@ import {
   listLatestVerificationByCourseIds,
 } from "@/db/repositories/verification-repository";
 import {
+  findCourseById,
   listPublishedCoursesWithProvider,
   updateCourse,
 } from "@/db/repositories/course-repository";
+import { listProviderPolicyRules } from "@/db/repositories/provider-policy-repository";
+import { writeAuditLog } from "@/domain/admin/audit-log";
 import { getServerEnv } from "@/lib/env";
 import { logger } from "@/lib/logger";
 import {
@@ -46,7 +49,11 @@ export async function selectCoursesForVerification(
     }
   >
 > {
-  const published = await listPublishedCoursesWithProvider(db, 200);
+  // Verification must still re-check courses that have gone PAID or trial-only,
+  // otherwise they would never be corrected back or unpublished.
+  const published = await listPublishedCoursesWithProvider(db, 200, {
+    freeListOnly: false,
+  });
   const latest = await listLatestVerificationByCourseIds(
     db,
     published.map((course) => course.id),
@@ -114,6 +121,9 @@ export async function runVerificationBatch(
   const now = options?.now ?? new Date();
 
   const selected = await selectCoursesForVerification(db, limit, now);
+  // Loaded once per batch: policy is the deterministic authority for certificate
+  // resolution (§66.2) and does not change mid-run.
+  const policies = await listProviderPolicyRules(db);
   const summary: VerifyBatchSummary = {
     considered: selected.length,
     verified: 0,
@@ -127,7 +137,7 @@ export async function runVerificationBatch(
 
     try {
       const evidence = await evidenceProvider.gather(course);
-      const result = produceVerificationResult(course, evidence, now);
+      const result = produceVerificationResult(course, evidence, now, policies);
       await persistVerification(db, course.id, result);
       if (result.status === "FAILED") {
         summary.failed += 1;
@@ -182,6 +192,8 @@ export async function persistVerification(
   });
 
   if (result.updateCourse) {
+    const before = await findCourseById(db, courseId);
+
     await updateCourse(db, courseId, {
       priceType: result.priceType,
       certificateType: result.certificateType,
@@ -189,6 +201,27 @@ export async function persistVerification(
       ...(result.refreshLastVerifiedAt
         ? { lastVerifiedAt: result.observedAt }
         : {}),
+    });
+
+    // §79.3: a course whose price or status changed must say who changed it.
+    await writeAuditLog(db, {
+      actorType: "CRON",
+      action: "COURSE_VERIFICATION_UPDATE",
+      entityType: "course",
+      entityId: courseId,
+      before: before
+        ? {
+            priceType: before.priceType,
+            certificateType: before.certificateType,
+            status: before.status,
+          }
+        : null,
+      after: {
+        priceType: result.priceType,
+        certificateType: result.certificateType,
+        status: result.nextCourseStatus,
+      },
+      reason: result.changeSummary ?? result.notes,
     });
   }
 }

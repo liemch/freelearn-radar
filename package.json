@@ -21,7 +21,10 @@
     "db:seed": "tsx src/db/seed.ts",
     "db:seed:http": "USE_NEON_HTTP=1 tsx src/db/seed.ts",
     "db:check": "bash scripts/db-check.sh",
-    "db:studio": "drizzle-kit studio"
+    "db:studio": "drizzle-kit studio",
+    "db:bootstrap:generate": "tsx scripts/generate-neon-bootstrap.ts",
+    "monitor:once": "tsx scripts/monitor-once.ts",
+    "replay:events": "tsx scripts/replay-events.ts"
   },
   "dependencies": {
     "@neondatabase/serverless": "^0.10.4",

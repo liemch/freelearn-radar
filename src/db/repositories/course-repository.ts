@@ -23,7 +23,10 @@ import {
 } from "@/db/schema";
 import type { CatalogFilters, CatalogSort } from "@/domain/course/catalog-query";
 import { DEFAULT_PAGE_SIZE } from "@/domain/course/catalog-query";
-import { isEligibleForFreeLists } from "@/domain/course/free-durability";
+import {
+  FREE_LIST_EXCLUDED_PRICE_TYPES,
+  isEligibleForFreeLists,
+} from "@/domain/course/free-durability";
 import type { CertificateType, CourseStatus } from "@/domain/course/types";
 
 export { isEligibleForFreeLists };
@@ -124,11 +127,18 @@ export function buildCatalogConditions(
     conditions.push(eq(courses.certificateType, filters.certificateType));
   }
 
+  if (publishedOnly) {
+    // §66.4 admits no exception: FREE_TRIAL / PAID stay out of every free-labelled
+    // surface even when the caller supplies an explicit ?price= filter. Applying
+    // this alongside (not instead of) the filter means a hand-typed
+    // ?price=FREE_TRIAL yields an empty page rather than a page of trials.
+    conditions.push(
+      notInArray(courses.priceType, [...FREE_LIST_EXCLUDED_PRICE_TYPES]),
+    );
+  }
+
   if (filters.priceType) {
     conditions.push(eq(courses.priceType, filters.priceType));
-  } else if (publishedOnly) {
-    // Default free catalog: FREE_TRIAL / PAID never appear in free lists (§66.4).
-    conditions.push(notInArray(courses.priceType, ["FREE_TRIAL", "PAID"]));
   }
 
   if (filters.durationMaxMinutes != null) {
@@ -298,10 +308,24 @@ export async function listPublishedCourses(
     .offset(offset);
 }
 
+/**
+ * Published courses for public surfaces. `freeListOnly` defaults to true so a new
+ * caller is safe by construction; verification is the one consumer that must also
+ * see courses which have since gone PAID, and opts out explicitly.
+ */
 export async function listPublishedCoursesWithProvider(
   db: Db,
   limit = 20,
+  options?: { freeListOnly?: boolean },
 ): Promise<CourseWithProvider[]> {
+  const conditions: SQL[] = [eq(courses.status, "PUBLISHED")];
+
+  if (options?.freeListOnly ?? true) {
+    conditions.push(
+      notInArray(courses.priceType, [...FREE_LIST_EXCLUDED_PRICE_TYPES]),
+    );
+  }
+
   const rows = await db
     .select({
       course: courses,
@@ -309,7 +333,7 @@ export async function listPublishedCoursesWithProvider(
     })
     .from(courses)
     .innerJoin(providers, eq(courses.providerId, providers.id))
-    .where(eq(courses.status, "PUBLISHED"))
+    .where(and(...conditions))
     .orderBy(desc(courses.publishedAt))
     .limit(limit);
 
@@ -422,6 +446,40 @@ export async function queryCatalog(
     page,
     pageSize,
     totalPages: Math.max(1, Math.ceil(total / pageSize)),
+  };
+}
+
+export type CatalogTrustSignals = {
+  /** Courses a visitor can actually reach from a free listing. */
+  publishedCount: number;
+  /** Most recent verification across that same set, or null if none ran. */
+  lastVerifiedAt: Date | null;
+};
+
+/**
+ * Backing data for the homepage trust strip. Computed in one aggregate rather
+ * than derived from a page of loaded courses, because a subset would understate
+ * both numbers and the strip's whole purpose is to be accurate.
+ */
+export async function getCatalogTrustSignals(
+  db: Db,
+): Promise<CatalogTrustSignals> {
+  const rows = await db
+    .select({
+      publishedCount: sql<number>`count(*)::int`,
+      lastVerifiedAt: sql<Date | null>`max(${courses.lastVerifiedAt})`,
+    })
+    .from(courses)
+    .where(
+      and(
+        eq(courses.status, "PUBLISHED"),
+        notInArray(courses.priceType, [...FREE_LIST_EXCLUDED_PRICE_TYPES]),
+      ),
+    );
+
+  return {
+    publishedCount: rows[0]?.publishedCount ?? 0,
+    lastVerifiedAt: rows[0]?.lastVerifiedAt ?? null,
   };
 }
 

@@ -12,6 +12,7 @@ import {
 } from "@/db/repositories/course-repository";
 import { listCategories } from "@/db/repositories/category-repository";
 import { listProviders } from "@/db/repositories/provider-repository";
+import { listProviderPolicyRules } from "@/db/repositories/provider-policy-repository";
 import { createVerification } from "@/db/repositories/verification-repository";
 import {
   canApproveCandidate,
@@ -30,6 +31,7 @@ import { deriveFreeDurability } from "@/domain/course/free-durability";
 import { createEvidence } from "@/domain/verification/evidence";
 import { resolvePriceType } from "@/domain/verification/free-status";
 import {
+  assertCertificateResolved,
   assertPriceTypeAllowed,
   resolveCertificateWithPolicy,
 } from "@/domain/verification/provider-policy";
@@ -178,12 +180,18 @@ export async function approveCandidate(db: Db, input: ApproveCandidateInput) {
     evidenceText,
     aiSuggestion: analysis?.certificate_type,
     aiConfidence: analysis?.confidence,
+    policies: await listProviderPolicyRules(db),
   });
 
   const resolvedCertificateType =
     input.overrides?.certificateType ||
     certResolved.certificateType ||
     "UNKNOWN";
+
+  // A reviewer is present at this moment and can answer the question; publishing
+  // an audit course with an unresolved certificate would strand it (§66.4).
+  assertCertificateResolved(resolvedPriceType, resolvedCertificateType);
+
   const freeDurability = deriveFreeDurability(provider.slug, resolvedPriceType);
 
   const now = new Date();

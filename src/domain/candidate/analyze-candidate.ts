@@ -7,6 +7,7 @@ import {
   applyAutoReject,
   evaluateAutoReject,
 } from "@/domain/candidate/auto-reject";
+import { writeAuditLog } from "@/domain/admin/audit-log";
 import { shouldRouteToExtraReview } from "@/domain/quality/confidence";
 import {
   prefilterCandidate,
@@ -120,6 +121,23 @@ export async function analyzeCandidate(
       provider: analysis.provider,
       rawTitle: analysis.title || candidate.rawTitle,
     };
+
+    // The AI is the actor here: its verdict drives the candidate's status and,
+    // after approval, the published course's price and certificate (§79.3).
+    await writeAuditLog(db, {
+      actorType: "AI",
+      action: "CANDIDATE_ANALYZED",
+      entityType: "candidate",
+      entityId: candidateId,
+      before: { discoveryStatus: candidate.discoveryStatus },
+      after: {
+        isCourse: analysis.is_course,
+        priceType: analysis.price_type,
+        certificateType: analysis.certificate_type,
+        confidence: analysis.confidence,
+        needsExtraReview,
+      },
+    });
 
     if (!analysis.is_course) {
       const decision = evaluateAutoReject({
