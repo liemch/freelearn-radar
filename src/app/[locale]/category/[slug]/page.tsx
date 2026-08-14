@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 
 import { CatalogFiltersForm } from "@/components/public/catalog-filters";
-import { CourseCard } from "@/components/public/course-card";
+import { CourseGrid } from "@/components/public/course-grid";
 import { EmptyState } from "@/components/public/empty-state";
 import { LocaleHtmlLang } from "@/components/public/locale-html-lang";
 import { LocalizedLink } from "@/components/public/localized-link";
@@ -180,11 +180,11 @@ export default async function CategoryPage({
             actionLabel={dict.common.browseAll}
           />
         ) : (
-          <div className="grid gap-3 sm:grid-cols-2 sm:gap-4 lg:grid-cols-3">
-            {catalog.items.map((course) => (
-              <CourseCard key={course.id} course={course} locale={locale} />
-            ))}
-          </div>
+          <CourseGrid
+            courses={catalog.items}
+            locale={locale}
+            priorityCount={4}
+          />
         )}
 
         <Pagination

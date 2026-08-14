@@ -2,7 +2,8 @@ import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 
 import { CatalogFiltersForm } from "@/components/public/catalog-filters";
-import { CourseCard } from "@/components/public/course-card";
+import { Breadcrumb } from "@/components/public/breadcrumb";
+import { CourseGrid } from "@/components/public/course-grid";
 import { EmptyState } from "@/components/public/empty-state";
 import { LocaleHtmlLang } from "@/components/public/locale-html-lang";
 import { LocalizedLink } from "@/components/public/localized-link";
@@ -151,12 +152,14 @@ export default async function FreeCoursesTopicPage({
       <SiteHeader locale={locale} />
       <div className="mx-auto w-full max-w-6xl space-y-6 px-4 py-7 sm:space-y-8 sm:py-10 sm:px-6">
         <div className="space-y-3">
-          <p className="text-sm text-muted-foreground">
-            <LocalizedLink href="/" className="hover:underline">
-              {dict.common.home}
-            </LocalizedLink>{" "}
-            / {dict.common.freeCourses} / {landing.slug}
-          </p>
+          <Breadcrumb
+            label={dict.a11y.breadcrumb}
+            items={[
+              { label: dict.common.home, href: "/" },
+              { label: dict.common.freeCourses },
+              { label: copy.heading },
+            ]}
+          />
           <h1 className="font-display text-[1.75rem] font-semibold tracking-tight sm:text-4xl">
             {copy.heading}
           </h1>
@@ -182,11 +185,11 @@ export default async function FreeCoursesTopicPage({
             actionLabel={dict.common.openCategory}
           />
         ) : (
-          <div className="grid gap-3 sm:grid-cols-2 sm:gap-4 lg:grid-cols-3">
-            {catalog.items.map((course) => (
-              <CourseCard key={course.id} course={course} locale={locale} />
-            ))}
-          </div>
+          <CourseGrid
+            courses={catalog.items}
+            locale={locale}
+            priorityCount={4}
+          />
         )}
 
         <Pagination

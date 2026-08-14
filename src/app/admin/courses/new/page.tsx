@@ -1,6 +1,6 @@
-import Link from "next/link";
 import { redirect } from "next/navigation";
 
+import { AdminPageHeader } from "@/components/admin/admin-page-header";
 import { CourseForm } from "@/components/admin/course-form";
 import { getDb } from "@/db";
 import { listCategories } from "@/db/repositories/category-repository";
@@ -67,33 +67,21 @@ export default async function AdminNewCoursePage() {
   };
 
   return (
-    <div className="min-h-screen bg-background">
-      <header className="border-b border-border/60">
-        <div className="mx-auto max-w-4xl px-6 py-4">
-          <p className="text-sm text-muted-foreground">
-            <Link href="/admin/courses" className="hover:underline">
-              {t.courses.heading}
-            </Link>{" "}
-            / {t.courses.breadcrumbNew}
-          </p>
-          <h1 className="text-xl font-semibold">{t.courses.createCourse}</h1>
-        </div>
-      </header>
+    <>
+      <AdminPageHeader title={t.courses.createCourse} />
 
-      <main className="mx-auto max-w-4xl px-6 py-8">
-        {!databaseReady || providers.length === 0 ? (
-          <p className="rounded-xl border border-dashed border-border p-6 text-sm text-muted-foreground">
-            {t.courses.seedRequired}
-          </p>
-        ) : (
-          <CourseForm
-            mode="create"
-            providers={providers}
-            categories={categories}
-            labels={formLabels}
-          />
-        )}
-      </main>
-    </div>
+      {!databaseReady || providers.length === 0 ? (
+        <p className="rounded-xl border border-dashed border-border p-6 text-sm text-muted-foreground">
+          {t.courses.seedRequired}
+        </p>
+      ) : (
+        <CourseForm
+          mode="create"
+          providers={providers}
+          categories={categories}
+          labels={formLabels}
+        />
+      )}
+    </>
   );
 }

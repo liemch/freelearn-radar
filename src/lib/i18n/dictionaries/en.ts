@@ -16,7 +16,16 @@ export const en: Dictionary = {
       "Free courses from trusted platforms with clear free status and verification freshness.",
     searchPlaceholder: "Search Python, AI, project management…",
     searchButton: "Search",
-    trending: "Trending",
+    topicShortcuts: "Start with",
+  },
+  trust: {
+    verifiedCourses: "verified free courses",
+    verifiedCoursesHint: "Each one checked against its provider page",
+    providersTracked: "platforms tracked",
+    providersTrackedHint: "Only sources with a published free-access policy",
+    lastChecked: "Last checked",
+    transparency: "Free status, stated plainly",
+    transparencyHint: "Audit-only and paid-certificate courses are labelled, never hidden",
   },
   sections: {
     freeThisWeek: "Free this week",
@@ -85,6 +94,7 @@ export const en: Dictionary = {
     levelIntermediate: "Intermediate",
     levelAdvanced: "Advanced",
     levelAll: "All levels",
+    removeFilter: "Remove filter: {label}",
   },
   pagination: {
     previous: "Previous",
@@ -213,6 +223,7 @@ export const en: Dictionary = {
   a11y: {
     freeStatusAndCertificate: "Free status and certificate",
     exploreRelated: "Explore related",
+    breadcrumb: "Breadcrumb",
   },
   verification: {
     never: "Never verified",

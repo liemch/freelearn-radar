@@ -139,29 +139,78 @@ describe("course visual fallback", () => {
     const { getCourseVisual } = await import("@/domain/course/course-visual");
     const visual = getCourseVisual({
       id: "1",
+      slug: "long-course",
       title: "Long course title that should truncate in fallback visual area",
       imageStorageUrl: "https://cdn.example.com/stored.jpg",
       imageSourceUrl: "https://cdn.example.com/source.jpg",
       provider: { name: "Coursera", slug: "coursera" },
     } as never);
-    expect(visual.type).toBe("image");
-    if (visual.type === "image") {
-      expect(visual.src).toBe("https://cdn.example.com/stored.jpg");
-    }
+    expect(visual.src).toBe("https://cdn.example.com/stored.jpg");
   });
 
   it("uses provider fallback when image missing", async () => {
     const { getCourseVisual } = await import("@/domain/course/course-visual");
     const visual = getCourseVisual({
       id: "2",
+      slug: "python-for-everyone",
       title: "Python for Everyone",
       imageStorageUrl: null,
       imageSourceUrl: null,
       provider: { name: "Coursera", slug: "coursera" },
     } as never);
-    expect(visual.type).toBe("fallback");
-    if (visual.type === "fallback") {
-      expect(visual.eyebrow).toBe("Coursera");
+    expect(visual.src).toBeNull();
+    expect(visual.eyebrow).toBe("Coursera");
+  });
+
+  it("rejects a non-HTTPS image rather than rendering mixed content", async () => {
+    const { getCourseVisual } = await import("@/domain/course/course-visual");
+    const visual = getCourseVisual({
+      id: "3",
+      slug: "insecure",
+      title: "Insecure thumbnail",
+      imageStorageUrl: null,
+      imageSourceUrl: "http://cdn.example.com/thumb.jpg",
+      provider: { name: "Udemy", slug: "udemy" },
+    } as never);
+    expect(visual.src).toBeNull();
+  });
+
+  // A tone that changed between renders would make the catalogue flicker and
+  // would defeat any visual memory a returning visitor has of a course.
+  it("assigns a stable tone for the same course", async () => {
+    const { getCourseVisual } = await import("@/domain/course/course-visual");
+    const course = {
+      id: "4",
+      slug: "stable-tone",
+      title: "Stable tone",
+      imageStorageUrl: null,
+      imageSourceUrl: null,
+      provider: { name: "edX", slug: "edx" },
+    } as never;
+
+    expect(getCourseVisual(course).toneClass).toBe(
+      getCourseVisual(course).toneClass,
+    );
+  });
+
+  it("draws tones from the curated tile set", async () => {
+    const { getCourseVisual } = await import("@/domain/course/course-visual");
+    const tones = new Set(
+      ["a", "b", "c", "d", "e", "f", "g", "h"].map(
+        (slug) =>
+          getCourseVisual({
+            id: slug,
+            slug,
+            title: slug,
+            imageStorageUrl: null,
+            imageSourceUrl: null,
+            provider: { name: "P", slug: "p" },
+          } as never).toneClass,
+      ),
+    );
+
+    for (const tone of tones) {
+      expect(tone).toMatch(/^course-tile-[1-5]$/);
     }
   });
 });

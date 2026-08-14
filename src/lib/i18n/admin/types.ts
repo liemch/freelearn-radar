@@ -2,6 +2,9 @@
 export type AdminDictionary = {
   common: {
     adminDashboard: string;
+    openMenu: string;
+    closeMenu: string;
+    sections: string;
     viewPublicSite: string;
     signOut: string;
     signingOut: string;
@@ -72,7 +75,35 @@ export type AdminDictionary = {
       categories: string;
       discoveryErrors: string;
       unknownCertificate: string;
+      staleVerification: string;
     };
+    actionRequired: string;
+    actionRequiredDescription: string;
+    allClear: string;
+    allClearDescription: string;
+    catalogOverview: string;
+    catalogOverviewDescription: string;
+    recentActivity: string;
+    recentActivityDescription: string;
+    noActivity: string;
+    quickActions: string;
+    viewAll: string;
+  };
+  /** System health, derived only from signals the application actually records. */
+  health: {
+    heading: string;
+    description: string;
+    discovery: string;
+    verification: string;
+    monitor: string;
+    healthy: string;
+    degraded: string;
+    failed: string;
+    unknown: string;
+    unknownHint: string;
+    never: string;
+    lastSignal: string;
+    errorsRecorded: (count: number) => string;
   };
   courses: {
     heading: string;
@@ -222,6 +253,22 @@ export type AdminDictionary = {
   };
   discovery: {
     heading: string;
+    latestRun: string;
+    latestRunNone: string;
+    runHistory: string;
+    runHistoryDescription: string;
+    runHistoryEmpty: string;
+    runScope: string;
+    runQueries: string;
+    runCreated: string;
+    runDuplicates: string;
+    runInvalid: string;
+    runErrors: string;
+    runActor: string;
+    runTime: string;
+    queriesEnabled: string;
+    queriesDue: string;
+    notRecorded: string;
     description: string;
     controls: string;
     runDiscovery: string;

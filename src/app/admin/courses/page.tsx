@@ -1,12 +1,13 @@
 import Link from "next/link";
 import { redirect } from "next/navigation";
 
-import { AdminLogoutButton } from "@/components/admin/logout-button";
+import { AdminPageHeader } from "@/components/admin/admin-page-header";
 import { CourseStatusActions } from "@/components/admin/course-status-actions";
+import { Badge, type BadgeProps } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { getDb } from "@/db";
 import { listCourses } from "@/db/repositories/course-repository";
-import type { CertificateType } from "@/domain/course/types";
+import type { CertificateType, CourseStatus } from "@/domain/course/types";
 import {
   getCourseStatusLabel,
   getPriceTypeLabel,
@@ -23,6 +24,20 @@ const CERTIFICATE_VALUES = new Set<CertificateType>([
   "NO_CERTIFICATE",
   "UNKNOWN",
 ]);
+
+function courseStatusVariant(status: CourseStatus): BadgeProps["variant"] {
+  switch (status) {
+    case "PUBLISHED":
+      return "success";
+    case "EXPIRED":
+    case "UNAVAILABLE":
+      return "warning";
+    case "ARCHIVED":
+      return "outline";
+    default:
+      return "neutral";
+  }
+}
 
 function parseCertificate(
   raw: string | string[] | undefined,
@@ -70,31 +85,17 @@ export default async function AdminCoursesPage({ searchParams }: PageProps) {
   };
 
   return (
-    <div className="min-h-screen bg-background">
-      <header className="border-b border-border/60">
-        <div className="mx-auto flex max-w-6xl items-center justify-between px-6 py-4">
-          <div>
-            <p className="text-sm text-muted-foreground">
-              <Link href="/admin" className="hover:underline">
-                {t.common.admin}
-              </Link>{" "}
-              / {t.courses.heading}
-            </p>
-            <h1 className="text-xl font-semibold">{t.courses.management}</h1>
-          </div>
-          <div className="flex items-center gap-3">
-            <Button asChild>
-              <Link href="/admin/courses/new">{t.courses.newCourse}</Link>
-            </Button>
-            <AdminLogoutButton
-              label={t.common.signOut}
-              signingOutLabel={t.common.signingOut}
-            />
-          </div>
-        </div>
-      </header>
+    <>
+      <AdminPageHeader
+        title={t.courses.management}
+        actions={
+          <Button asChild>
+            <Link href="/admin/courses/new">{t.courses.newCourse}</Link>
+          </Button>
+        }
+      />
 
-      <main className="mx-auto max-w-6xl space-y-6 px-6 py-8">
+      <div className="space-y-6">
         {certificateType ? (
           <p className="text-sm text-muted-foreground">
             {t.courses.certificate}: {certificateType}{" "}
@@ -112,13 +113,33 @@ export default async function AdminCoursesPage({ searchParams }: PageProps) {
 
         <div className="overflow-x-auto rounded-xl border border-border">
           <table className="min-w-full text-left text-sm">
+            <caption className="sr-only">{t.courses.management}</caption>
             <thead className="bg-muted/50">
               <tr>
-                <th className="px-4 py-3 font-medium">{t.courses.title}</th>
-                <th className="px-4 py-3 font-medium">{t.courses.provider}</th>
-                <th className="px-4 py-3 font-medium">{t.courses.price}</th>
-                <th className="px-4 py-3 font-medium">{t.common.status}</th>
-                <th className="px-4 py-3 font-medium">{t.common.actions}</th>
+                <th scope="col" className="px-4 py-3 font-medium">
+                  {t.courses.title}
+                </th>
+                <th scope="col" className="px-4 py-3 font-medium">
+                  {t.courses.provider}
+                </th>
+                <th
+                  scope="col"
+                  className="whitespace-nowrap px-4 py-3 font-medium"
+                >
+                  {t.courses.price}
+                </th>
+                <th
+                  scope="col"
+                  className="whitespace-nowrap px-4 py-3 font-medium"
+                >
+                  {t.common.status}
+                </th>
+                <th
+                  scope="col"
+                  className="whitespace-nowrap px-4 py-3 font-medium"
+                >
+                  {t.common.actions}
+                </th>
               </tr>
             </thead>
             <tbody>
@@ -134,13 +155,15 @@ export default async function AdminCoursesPage({ searchParams }: PageProps) {
                     <p className="text-xs text-muted-foreground">{course.slug}</p>
                   </td>
                   <td className="px-4 py-3">{course.provider.name}</td>
-                  <td className="px-4 py-3">
+                  <td className="whitespace-nowrap px-4 py-3">
                     {getPriceTypeLabel(course.priceType).label}
                   </td>
-                  <td className="px-4 py-3">
-                    {getCourseStatusLabel(course.status)}
+                  <td className="whitespace-nowrap px-4 py-3">
+                    <Badge variant={courseStatusVariant(course.status)}>
+                      {getCourseStatusLabel(course.status)}
+                    </Badge>
                   </td>
-                  <td className="px-4 py-3">
+                  <td className="whitespace-nowrap px-4 py-3">
                     <div className="flex flex-wrap gap-2">
                       <Button asChild size="sm" variant="outline">
                         <Link href={`/admin/courses/${course.id}`}>
@@ -169,7 +192,7 @@ export default async function AdminCoursesPage({ searchParams }: PageProps) {
             </tbody>
           </table>
         </div>
-      </main>
-    </div>
+      </div>
+    </>
   );
 }

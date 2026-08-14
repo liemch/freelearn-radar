@@ -1,6 +1,6 @@
-import Link from "next/link";
 import { notFound, redirect } from "next/navigation";
 
+import { AdminPageHeader } from "@/components/admin/admin-page-header";
 import { CourseForm } from "@/components/admin/course-form";
 import { CourseStatusActions } from "@/components/admin/course-status-actions";
 import { getDb } from "@/db";
@@ -94,60 +94,50 @@ export default async function AdminEditCoursePage({
   };
 
   return (
-    <div className="min-h-screen bg-background">
-      <header className="border-b border-border/60">
-        <div className="mx-auto flex max-w-4xl items-center justify-between px-6 py-4">
-          <div>
-            <p className="text-sm text-muted-foreground">
-              <Link href="/admin/courses" className="hover:underline">
-                {t.courses.heading}
-              </Link>{" "}
-              / {t.courses.breadcrumbEdit}
-            </p>
-            <h1 className="text-xl font-semibold">{course.title}</h1>
-          </div>
+    <>
+      <AdminPageHeader
+        title={course.title}
+        actions={
           <CourseStatusActions
             courseId={course.id}
             status={course.status}
             labels={statusLabels}
           />
-        </div>
-      </header>
+        }
+      />
 
-      <main className="mx-auto max-w-4xl px-6 py-8">
-        <CourseForm
-          mode="edit"
-          courseId={course.id}
-          providers={providers}
-          categories={categories}
-          labels={formLabels}
-          initialValues={{
-            title: course.title,
-            slug: course.slug,
-            shortDescription: course.shortDescription ?? "",
-            description: course.description ?? "",
-            providerId: course.providerId,
-            categoryIds,
-            canonicalUrl: course.canonicalUrl,
-            outboundUrl: course.outboundUrl,
-            affiliateUrl: course.affiliateUrl ?? "",
-            instructor: course.instructor ?? "",
-            language: course.language ?? "",
-            level: course.level,
-            durationMinutes:
-              course.durationMinutes != null
-                ? String(course.durationMinutes)
-                : "",
-            priceType: course.priceType,
-            certificateType: course.certificateType,
-            qualityScore:
-              course.qualityScore != null ? String(course.qualityScore) : "",
-            editorScore:
-              course.editorScore != null ? String(course.editorScore) : "",
-            status: course.status,
-          }}
-        />
-      </main>
-    </div>
+      <CourseForm
+        mode="edit"
+        courseId={course.id}
+        providers={providers}
+        categories={categories}
+        labels={formLabels}
+        initialValues={{
+          title: course.title,
+          slug: course.slug,
+          shortDescription: course.shortDescription ?? "",
+          description: course.description ?? "",
+          providerId: course.providerId,
+          categoryIds,
+          canonicalUrl: course.canonicalUrl,
+          outboundUrl: course.outboundUrl,
+          affiliateUrl: course.affiliateUrl ?? "",
+          instructor: course.instructor ?? "",
+          language: course.language ?? "",
+          level: course.level,
+          durationMinutes:
+            course.durationMinutes != null
+              ? String(course.durationMinutes)
+              : "",
+          priceType: course.priceType,
+          certificateType: course.certificateType,
+          qualityScore:
+            course.qualityScore != null ? String(course.qualityScore) : "",
+          editorScore:
+            course.editorScore != null ? String(course.editorScore) : "",
+          status: course.status,
+        }}
+      />
+    </>
   );
 }

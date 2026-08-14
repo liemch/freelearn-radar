@@ -1,47 +1,69 @@
-import type { CourseWithProvider } from "@/db/repositories/course-repository";
-import type { Locale } from "@/lib/i18n/config";
-import { getCourseVisual } from "@/domain/course/course-visual";
+"use client";
+
+import { useState } from "react";
+
 import { cn } from "@/lib/utils";
 
 type CourseCardVisualProps = {
-  course: CourseWithProvider;
-  locale?: Locale;
+  src: string | null;
+  eyebrow: string;
+  title: string;
+  toneClass: string;
+  /** Above-the-fold cards skip lazy loading so the first screen paints complete. */
+  priority?: boolean;
   className?: string;
 };
 
+/**
+ * The 16:9 slot on a course card.
+ *
+ * Client-side because a remote provider image can 404, expire, or block
+ * hotlinking at any time, and a broken-image icon on a curated catalogue looks
+ * like the product is broken. On error the tile takes over silently.
+ */
 export function CourseCardVisual({
-  course,
+  src,
+  eyebrow,
+  title,
+  toneClass,
+  priority = false,
   className,
 }: CourseCardVisualProps) {
-  const visual = getCourseVisual(course);
+  const [failed, setFailed] = useState(false);
+  const showImage = Boolean(src) && !failed;
 
   return (
     <div
       className={cn(
-        "relative aspect-[16/9] w-full overflow-hidden rounded-lg bg-surface-muted",
+        "relative aspect-16/9 w-full overflow-hidden bg-surface-muted",
         className,
       )}
     >
-      {visual.type === "image" ? (
-        // eslint-disable-next-line @next/next/no-img-element -- remote provider images with fallback
+      {showImage ? (
+        // eslint-disable-next-line @next/next/no-img-element -- arbitrary provider domains; next/image would need an open remotePatterns allowlist
         <img
-          src={visual.src}
+          src={src as string}
           alt=""
-          loading="lazy"
-          className="size-full object-cover"
+          loading={priority ? "eager" : "lazy"}
+          decoding="async"
+          fetchPriority={priority ? "high" : "auto"}
+          onError={() => setFailed(true)}
+          className="size-full object-cover transition duration-300 group-hover:scale-[1.02] motion-reduce:transition-none motion-reduce:group-hover:scale-100"
         />
       ) : (
         <div
           className={cn(
-            "flex size-full flex-col justify-end p-3",
-            visual.toneClass,
+            "course-tile flex size-full flex-col justify-end gap-1 p-4 text-white",
+            toneClass,
           )}
         >
-          <span className="text-[10px] font-semibold uppercase tracking-[0.14em] opacity-80">
-            {visual.eyebrow}
-          </span>
-          <span className="font-display text-lg font-semibold leading-tight text-balance">
-            {visual.title}
+          {eyebrow ? (
+            <span className="text-[0.625rem] font-semibold uppercase tracking-[0.14em] text-white/70">
+              {eyebrow}
+            </span>
+          ) : null}
+          <span className="line-clamp-2 font-display text-base leading-snug text-balance sm:text-lg">
+            {title}
           </span>
         </div>
       )}

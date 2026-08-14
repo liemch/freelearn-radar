@@ -1,7 +1,6 @@
-import Link from "next/link";
 import { redirect } from "next/navigation";
 
-import { AdminLogoutButton } from "@/components/admin/logout-button";
+import { AdminPageHeader } from "@/components/admin/admin-page-header";
 import { UserRoleSelect } from "@/components/admin/user-role-select";
 import { getDb } from "@/db";
 import { listUsers } from "@/db/repositories/user-repository";
@@ -27,34 +26,26 @@ export default async function AdminUsersPage() {
   }
 
   return (
-    <div className="min-h-screen bg-background">
-      <header className="border-b border-border/60">
-        <div className="mx-auto flex max-w-4xl items-center justify-between px-6 py-4">
-          <div>
-            <p className="text-sm text-muted-foreground">
-              <Link href="/admin" className="hover:underline">
-                {t.common.admin}
-              </Link>{" "}
-              / {t.nav.users}
-            </p>
-            <h1 className="text-xl font-semibold">{t.users.heading}</h1>
-          </div>
-          <AdminLogoutButton
-            label={t.common.signOut}
-            signingOutLabel={t.common.signingOut}
-          />
-        </div>
-      </header>
+    <>
+      <AdminPageHeader title={t.users.heading} />
 
-      <main className="mx-auto max-w-4xl space-y-4 px-6 py-8">
+      <div className="space-y-4">
         <p className="text-sm text-muted-foreground">{t.users.description}</p>
 
         <div className="overflow-x-auto rounded-xl border border-border">
           <table className="min-w-full text-left text-sm">
+            <caption className="sr-only">{t.users.heading}</caption>
             <thead className="bg-muted/50">
               <tr>
-                <th className="px-4 py-3 font-medium">{t.users.email}</th>
-                <th className="px-4 py-3 font-medium">{t.users.role}</th>
+                <th scope="col" className="px-4 py-3 font-medium">
+                  {t.users.email}
+                </th>
+                <th
+                  scope="col"
+                  className="whitespace-nowrap px-4 py-3 font-medium"
+                >
+                  {t.users.role}
+                </th>
               </tr>
             </thead>
             <tbody>
@@ -64,7 +55,7 @@ export default async function AdminUsersPage() {
                     <p className="font-medium">{user.email}</p>
                     <p className="text-xs text-muted-foreground">{user.name}</p>
                   </td>
-                  <td className="px-4 py-3">
+                  <td className="whitespace-nowrap px-4 py-3">
                     <UserRoleSelect
                       userId={user.id}
                       role={user.role}
@@ -89,7 +80,7 @@ export default async function AdminUsersPage() {
             </tbody>
           </table>
         </div>
-      </main>
-    </div>
+      </div>
+    </>
   );
 }

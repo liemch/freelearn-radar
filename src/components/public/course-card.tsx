@@ -1,8 +1,9 @@
 import { CourseCardVisual } from "@/components/public/course-card-visual";
 import { FreeStatusBadge } from "@/components/public/free-status-badge";
 import { LocalizedLink } from "@/components/public/localized-link";
-import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
 import type { CourseWithProvider } from "@/db/repositories/course-repository";
+import { getCourseVisual } from "@/domain/course/course-visual";
 import {
   formatLevelLabel,
   getCertificateTypeLabel,
@@ -23,20 +24,23 @@ import { localePath } from "@/lib/i18n/path";
 type CourseCardProps = {
   course: CourseWithProvider;
   locale: Locale;
+  /** Set on the first row of the first grid so the hero images load eagerly. */
+  priority?: boolean;
 };
 
 /**
- * Scan order: Visual → Free status → Title → Provider → Value → Meta → CTA
- * Links go through LocalizedLink so navigation tracks the live URL locale.
+ * Scan order: visual → title → provider → truth badges → effort → freshness.
+ *
+ * The whole card is one link: the title anchor is stretched over the card, and
+ * the provider link is lifted above it. That keeps a single tab stop per card
+ * while leaving the provider reachable — nesting two anchors would not.
  */
-export function CourseCard({ course, locale }: CourseCardProps) {
+export function CourseCard({ course, locale, priority }: CourseCardProps) {
   const dict = getDictionary(locale);
+  const visual = getCourseVisual(course);
   const certificate = getCertificateTypeLabel(course.certificateType, locale);
   const duration = formatDuration(course.durationMinutes);
-  const stale = isStaleForPublicWarning(
-    course.lastVerifiedAt,
-    course.priceType,
-  );
+  const stale = isStaleForPublicWarning(course.lastVerifiedAt, course.priceType);
   const courseHref = localePath(locale, `/course/${course.slug}`);
   const badgeSlots = selectCourseBadgeSlots({
     certificateKnown: course.certificateType !== "UNKNOWN",
@@ -46,46 +50,44 @@ export function CourseCard({ course, locale }: CourseCardProps) {
     course.freeDurability ?? "UNKNOWN",
     locale,
   );
+  const freshness = verificationAgeLabel(
+    course.lastVerifiedAt,
+    undefined,
+    dict.verification,
+  );
 
   return (
-    <article className="group flex h-full flex-col overflow-hidden rounded-xl bg-card ring-1 ring-border/70 transition hover:ring-primary/30 hover:shadow-md sm:hover:-translate-y-0.5 motion-reduce:transition-none motion-reduce:hover:translate-y-0">
-      <LocalizedLink href={courseHref} className="block shrink-0">
-        <CourseCardVisual course={course} locale={locale} />
-      </LocalizedLink>
+    <article className="group relative flex h-full flex-col overflow-hidden rounded-xl border border-border/70 bg-card transition hover:border-primary/40 hover:shadow-md focus-within:border-primary/40 motion-reduce:transition-none">
+      <div className="relative">
+        <CourseCardVisual
+          src={visual.src}
+          eyebrow={visual.eyebrow}
+          title={visual.title}
+          toneClass={visual.toneClass}
+          priority={priority}
+        />
+        {course.provider?.name ? (
+          <span className="absolute left-3 top-3 rounded-md bg-background/92 px-2 py-1 text-[0.6875rem] font-semibold text-foreground shadow-sm backdrop-blur-sm">
+            {course.provider.name}
+          </span>
+        ) : null}
+      </div>
 
-      <div className="flex flex-1 flex-col p-3.5 pt-3 sm:p-4">
-        <div className="flex flex-wrap items-center gap-2">
-          {badgeSlots.includes("price") ? (
-            <FreeStatusBadge
-              priceType={course.priceType}
-              locale={locale}
-              size="sm"
-            />
-          ) : null}
-          {badgeSlots.includes("certificate") ? (
-            <span className="text-xs text-muted-foreground">{certificate}</span>
-          ) : null}
-          {badgeSlots.includes("durability") ? (
-            <span className="rounded-full border border-border px-2 py-0.5 text-xs text-muted-foreground">
-              {durability}
-            </span>
-          ) : null}
-        </div>
-
-        <h3 className="mt-2.5 text-base font-semibold leading-snug tracking-tight">
+      <div className="flex flex-1 flex-col p-4">
+        <h3 className="text-[0.9375rem] font-semibold leading-snug tracking-tight">
           <LocalizedLink
             href={courseHref}
-            className="transition hover:text-primary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+            className="rounded-sm after:absolute after:inset-0 after:content-[''] group-hover:text-primary"
           >
             {course.title}
           </LocalizedLink>
         </h3>
 
-        <p className="mt-1 text-xs font-medium text-muted-foreground">
+        <p className="mt-1 text-xs text-muted-foreground">
           {course.provider?.slug ? (
             <LocalizedLink
               href={localePath(locale, `/provider/${course.provider.slug}`)}
-              className="hover:text-primary hover:underline"
+              className="relative z-10 hover:text-primary hover:underline"
             >
               {course.provider.name}
             </LocalizedLink>
@@ -94,9 +96,21 @@ export function CourseCard({ course, locale }: CourseCardProps) {
           )}
         </p>
 
-        <p className="mt-2 line-clamp-2 flex-1 text-sm leading-relaxed text-muted-foreground">
-          {course.shortDescription ?? dict.courseDetail.fallbackSummary}
-        </p>
+        <div className="mt-3 flex flex-wrap items-center gap-1.5">
+          {badgeSlots.includes("price") ? (
+            <FreeStatusBadge
+              priceType={course.priceType}
+              locale={locale}
+              size="sm"
+            />
+          ) : null}
+          {badgeSlots.includes("certificate") ? (
+            <Badge variant="outline">{certificate}</Badge>
+          ) : null}
+          {badgeSlots.includes("durability") ? (
+            <Badge variant="outline">{durability}</Badge>
+          ) : null}
+        </div>
 
         <p className="mt-3 text-xs text-muted-foreground">
           <span>
@@ -110,32 +124,15 @@ export function CourseCard({ course, locale }: CourseCardProps) {
           <span>{duration ?? dict.course.durationUnknown}</span>
         </p>
 
-        <p className="mt-1 text-xs text-muted-foreground">
-          {stale ? (
-            <span className="text-amber-800 dark:text-amber-200">
-              {dict.course.staleVerification} ·{" "}
-              {verificationAgeLabel(
-                course.lastVerifiedAt,
-                undefined,
-                dict.verification,
-              )}
-            </span>
-          ) : (
-            verificationAgeLabel(
-              course.lastVerifiedAt,
-              undefined,
-              dict.verification,
-            )
-          )}
+        <p
+          className={
+            stale
+              ? "mt-auto pt-3 text-xs font-medium text-warning-foreground"
+              : "mt-auto pt-3 text-xs text-muted-foreground"
+          }
+        >
+          {stale ? `${dict.course.staleVerification} · ${freshness}` : freshness}
         </p>
-
-        <div className="mt-4">
-          <Button asChild className="h-11 w-full sm:h-8" size="sm">
-            <LocalizedLink href={courseHref}>
-              {dict.course.openCourse}
-            </LocalizedLink>
-          </Button>
-        </div>
       </div>
     </article>
   );

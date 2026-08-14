@@ -1,5 +1,5 @@
 import { LocalizedLink } from "@/components/public/localized-link";
-import { CourseCard } from "@/components/public/course-card";
+import { CourseGrid } from "@/components/public/course-grid";
 import type { CourseWithProvider } from "@/db/repositories/course-repository";
 import type { Locale } from "@/lib/i18n/config";
 import { getDictionary } from "@/lib/i18n/get-dictionary";
@@ -11,6 +11,7 @@ type CourseSectionProps = {
   locale: Locale;
   viewAllHref?: string;
   viewAllLabel?: string;
+  priorityCount?: number;
 };
 
 export function CourseSection({
@@ -20,6 +21,7 @@ export function CourseSection({
   locale,
   viewAllHref,
   viewAllLabel,
+  priorityCount,
 }: CourseSectionProps) {
   if (courses.length === 0) {
     return null;
@@ -47,11 +49,11 @@ export function CourseSection({
           </LocalizedLink>
         ) : null}
       </div>
-      <div className="grid gap-3 sm:grid-cols-2 sm:gap-4 lg:grid-cols-3">
-        {courses.map((course) => (
-          <CourseCard key={course.id} course={course} locale={locale} />
-        ))}
-      </div>
+      <CourseGrid
+        courses={courses}
+        locale={locale}
+        priorityCount={priorityCount}
+      />
     </section>
   );
 }

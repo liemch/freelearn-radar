@@ -8,10 +8,12 @@ import { HomeHero } from "@/components/public/home-hero";
 import { LocaleHtmlLang } from "@/components/public/locale-html-lang";
 import { SiteFooter } from "@/components/public/site-footer";
 import { SiteHeader } from "@/components/public/site-header";
+import { TrustStrip } from "@/components/public/trust-strip";
 import { PageShell, PageStack } from "@/components/layout/page-shell";
 import { Button } from "@/components/ui/button";
 import { listCategories } from "@/db/repositories/category-repository";
 import {
+  getCatalogTrustSignals,
   listPublishedCoursesWithProvider,
   queryCatalog,
 } from "@/db/repositories/course-repository";
@@ -91,7 +93,7 @@ export default async function HomePage({ params }: HomePageProps) {
     },
   ];
 
-  const [published, categories, providers, freeCert, shortCourses] =
+  const [published, categories, providers, freeCert, shortCourses, trust] =
     await Promise.all([
       withDb(
         "home.published",
@@ -122,6 +124,10 @@ export default async function HomePage({ params }: HomePageProps) {
           }),
         { items: [], total: 0, page: 1, pageSize: 6, totalPages: 1 },
       ),
+      withDb("home.trust", (db) => getCatalogTrustSignals(db), {
+        publishedCount: 0,
+        lastVerifiedAt: null,
+      }),
     ]);
 
   const freeEligible = published.filter((course) =>
@@ -152,6 +158,12 @@ export default async function HomePage({ params }: HomePageProps) {
       <LocaleHtmlLang locale={locale} />
       <SiteHeader locale={locale} />
       <HomeHero hero={dict.hero} topics={topics} />
+      <TrustStrip
+        locale={locale}
+        publishedCount={trust.publishedCount}
+        providerCount={providers.length}
+        lastVerifiedAt={trust.lastVerifiedAt}
+      />
 
       <PageShell>
         <PageStack className="gap-8 sm:gap-10">
@@ -176,6 +188,7 @@ export default async function HomePage({ params }: HomePageProps) {
               courses={freeThisWeek}
               viewAllHref={localePath(locale, "/search?price=TEMPORARILY_FREE")}
               viewAllLabel={dict.sections.viewAll}
+              priorityCount={4}
             />
           ) : null}
 
@@ -187,26 +200,8 @@ export default async function HomePage({ params }: HomePageProps) {
               courses={best}
               viewAllHref={localePath(locale, "/search?sort=recommended")}
               viewAllLabel={dict.sections.viewAll}
+              priorityCount={freeThisWeek.length === 0 ? 4 : 0}
             />
-          ) : null}
-
-          {categories.length > 0 ? (
-            <section className="space-y-3">
-              <h2 className="text-xl font-semibold tracking-tight sm:text-2xl">
-                {dict.sections.browseTopic}
-              </h2>
-              <div className="-mx-1 flex gap-2 overflow-x-auto px-1 pb-1 sm:flex-wrap sm:overflow-visible">
-                {categories.map((category) => (
-                  <Link
-                    key={category.id}
-                    href={localePath(locale, `/category/${category.slug}`)}
-                    className="shrink-0 rounded-full bg-secondary px-3.5 py-2 text-sm font-medium text-secondary-foreground transition hover:bg-accent sm:py-1.5"
-                  >
-                    {category.name}
-                  </Link>
-                ))}
-              </div>
-            </section>
           ) : null}
 
           {recentlyVerified.length > 0 ? (
@@ -218,6 +213,36 @@ export default async function HomePage({ params }: HomePageProps) {
               viewAllHref={localePath(locale, "/search?sort=newest")}
               viewAllLabel={dict.sections.viewAll}
             />
+          ) : null}
+
+          {categories.length > 0 ? (
+            <section className="space-y-3">
+              <h2 className="text-xl font-semibold tracking-tight sm:text-2xl">
+                {dict.sections.browseTopic}
+              </h2>
+              {/*
+                Tiles rather than a scrolling pill rail: topics are a primary
+                entry point, and a horizontal scroller hides most of them on the
+                exact screens where browsing matters most. No counts — deriving
+                an accurate per-category total would cost one query each.
+              */}
+              <ul className="grid grid-cols-2 gap-2 sm:grid-cols-3 lg:grid-cols-4">
+                {categories.map((category) => (
+                  <li key={category.id}>
+                    <Link
+                      href={localePath(locale, `/category/${category.slug}`)}
+                      className="flex h-full items-center gap-2 rounded-lg border border-border bg-card px-3 py-2.5 text-sm font-medium transition hover:border-primary/40 hover:bg-accent hover:text-accent-foreground"
+                    >
+                      <span
+                        aria-hidden="true"
+                        className="size-1.5 shrink-0 rounded-full bg-primary/60"
+                      />
+                      <span className="min-w-0 truncate">{category.name}</span>
+                    </Link>
+                  </li>
+                ))}
+              </ul>
+            </section>
           ) : null}
 
           {freeCert.items.length > 0 ? (
@@ -261,21 +286,30 @@ export default async function HomePage({ params }: HomePageProps) {
             </section>
           ) : null}
 
-          <section className="border-t border-border/50 pt-8">
-            <div className="flex flex-wrap items-end justify-between gap-4">
-              <div>
-                <h2 className="text-xl font-semibold tracking-tight sm:text-2xl">
-                  {dict.sections.monthlyCollection}
-                </h2>
-                <p className="mt-1 text-sm text-muted-foreground">
-                  {dict.sections.monthlyCollectionSub}
-                </p>
+          {/*
+            Hidden on an empty catalogue: the monthly collection would render as
+            a heading with nothing beneath it, directly under the empty state
+            that already explains the situation.
+          */}
+          {hasCourses ? (
+            <section className="border-t border-border/50 pt-8">
+              <div className="flex flex-wrap items-end justify-between gap-4">
+                <div>
+                  <h2 className="text-xl font-semibold tracking-tight sm:text-2xl">
+                    {dict.sections.monthlyCollection}
+                  </h2>
+                  <p className="mt-1 text-sm text-muted-foreground">
+                    {dict.sections.monthlyCollectionSub}
+                  </p>
+                </div>
+                <Button asChild variant="outline" size="sm">
+                  <Link href={bestHref}>
+                    {dict.sections.monthlyCollectionCta}
+                  </Link>
+                </Button>
               </div>
-              <Button asChild variant="outline" size="sm">
-                <Link href={bestHref}>{dict.sections.monthlyCollectionCta}</Link>
-              </Button>
-            </div>
-          </section>
+            </section>
+          ) : null}
         </PageStack>
       </PageShell>
 

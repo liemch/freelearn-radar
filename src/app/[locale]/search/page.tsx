@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 
 import { CatalogFiltersForm } from "@/components/public/catalog-filters";
-import { CourseCard } from "@/components/public/course-card";
+import { CourseGrid } from "@/components/public/course-grid";
 import { EmptyState } from "@/components/public/empty-state";
 import { LocaleHtmlLang } from "@/components/public/locale-html-lang";
 import { Pagination } from "@/components/public/pagination";
@@ -105,6 +105,15 @@ export default async function SearchPage({
     resultCount: catalog.total,
   });
 
+  const hasNarrowingFilters = Boolean(
+    filters.q ||
+      filters.providerSlug ||
+      filters.level ||
+      filters.priceType ||
+      filters.certificateType ||
+      filters.durationMaxMinutes,
+  );
+
   return (
     <main className="min-h-screen bg-background">
       <LocaleHtmlLang locale={locale} />
@@ -137,13 +146,18 @@ export default async function SearchPage({
             description={dict.empty.searchDescription}
             actionHref="/free-courses/ai"
             actionLabel={dict.empty.searchAction}
+            // Offered only when a filter is what emptied the page.
+            secondaryHref={hasNarrowingFilters ? "/search" : undefined}
+            secondaryLabel={
+              hasNarrowingFilters ? dict.filters.clearAll : undefined
+            }
           />
         ) : (
-          <div className="grid gap-3 sm:grid-cols-2 sm:gap-4 lg:grid-cols-3">
-            {catalog.items.map((course) => (
-              <CourseCard key={course.id} course={course} locale={locale} />
-            ))}
-          </div>
+          <CourseGrid
+            courses={catalog.items}
+            locale={locale}
+            priorityCount={4}
+          />
         )}
 
         <Pagination

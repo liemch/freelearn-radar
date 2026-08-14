@@ -1,55 +1,52 @@
 import type { CourseWithProvider } from "@/db/repositories/course-repository";
 
-export type CourseVisual =
-  | { type: "image"; src: string }
-  | {
-      type: "fallback";
-      eyebrow: string;
-      title: string;
-      toneClass: string;
-    };
-
-const CATEGORY_TONES: Record<string, string> = {
-  ai: "bg-slate-800 text-white",
-  programming: "bg-indigo-900 text-white",
-  "data-science": "bg-violet-900 text-white",
-  cloud: "bg-sky-900 text-white",
-  cybersecurity: "bg-zinc-800 text-white",
-  business: "bg-stone-700 text-white",
-  design: "bg-rose-900 text-white",
-  default: "bg-primary/90 text-primary-foreground",
+export type CourseVisual = {
+  /** Remote thumbnail when the pipeline captured one; otherwise render the tile. */
+  src: string | null;
+  eyebrow: string;
+  title: string;
+  toneClass: string;
 };
 
-function providerTone(providerSlug?: string | null): string {
-  const map: Record<string, string> = {
-    coursera: "bg-blue-900 text-white",
-    udemy: "bg-violet-950 text-white",
-    edx: "bg-emerald-900 text-white",
-    "microsoft-learn": "bg-sky-950 text-white",
-    freecodecamp: "bg-neutral-800 text-white",
-  };
-  if (providerSlug && map[providerSlug]) {
-    return map[providerSlug];
+const TILE_TONES = [
+  "course-tile-1",
+  "course-tile-2",
+  "course-tile-3",
+  "course-tile-4",
+  "course-tile-5",
+] as const;
+
+/**
+ * FNV-1a over a stable course field. Any hash would do; the requirement is that
+ * it is pure, so a course does not change appearance between renders or between
+ * the server and the client.
+ */
+function toneFor(seed: string): string {
+  let hash = 0x811c9dc5;
+  for (let index = 0; index < seed.length; index += 1) {
+    hash ^= seed.charCodeAt(index);
+    hash = Math.imul(hash, 0x01000193);
   }
-  return CATEGORY_TONES.default;
+  return TILE_TONES[Math.abs(hash) % TILE_TONES.length]!;
 }
 
+/**
+ * Resolve what a course card should show in its 16:9 slot.
+ *
+ * A real provider thumbnail wins when one exists. Otherwise the card gets a
+ * branded tile — deliberately not artwork, since inventing course imagery would
+ * misrepresent the provider. Tones are drawn from one restrained brand-adjacent
+ * set so a grid of fallbacks looks curated rather than random.
+ */
 export function getCourseVisual(course: CourseWithProvider): CourseVisual {
-  const remote =
-    course.imageStorageUrl ?? course.imageSourceUrl ?? null;
-  if (remote && /^https:\/\//i.test(remote)) {
-    return { type: "image", src: remote };
-  }
-
-  const providerName = course.provider?.name ?? "Course";
-  const slug = course.provider?.slug;
+  const remote = course.imageStorageUrl ?? course.imageSourceUrl ?? null;
   const shortTitle =
-    course.title.length > 48 ? `${course.title.slice(0, 45)}…` : course.title;
+    course.title.length > 64 ? `${course.title.slice(0, 61)}…` : course.title;
 
   return {
-    type: "fallback",
-    eyebrow: providerName,
+    src: remote && /^https:\/\//i.test(remote) ? remote : null,
+    eyebrow: course.provider?.name ?? "",
     title: shortTitle,
-    toneClass: providerTone(slug),
+    toneClass: toneFor(course.slug || course.id || course.title),
   };
 }

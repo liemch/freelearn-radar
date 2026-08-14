@@ -34,7 +34,12 @@ export async function insertAuditLog(
 
 export async function listRecentAuditLogs(
   db: Db,
-  options?: { limit?: number; entityType?: string; entityId?: string },
+  options?: {
+    limit?: number;
+    entityType?: string;
+    entityId?: string;
+    action?: string;
+  },
 ): Promise<AdminAuditLog[]> {
   const limit = options?.limit ?? 50;
   const conditions = [];
@@ -44,6 +49,9 @@ export async function listRecentAuditLogs(
   }
   if (options?.entityId) {
     conditions.push(eq(adminAuditLog.entityId, options.entityId));
+  }
+  if (options?.action) {
+    conditions.push(eq(adminAuditLog.action, options.action));
   }
 
   const query = db.select().from(adminAuditLog);

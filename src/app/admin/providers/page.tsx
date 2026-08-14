@@ -1,7 +1,7 @@
 import Link from "next/link";
 import { redirect } from "next/navigation";
 
-import { AdminLogoutButton } from "@/components/admin/logout-button";
+import { AdminPageHeader } from "@/components/admin/admin-page-header";
 import { Button } from "@/components/ui/button";
 import { getDb } from "@/db";
 import { listProviders } from "@/db/repositories/provider-repository";
@@ -26,26 +26,10 @@ export default async function AdminProvidersPage() {
   }
 
   return (
-    <div className="min-h-screen bg-background">
-      <header className="border-b border-border/60">
-        <div className="mx-auto flex max-w-6xl items-center justify-between px-6 py-4">
-          <div>
-            <p className="text-sm text-muted-foreground">
-              <Link href="/admin" className="hover:underline">
-                {t.common.admin}
-              </Link>{" "}
-              / {t.nav.providers}
-            </p>
-            <h1 className="text-xl font-semibold">{t.providers.heading}</h1>
-          </div>
-          <AdminLogoutButton
-            label={t.common.signOut}
-            signingOutLabel={t.common.signingOut}
-          />
-        </div>
-      </header>
+    <>
+      <AdminPageHeader title={t.providers.heading} />
 
-      <main className="mx-auto max-w-6xl space-y-4 px-6 py-8">
+      <div className="space-y-4">
         <p className="text-sm text-muted-foreground">{t.providers.description}</p>
         {providers.map((provider) => (
           <article
@@ -80,7 +64,7 @@ export default async function AdminProvidersPage() {
             {t.providers.empty}
           </p>
         ) : null}
-      </main>
-    </div>
+      </div>
+    </>
   );
 }

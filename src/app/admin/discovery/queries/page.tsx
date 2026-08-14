@@ -1,8 +1,7 @@
-import Link from "next/link";
 import { redirect } from "next/navigation";
 
+import { AdminPageHeader } from "@/components/admin/admin-page-header";
 import { DiscoveryQueryToggle } from "@/components/admin/discovery-query-toggle";
-import { AdminLogoutButton } from "@/components/admin/logout-button";
 import { getDb } from "@/db";
 import { listDiscoveryQueries } from "@/db/repositories/discovery-query-repository";
 import { getSession } from "@/lib/auth/guards";
@@ -27,48 +26,50 @@ export default async function AdminDiscoveryQueriesPage() {
   }
 
   return (
-    <div className="min-h-screen bg-background">
-      <header className="border-b border-border/60">
-        <div className="mx-auto flex max-w-6xl items-center justify-between px-6 py-4">
-          <div>
-            <p className="text-sm text-muted-foreground">
-              <Link href="/admin" className="hover:underline">
-                {t.common.admin}
-              </Link>{" "}
-              / {t.nav.discoveryQueries}
-            </p>
-            <h1 className="text-xl font-semibold">
-              {t.discoveryQueries.heading}
-            </h1>
-          </div>
-          <AdminLogoutButton
-            label={t.common.signOut}
-            signingOutLabel={t.common.signingOut}
-          />
-        </div>
-      </header>
+    <>
+      <AdminPageHeader title={t.discoveryQueries.heading} />
 
-      <main className="mx-auto max-w-6xl space-y-4 px-6 py-8">
+      <div className="space-y-4">
         <p className="text-sm text-muted-foreground">
           {t.discoveryQueries.description}
         </p>
 
         <div className="overflow-x-auto rounded-xl border border-border">
           <table className="min-w-full text-left text-sm">
+            <caption className="sr-only">{t.discoveryQueries.heading}</caption>
             <thead className="bg-muted/50">
               <tr>
-                <th className="px-4 py-3 font-medium">{t.discovery.query}</th>
-                <th className="px-4 py-3 font-medium">{t.discovery.provider}</th>
-                <th className="px-4 py-3 font-medium">
+                <th scope="col" className="px-4 py-3 font-medium">
+                  {t.discovery.query}
+                </th>
+                <th
+                  scope="col"
+                  className="whitespace-nowrap px-4 py-3 font-medium"
+                >
+                  {t.discovery.provider}
+                </th>
+                <th
+                  scope="col"
+                  className="whitespace-nowrap px-4 py-3 font-medium"
+                >
                   {t.discoveryQueries.junkRate}
                 </th>
-                <th className="px-4 py-3 font-medium">
+                <th
+                  scope="col"
+                  className="whitespace-nowrap px-4 py-3 font-medium"
+                >
                   {t.discoveryQueries.successCount}
                 </th>
-                <th className="px-4 py-3 font-medium">
+                <th
+                  scope="col"
+                  className="whitespace-nowrap px-4 py-3 font-medium"
+                >
                   {t.discoveryQueries.failureCount}
                 </th>
-                <th className="px-4 py-3 font-medium">
+                <th
+                  scope="col"
+                  className="whitespace-nowrap px-4 py-3 font-medium"
+                >
                   {t.discoveryQueries.enabled}
                 </th>
               </tr>
@@ -82,13 +83,19 @@ export default async function AdminDiscoveryQueriesPage() {
                       {query.category}
                     </p>
                   </td>
-                  <td className="px-4 py-3">{query.provider}</td>
-                  <td className="px-4 py-3">
+                  <td className="whitespace-nowrap px-4 py-3">
+                    {query.provider}
+                  </td>
+                  <td className="whitespace-nowrap px-4 py-3">
                     {query.junkRate ?? t.common.notSet}
                   </td>
-                  <td className="px-4 py-3">{query.successCount}</td>
-                  <td className="px-4 py-3">{query.failureCount}</td>
-                  <td className="px-4 py-3">
+                  <td className="whitespace-nowrap px-4 py-3">
+                    {query.successCount}
+                  </td>
+                  <td className="whitespace-nowrap px-4 py-3">
+                    {query.failureCount}
+                  </td>
+                  <td className="whitespace-nowrap px-4 py-3">
                     {canWrite ? (
                       <DiscoveryQueryToggle
                         queryId={query.id}
@@ -119,7 +126,7 @@ export default async function AdminDiscoveryQueriesPage() {
             </tbody>
           </table>
         </div>
-      </main>
-    </div>
+      </div>
+    </>
   );
 }

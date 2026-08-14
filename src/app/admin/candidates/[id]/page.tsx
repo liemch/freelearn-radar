@@ -1,10 +1,12 @@
-import Link from "next/link";
 import { notFound, redirect } from "next/navigation";
 
+import { AdminPageHeader } from "@/components/admin/admin-page-header";
 import { CandidateActions } from "@/components/admin/candidate-actions";
 import { CandidateSourceImage } from "@/components/admin/candidate-source-image";
+import { Badge, type BadgeProps } from "@/components/ui/badge";
 import { getDb } from "@/db";
 import { findCandidateById } from "@/db/repositories/candidate-repository";
+import type { DiscoveryStatus } from "@/domain/course/types";
 import {
   getCertificateTypeLabel,
   getDiscoveryStatusLabel,
@@ -26,6 +28,28 @@ import { getAdminDictionary } from "@/lib/i18n/admin";
 import { getAdminLocale } from "@/lib/i18n/admin-locale";
 
 export const dynamic = "force-dynamic";
+
+function discoveryStatusVariant(
+  status: DiscoveryStatus,
+): BadgeProps["variant"] {
+  switch (status) {
+    case "READY_FOR_REVIEW":
+      return "info";
+    case "APPROVED":
+    case "PUBLISHED":
+      return "success";
+    case "ERROR":
+    case "INVALID":
+      return "danger";
+    case "REJECTED":
+    case "DUPLICATE":
+    case "EXPIRED":
+    case "EXPIRED_UNREVIEWED":
+      return "outline";
+    default:
+      return "neutral";
+  }
+}
 
 type PageProps = { params: Promise<{ id: string }> };
 
@@ -96,20 +120,10 @@ export default async function AdminCandidateDetailPage({ params }: PageProps) {
   };
 
   return (
-    <div className="min-h-screen bg-background">
-      <header className="border-b border-border/60">
-        <div className="mx-auto flex max-w-4xl items-center justify-between gap-4 px-6 py-4">
-          <div>
-            <p className="text-sm text-muted-foreground">
-              <Link href="/admin/candidates" className="hover:underline">
-                {t.nav.candidates}
-              </Link>{" "}
-              / {t.candidates.detail}
-            </p>
-            <h1 className="text-xl font-semibold">
-              {candidate.rawTitle || t.candidates.untitled}
-            </h1>
-          </div>
+    <>
+      <AdminPageHeader
+        title={candidate.rawTitle || t.candidates.untitled}
+        actions={
           <CandidateActions
             candidateId={candidate.id}
             canApprove={canApproveCandidate(candidate.discoveryStatus)}
@@ -130,15 +144,19 @@ export default async function AdminCandidateDetailPage({ params }: PageProps) {
             }
             labels={actionLabels}
           />
-        </div>
-      </header>
+        }
+      />
 
-      <main className="mx-auto max-w-4xl space-y-6 px-6 py-8">
+      <div className="space-y-6">
         <section className="grid gap-4 rounded-xl border border-border p-5 sm:grid-cols-2">
           <div>
             <p className="text-sm text-muted-foreground">{t.common.status}</p>
-            <p className="font-medium">
-              {getDiscoveryStatusLabel(candidate.discoveryStatus)}
+            <p className="mt-1">
+              <Badge
+                variant={discoveryStatusVariant(candidate.discoveryStatus)}
+              >
+                {getDiscoveryStatusLabel(candidate.discoveryStatus)}
+              </Badge>
             </p>
             <p className="mt-1 font-mono text-xs text-muted-foreground">
               {candidate.discoveryStatus}
@@ -303,7 +321,7 @@ export default async function AdminCandidateDetailPage({ params }: PageProps) {
             )}
           </pre>
         </details>
-      </main>
-    </div>
+      </div>
+    </>
   );
 }

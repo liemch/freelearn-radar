@@ -13,7 +13,24 @@ export type Dictionary = {
     subhead: string;
     searchPlaceholder: string;
     searchButton: string;
-    trending: string;
+    /**
+     * Curated shortcuts, not behavioural data. Named for what it is: the
+     * previous "Trending" label claimed popularity the product cannot measure.
+     */
+    topicShortcuts: string;
+  };
+  /**
+   * Homepage trust strip. Every numeric item is rendered only when the
+   * application can supply a real value; there are no placeholder figures.
+   */
+  trust: {
+    verifiedCourses: string;
+    verifiedCoursesHint: string;
+    providersTracked: string;
+    providersTrackedHint: string;
+    lastChecked: string;
+    transparency: string;
+    transparencyHint: string;
   };
   sections: {
     freeThisWeek: string;
@@ -78,6 +95,14 @@ export type Dictionary = {
     levelIntermediate: string;
     levelAdvanced: string;
     levelAll: string;
+    /**
+     * Accessible name for the remove control on an active-filter chip.
+     *
+     * A template string rather than a function: this object is handed whole to
+     * a client component, and a function cannot cross that boundary.
+     * Placeholder: {label}
+     */
+    removeFilter: string;
   };
   pagination: {
     previous: string;
@@ -190,6 +215,7 @@ export type Dictionary = {
   a11y: {
     freeStatusAndCertificate: string;
     exploreRelated: string;
+    breadcrumb: string;
   };
   verification: {
     never: string;

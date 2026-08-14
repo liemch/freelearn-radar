@@ -1,7 +1,6 @@
-import Link from "next/link";
 import { notFound, redirect } from "next/navigation";
 
-import { AdminLogoutButton } from "@/components/admin/logout-button";
+import { AdminPageHeader } from "@/components/admin/admin-page-header";
 import { ProviderEditForm } from "@/components/admin/provider-edit-form";
 import { UrlShapeTryBox } from "@/components/admin/url-shape-try-box";
 import { getDb } from "@/db";
@@ -30,30 +29,10 @@ export default async function AdminProviderDetailPage({ params }: PageProps) {
   const canWrite = session.role === "ADMIN";
 
   return (
-    <div className="min-h-screen bg-background">
-      <header className="border-b border-border/60">
-        <div className="mx-auto flex max-w-4xl items-center justify-between px-6 py-4">
-          <div>
-            <p className="text-sm text-muted-foreground">
-              <Link href="/admin" className="hover:underline">
-                {t.common.admin}
-              </Link>{" "}
-              /{" "}
-              <Link href="/admin/providers" className="hover:underline">
-                {t.nav.providers}
-              </Link>{" "}
-              / {provider.name}
-            </p>
-            <h1 className="text-xl font-semibold">{provider.name}</h1>
-          </div>
-          <AdminLogoutButton
-            label={t.common.signOut}
-            signingOutLabel={t.common.signingOut}
-          />
-        </div>
-      </header>
+    <>
+      <AdminPageHeader title={provider.name} />
 
-      <main className="mx-auto max-w-4xl space-y-6 px-6 py-8">
+      <div className="space-y-6">
         <p className="text-sm text-muted-foreground">
           {provider.slug} · {t.providers.domain}: {provider.domain}
         </p>
@@ -85,7 +64,7 @@ export default async function AdminProviderDetailPage({ params }: PageProps) {
             classifying: t.providers.classifying,
           }}
         />
-      </main>
-    </div>
+      </div>
+    </>
   );
 }

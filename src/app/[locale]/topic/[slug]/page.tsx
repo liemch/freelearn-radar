@@ -1,10 +1,10 @@
 import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 
-import { CourseCard } from "@/components/public/course-card";
+import { Breadcrumb } from "@/components/public/breadcrumb";
+import { CourseGrid } from "@/components/public/course-grid";
 import { EmptyState } from "@/components/public/empty-state";
 import { LocaleHtmlLang } from "@/components/public/locale-html-lang";
-import { LocalizedLink } from "@/components/public/localized-link";
 import { SiteFooter } from "@/components/public/site-footer";
 import { SiteHeader } from "@/components/public/site-header";
 import { PageShell } from "@/components/layout/page-shell";
@@ -125,15 +125,13 @@ export default async function TopicTagPage({ params }: TopicPageProps) {
       <SiteHeader locale={locale} />
       <PageShell>
         <div className="space-y-6 py-8">
-          <nav className="text-sm text-muted-foreground">
-            <LocalizedLink href="/" className="hover:underline">
-              {dict.common.home}
-            </LocalizedLink>
-            <span aria-hidden="true" className="mx-1.5">
-              /
-            </span>
-            <span>{name}</span>
-          </nav>
+          <Breadcrumb
+            label={dict.a11y.breadcrumb}
+            items={[
+              { label: dict.common.home, href: "/" },
+              { label: name },
+            ]}
+          />
 
           <header className="space-y-2">
             <h1 className="font-display text-3xl font-semibold tracking-tight">
@@ -155,13 +153,11 @@ export default async function TopicTagPage({ params }: TopicPageProps) {
               actionLabel={dict.common.searchCatalog}
             />
           ) : (
-            <ul className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-              {courseItems.map((course) => (
-                <li key={course.id}>
-                  <CourseCard course={course} locale={locale} />
-                </li>
-              ))}
-            </ul>
+            <CourseGrid
+              courses={courseItems}
+              locale={locale}
+              priorityCount={4}
+            />
           )}
         </div>
       </PageShell>

@@ -15,6 +15,7 @@ import {
   TOPIC_LANDINGS,
   topicCopy,
 } from "@/domain/discovery/topic-landings";
+import { getPriceTypeLabel } from "@/domain/course/labels";
 import { verificationAgeLabel } from "@/domain/verification/freshness-policy";
 
 type Leaf = string | ((...args: never[]) => string);
@@ -203,5 +204,49 @@ describe("locale-sensitive helpers", () => {
     expect(vi.pages.providerHeading("Coursera")).not.toBe(
       en.pages.providerHeading("Coursera"),
     );
+  });
+});
+
+/**
+ * Regression: `dict.filters` is handed whole to the `CatalogFiltersForm` client
+ * component. React cannot serialise a function across that boundary, so adding
+ * a `(x) => string` entry here turns every page carrying filters into a 500 —
+ * and neither typecheck nor build catches it, because both are perfectly valid
+ * TypeScript. Only running the app reveals it.
+ */
+describe("client-serialisable dictionary slices", () => {
+  const CLIENT_PASSED_SLICES = ["filters"] as const;
+
+  it.each(CLIENT_PASSED_SLICES)(
+    "keeps every value in dict.%s serialisable",
+    (slice) => {
+      for (const dict of [en, vi]) {
+        const group = dict[slice] as Record<string, unknown>;
+        for (const [key, value] of Object.entries(group)) {
+          expect(
+            typeof value,
+            `${slice}.${key} must be a plain value; use a "{placeholder}" template instead of a function`,
+          ).not.toBe("function");
+        }
+        expect(() => JSON.stringify(group)).not.toThrow();
+      }
+    },
+  );
+});
+
+/**
+ * FREE_AUDIT and FREE_TRIAL sit next to each other on the same badge and mean
+ * opposite things: audit access does not expire, a trial does, and FREE_TRIAL is
+ * excluded from free listings entirely (§66.4). A visitor who cannot tell the
+ * two labels apart cannot act on either.
+ */
+describe("price labels distinguish audit from trial", () => {
+  it.each(locales)("keeps the two labels distinct in %s", (locale) => {
+    const audit = getPriceTypeLabel("FREE_AUDIT", locale).label;
+    const trial = getPriceTypeLabel("FREE_TRIAL", locale).label;
+
+    expect(audit).not.toBe(trial);
+    expect(audit.toLowerCase()).not.toContain(trial.toLowerCase());
+    expect(trial.toLowerCase()).not.toContain(audit.toLowerCase());
   });
 });

@@ -1,9 +1,10 @@
 import Link from "next/link";
 import { redirect } from "next/navigation";
 
+import { AdminPageHeader } from "@/components/admin/admin-page-header";
 import { CandidateActions } from "@/components/admin/candidate-actions";
-import { AdminLogoutButton } from "@/components/admin/logout-button";
 import { EmptyState } from "@/components/public/empty-state";
+import { Badge, type BadgeProps } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { getDb } from "@/db";
 import { listCandidates } from "@/db/repositories/candidate-repository";
@@ -30,6 +31,28 @@ const REVIEW_QUEUE_STATUSES = new Set<DiscoveryStatus>([
   "READY_FOR_REVIEW",
   "ERROR",
 ]);
+
+function discoveryStatusVariant(
+  status: DiscoveryStatus,
+): BadgeProps["variant"] {
+  switch (status) {
+    case "READY_FOR_REVIEW":
+      return "info";
+    case "APPROVED":
+    case "PUBLISHED":
+      return "success";
+    case "ERROR":
+    case "INVALID":
+      return "danger";
+    case "REJECTED":
+    case "DUPLICATE":
+    case "EXPIRED":
+    case "EXPIRED_UNREVIEWED":
+      return "outline";
+    default:
+      return "neutral";
+  }
+}
 
 type CandidateView =
   | "all"
@@ -156,31 +179,17 @@ export default async function AdminCandidatesPage({ searchParams }: PageProps) {
   ];
 
   return (
-    <div className="min-h-screen bg-background">
-      <header className="border-b border-border/60">
-        <div className="mx-auto flex max-w-6xl items-center justify-between px-6 py-4">
-          <div>
-            <p className="text-sm text-muted-foreground">
-              <Link href="/admin" className="hover:underline">
-                {t.common.admin}
-              </Link>{" "}
-              / {t.nav.candidates}
-            </p>
-            <h1 className="text-xl font-semibold">{t.candidates.review}</h1>
-          </div>
-          <div className="flex items-center gap-3">
-            <Button asChild variant="outline">
-              <Link href="/admin/discovery">{t.nav.discovery}</Link>
-            </Button>
-            <AdminLogoutButton
-              label={t.common.signOut}
-              signingOutLabel={t.common.signingOut}
-            />
-          </div>
-        </div>
-      </header>
+    <>
+      <AdminPageHeader
+        title={t.candidates.review}
+        actions={
+          <Button asChild variant="outline">
+            <Link href="/admin/discovery">{t.nav.discovery}</Link>
+          </Button>
+        }
+      />
 
-      <main className="mx-auto max-w-6xl space-y-4 px-6 py-8">
+      <div className="space-y-4">
         <div className="flex flex-wrap gap-2">
           {views.map((item) => (
             <Button
@@ -207,9 +216,13 @@ export default async function AdminCandidatesPage({ searchParams }: PageProps) {
                 >
                   {candidate.rawTitle || candidate.canonicalUrl}
                 </Link>
-                <p className="text-sm text-muted-foreground">
-                  {candidate.provider || t.candidates.unknownProvider} ·{" "}
-                  {getDiscoveryStatusLabel(candidate.discoveryStatus)}
+                <p className="flex flex-wrap items-center gap-2 text-sm text-muted-foreground">
+                  {candidate.provider || t.candidates.unknownProvider}
+                  <Badge
+                    variant={discoveryStatusVariant(candidate.discoveryStatus)}
+                  >
+                    {getDiscoveryStatusLabel(candidate.discoveryStatus)}
+                  </Badge>
                 </p>
                 <a
                   href={candidate.canonicalUrl}
@@ -251,7 +264,7 @@ export default async function AdminCandidatesPage({ searchParams }: PageProps) {
             actionLabel={t.candidates.openDiscovery}
           />
         ) : null}
-      </main>
-    </div>
+      </div>
+    </>
   );
 }

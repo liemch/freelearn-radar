@@ -48,9 +48,15 @@ const PRICE_TYPE_LABELS_VI: Record<
     label: "Miễn phí 100%",
     shortHint: "Truy cập toàn bộ khóa học không mất phí",
   },
+  /*
+   * "Học thử miễn phí" was almost indistinguishable from FREE_TRIAL's
+   * "Dùng thử miễn phí", yet the two mean opposite things to a learner: audit
+   * access does not expire, a trial does. Naming what is free — the learning —
+   * separates them.
+   */
   FREE_AUDIT: {
-    label: "Học thử miễn phí",
-    shortHint: "Học miễn phí; phần mở rộng có thể trả phí",
+    label: "Học miễn phí",
+    shortHint: "Học toàn bộ nội dung miễn phí; chứng chỉ thường phải trả phí",
   },
   FREE_WITH_COUPON: {
     label: "Cần mã coupon",
@@ -61,7 +67,7 @@ const PRICE_TYPE_LABELS_VI: Record<
     shortHint: "Khuyến mãi có thể kết thúc sớm",
   },
   FREE_TRIAL: {
-    label: "Dùng thử miễn phí",
+    label: "Dùng thử có hạn",
     shortHint: "Truy cập thử trong thời gian giới hạn",
   },
   PAID: {

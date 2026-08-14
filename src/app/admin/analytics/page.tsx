@@ -1,7 +1,7 @@
 import Link from "next/link";
 import { redirect } from "next/navigation";
 
-import { AdminLogoutButton } from "@/components/admin/logout-button";
+import { AdminPageHeader } from "@/components/admin/admin-page-header";
 import { getDb } from "@/db";
 import {
   listTopClickedCategories,
@@ -37,28 +37,10 @@ export default async function AdminAnalyticsPage() {
   }
 
   return (
-    <div className="min-h-screen bg-background">
-      <header className="border-b border-border/60">
-        <div className="mx-auto flex max-w-6xl items-center justify-between px-6 py-4">
-          <div>
-            <p className="text-sm text-muted-foreground">
-              <Link href="/admin" className="hover:underline">
-                {t.common.admin}
-              </Link>{" "}
-              / {t.analytics.heading}
-            </p>
-            <h1 className="text-xl font-semibold">
-              {t.analytics.outboundAnalytics}
-            </h1>
-          </div>
-          <AdminLogoutButton
-            label={t.common.signOut}
-            signingOutLabel={t.common.signingOut}
-          />
-        </div>
-      </header>
+    <>
+      <AdminPageHeader title={t.analytics.outboundAnalytics} />
 
-      <main className="mx-auto grid max-w-6xl gap-6 px-6 py-8 lg:grid-cols-3">
+      <div className="grid gap-6 lg:grid-cols-3">
         <AnalyticsList
           title={t.analytics.topClickedCourses}
           emptyLabel={t.analytics.noClicks}
@@ -88,8 +70,8 @@ export default async function AdminAnalyticsPage() {
             value: item.clicks,
           }))}
         />
-      </main>
-    </div>
+      </div>
+    </>
   );
 }
 

@@ -16,7 +16,16 @@ export const vi: Dictionary = {
       "Khóa học miễn phí từ các nền tảng uy tín, với trạng thái miễn phí rõ ràng và thời điểm xác minh.",
     searchPlaceholder: "Tìm Python, AI, quản lý dự án…",
     searchButton: "Tìm kiếm",
-    trending: "Xu hướng",
+    topicShortcuts: "Bắt đầu với",
+  },
+  trust: {
+    verifiedCourses: "khóa học miễn phí đã xác minh",
+    verifiedCoursesHint: "Mỗi khóa đều được đối chiếu với trang gốc của nền tảng",
+    providersTracked: "nền tảng đang theo dõi",
+    providersTrackedHint: "Chỉ nhận nguồn có chính sách truy cập miễn phí công khai",
+    lastChecked: "Xác minh gần nhất",
+    transparency: "Trạng thái miễn phí nói thẳng",
+    transparencyHint: "Khóa chỉ học thử hay chứng chỉ trả phí đều được ghi rõ, không giấu",
   },
   sections: {
     freeThisWeek: "Miễn phí tuần này",
@@ -85,6 +94,7 @@ export const vi: Dictionary = {
     levelIntermediate: "Trung cấp",
     levelAdvanced: "Nâng cao",
     levelAll: "Mọi trình độ",
+    removeFilter: "Bỏ bộ lọc: {label}",
   },
   pagination: {
     previous: "Trước",
@@ -214,6 +224,7 @@ export const vi: Dictionary = {
   a11y: {
     freeStatusAndCertificate: "Trạng thái miễn phí và chứng chỉ",
     exploreRelated: "Khám phá nội dung liên quan",
+    breadcrumb: "Đường dẫn điều hướng",
   },
   verification: {
     never: "Chưa từng xác minh",

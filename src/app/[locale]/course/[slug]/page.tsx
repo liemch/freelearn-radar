@@ -1,6 +1,7 @@
 import { notFound } from "next/navigation";
 import type { Metadata } from "next";
 
+import { CourseCardVisual } from "@/components/public/course-card-visual";
 import { CourseSection } from "@/components/public/course-section";
 import { FreeStatusBadge } from "@/components/public/free-status-badge";
 import { LocaleHtmlLang } from "@/components/public/locale-html-lang";
@@ -23,6 +24,7 @@ import {
   getCertificateTypeLabel,
   getPriceTypeLabel,
 } from "@/domain/course/labels";
+import { getCourseVisual } from "@/domain/course/course-visual";
 import { formatDuration } from "@/domain/course/recommendation";
 import { currentBestPath } from "@/domain/discovery/monthly-collection";
 import {
@@ -142,6 +144,7 @@ export default async function CourseDetailPage({ params }: CoursePageProps) {
     courseSlug: course.slug,
   });
 
+  const visual = getCourseVisual(course);
   const price = getPriceTypeLabel(course.priceType, locale);
   const certificate = getCertificateTypeLabel(course.certificateType, locale);
   const duration = formatDuration(course.durationMinutes);
@@ -256,7 +259,20 @@ export default async function CourseDetailPage({ params }: CoursePageProps) {
               </div>
             </header>
 
-            <aside className="order-2 h-fit space-y-3 rounded-xl border border-border bg-card p-4 shadow-sm sm:space-y-4 sm:p-5 lg:sticky lg:top-20 lg:col-start-2 lg:row-span-2 lg:self-start">
+            <aside className="order-2 h-fit overflow-hidden rounded-xl border border-border bg-card shadow-sm lg:sticky lg:top-20 lg:col-start-2 lg:row-span-2 lg:self-start">
+              {/*
+                The visual sits in the action panel rather than above the h1:
+                it belongs with "view this course", and putting it there keeps
+                the page's first landmark the course title.
+              */}
+              <CourseCardVisual
+                src={visual.src}
+                eyebrow={visual.eyebrow}
+                title={visual.title}
+                toneClass={visual.toneClass}
+                priority
+              />
+              <div className="space-y-3 p-4 sm:space-y-4 sm:p-5">
               <h2 className="text-base font-semibold sm:text-lg">
                 {dict.courseDetail.viewCourseHeading}
               </h2>
@@ -296,6 +312,7 @@ export default async function CourseDetailPage({ params }: CoursePageProps) {
                 </div>
               ) : null}
               <p className="sr-only">Source URL: {course.canonicalUrl}</p>
+              </div>
             </aside>
 
             <div className="order-3 space-y-8 lg:col-start-1">

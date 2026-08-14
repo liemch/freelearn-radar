@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 
-import { CourseCard } from "@/components/public/course-card";
+import { CourseGrid } from "@/components/public/course-grid";
 import { EmptyState } from "@/components/public/empty-state";
 import { LocaleHtmlLang } from "@/components/public/locale-html-lang";
 import { SiteFooter } from "@/components/public/site-footer";
@@ -150,11 +150,11 @@ export default async function BestCoursesPage({ params }: BestPageProps) {
             actionLabel={dict.common.browseAll}
           />
         ) : (
-          <div className="grid gap-3 sm:grid-cols-2 sm:gap-4 lg:grid-cols-3">
-            {collection.items.map((course) => (
-              <CourseCard key={course.id} course={course} locale={locale} />
-            ))}
-          </div>
+          <CourseGrid
+            courses={collection.items}
+            locale={locale}
+            priorityCount={4}
+          />
         )}
 
         <p className="text-sm text-muted-foreground">
