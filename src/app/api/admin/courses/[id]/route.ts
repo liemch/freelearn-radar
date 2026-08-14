@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { z } from "zod";
 
 import { getDb } from "@/db";
+import { writeAuditLog } from "@/domain/admin/audit-log";
 import {
   findCourseByCanonicalUrl,
   findCourseById,
@@ -9,10 +10,13 @@ import {
   setCourseCategories,
   updateCourse,
 } from "@/db/repositories/course-repository";
+import { listProviders } from "@/db/repositories/provider-repository";
 import {
   courseFormSchema,
   emptyToNull,
 } from "@/domain/course/course-form";
+import { deriveFreeDurability } from "@/domain/course/free-durability";
+import { assertPriceTypeAllowed } from "@/domain/verification/provider-policy";
 import {
   forbiddenResponse,
   getSession,
@@ -38,6 +42,7 @@ export async function PATCH(request: Request, context: RouteContext) {
 
   try {
     const body = courseFormSchema.parse(await request.json());
+    assertPriceTypeAllowed("MANUAL", body.priceType);
     const db = getDb();
 
     const existing = await findCourseById(db, id);
@@ -67,6 +72,15 @@ export async function PATCH(request: Request, context: RouteContext) {
         ? existing.publishedAt ?? new Date()
         : existing.publishedAt;
 
+    const providers = await listProviders(db, false);
+    const provider =
+      providers.find((item) => item.id === body.providerId) ??
+      providers.find((item) => item.id === existing.providerId);
+    const freeDurability = deriveFreeDurability(
+      provider?.slug,
+      body.priceType,
+    );
+
     const course = await updateCourse(db, id, {
       title: body.title,
       slug: body.slug,
@@ -82,15 +96,36 @@ export async function PATCH(request: Request, context: RouteContext) {
       durationMinutes: body.durationMinutes ?? null,
       priceType: body.priceType,
       certificateType: body.certificateType,
+      freeDurability,
       qualityScore: body.qualityScore ?? null,
       editorScore: body.editorScore ?? null,
       status,
       publishedAt,
       lastVerifiedAt:
-        status === "PUBLISHED" ? existing.lastVerifiedAt ?? new Date() : existing.lastVerifiedAt,
+        status === "PUBLISHED"
+          ? existing.lastVerifiedAt ?? new Date()
+          : existing.lastVerifiedAt,
     });
 
     await setCourseCategories(db, course.id, body.categoryIds);
+
+    await writeAuditLog(db, {
+      actorType: "USER",
+      actorId: session.userId,
+      action: "COURSE_UPDATE",
+      entityType: "course",
+      entityId: course.id,
+      before: {
+        status: existing.status,
+        priceType: existing.priceType,
+        certificateType: existing.certificateType,
+      },
+      after: {
+        status: course.status,
+        priceType: course.priceType,
+        certificateType: course.certificateType,
+      },
+    });
 
     logger.info("admin.courses.update", {
       courseId: course.id,
@@ -105,6 +140,13 @@ export async function PATCH(request: Request, context: RouteContext) {
         { error: "Invalid course payload", details: error.issues },
         { status: 400 },
       );
+    }
+
+    if (
+      error instanceof Error &&
+      error.message.includes("FREE_WITH_COUPON")
+    ) {
+      return NextResponse.json({ error: error.message }, { status: 400 });
     }
 
     logger.error("admin.courses.update", {

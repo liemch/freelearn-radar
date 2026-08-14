@@ -14,7 +14,9 @@ import {
   certificateTypeEnum,
   courseLevelEnum,
   courseStatusEnum,
+  freeDurabilityEnum,
   priceTypeEnum,
+  trackingTierEnum,
 } from "@/db/schema/enums";
 import { providers } from "@/db/schema/providers";
 
@@ -57,6 +59,22 @@ export const courses = pgTable(
       withTimezone: true,
     }),
     imagePolicy: text("image_policy").default("REMOTE_ONLY"),
+    freeDurability: freeDurabilityEnum("free_durability")
+      .notNull()
+      .default("UNKNOWN"),
+    trackingTier: trackingTierEnum("tracking_tier")
+      .notNull()
+      .default("NORMAL"),
+    lastObservedAt: timestamp("last_observed_at", { withTimezone: true }),
+    nextObservationAt: timestamp("next_observation_at", { withTimezone: true }),
+    volatilityScore: numeric("volatility_score", { precision: 8, scale: 4 }),
+    freeStreakStartedAt: timestamp("free_streak_started_at", {
+      withTimezone: true,
+    }),
+    typicalPriceAmount: numeric("typical_price_amount", {
+      precision: 10,
+      scale: 2,
+    }),
     createdAt: timestamp("created_at", { withTimezone: true })
       .notNull()
       .defaultNow(),

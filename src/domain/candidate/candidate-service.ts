@@ -6,6 +6,7 @@ import {
 } from "@/db/repositories/candidate-repository";
 import type { CourseCandidate } from "@/db/schema";
 import { detectDuplicate } from "@/domain/discovery/duplicate-detector";
+import { classifyUrlShape } from "@/domain/discovery/url-shape-classifier";
 import { prefilterCandidate } from "@/domain/quality/candidate-prefilter";
 import type { SearchResult } from "@/services/search/search-provider";
 import { isValidHttpUrl, normalizeUrl } from "@/lib/url";
@@ -36,6 +37,17 @@ export async function ingestSearchResult(
     return {
       status: "INVALID",
       error: error instanceof Error ? error.message : "URL normalize failed",
+    };
+  }
+
+  // M19 §67.5 — reject known non-course shapes before fetch/AI spend.
+  const shape = classifyUrlShape(canonicalUrl);
+  if (shape.class === "KNOWN_NON_COURSE") {
+    return {
+      status: "INVALID",
+      error: `NON_COURSE_PATTERN: ${shape.reason}${
+        shape.matchedRule ? ` (${shape.matchedRule})` : ""
+      }`,
     };
   }
 

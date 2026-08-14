@@ -9,6 +9,7 @@ import { ShareCourseButton } from "@/components/public/share-course-button";
 import { SiteFooter } from "@/components/public/site-footer";
 import { SiteHeader } from "@/components/public/site-header";
 import { VerificationFreshnessNotice } from "@/components/public/verification-freshness";
+import { WatchCourseForm } from "@/components/public/watch-course-form";
 import { JsonLd } from "@/components/seo/json-ld";
 import { PageShell } from "@/components/layout/page-shell";
 import { Button } from "@/components/ui/button";
@@ -28,6 +29,11 @@ import {
   buildBreadcrumbJsonLd,
   buildCourseJsonLd,
 } from "@/domain/seo/json-ld";
+import {
+  freeDurabilityLabel,
+  lastVerifiedFreshnessLabel,
+  selectCourseBadgeSlots,
+} from "@/domain/tracker/vocabulary";
 import { withDb } from "@/lib/db-safe";
 import { getServerEnv } from "@/lib/env";
 import { getDictionary } from "@/lib/i18n/get-dictionary";
@@ -142,12 +148,28 @@ export default async function CourseDetailPage({ params }: CoursePageProps) {
   const inactive =
     course.status === "EXPIRED" || course.status === "UNAVAILABLE";
 
+  let trackerUi = false;
+  let priceAlerts = false;
   let appUrl = "http://localhost:3000";
   try {
-    appUrl = getServerEnv().APP_URL;
+    const env = getServerEnv();
+    appUrl = env.APP_URL;
+    trackerUi = env.FEATURE_TRACKER_UI === "true";
+    priceAlerts = env.FEATURE_PRICE_ALERTS === "true";
   } catch {
     appUrl = process.env.APP_URL || appUrl;
+    trackerUi = process.env.FEATURE_TRACKER_UI === "true";
+    priceAlerts = process.env.FEATURE_PRICE_ALERTS === "true";
   }
+
+  const badgeSlots = selectCourseBadgeSlots({
+    certificateKnown: course.certificateType !== "UNKNOWN",
+    freeDurability: course.freeDurability ?? "UNKNOWN",
+  });
+  const durability = freeDurabilityLabel(
+    course.freeDurability ?? "UNKNOWN",
+    locale,
+  );
 
   const shareUrl = `${appUrl}${localePath(locale, `/course/${course.slug}`)}`;
   const bestHref = currentBestPath();
@@ -214,10 +236,23 @@ export default async function CourseDetailPage({ params }: CoursePageProps) {
                 className="flex flex-wrap items-center gap-2"
                 aria-label={dict.a11y.freeStatusAndCertificate}
               >
-                <FreeStatusBadge priceType={course.priceType} locale={locale} size="lg" />
-                <span className="rounded-full border border-border bg-secondary px-3 py-1 text-sm">
-                  {certificate}
-                </span>
+                {badgeSlots.includes("price") ? (
+                  <FreeStatusBadge
+                    priceType={course.priceType}
+                    locale={locale}
+                    size="lg"
+                  />
+                ) : null}
+                {badgeSlots.includes("certificate") ? (
+                  <span className="rounded-full border border-border bg-secondary px-3 py-1 text-sm">
+                    {certificate}
+                  </span>
+                ) : null}
+                {badgeSlots.includes("durability") ? (
+                  <span className="rounded-full border border-border bg-secondary px-3 py-1 text-sm">
+                    {durability}
+                  </span>
+                ) : null}
               </div>
             </header>
 
@@ -244,6 +279,22 @@ export default async function CourseDetailPage({ params }: CoursePageProps) {
                 shareLabel={dict.share.action}
                 copiedLabel={dict.share.copied}
               />
+              {trackerUi && priceAlerts ? (
+                <div className="border-t border-border pt-3">
+                  <WatchCourseForm
+                    courseId={course.id}
+                    locale={locale}
+                    labels={{
+                      heading: dict.courseDetail.watchHeading,
+                      email: dict.courseDetail.watchEmail,
+                      submit: dict.courseDetail.watchSubmit,
+                      submitting: dict.courseDetail.watchSubmitting,
+                      success: dict.courseDetail.watchSuccess,
+                      error: dict.courseDetail.watchError,
+                    }}
+                  />
+                </div>
+              ) : null}
               <p className="sr-only">Source URL: {course.canonicalUrl}</p>
             </aside>
 
@@ -283,6 +334,29 @@ export default async function CourseDetailPage({ params }: CoursePageProps) {
                         : dict.courseDetail.notVerified
                     }
                   />
+                  {trackerUi ? (
+                    <>
+                      <Fact
+                        label={dict.courseDetail.freeDurability}
+                        value={durability}
+                      />
+                      <Fact
+                        label={dict.courseDetail.lastObserved}
+                        value={
+                          course.lastObservedAt
+                            ? course.lastObservedAt.toLocaleString(locale)
+                            : dict.courseDetail.unknown
+                        }
+                      />
+                      <Fact
+                        label={dict.courseDetail.trackerHeading}
+                        value={lastVerifiedFreshnessLabel(
+                          course.lastVerifiedAt,
+                          locale,
+                        )}
+                      />
+                    </>
+                  ) : null}
                   <Fact
                     label={dict.courseDetail.provider}
                     value={course.provider.name}

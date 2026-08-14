@@ -25,12 +25,24 @@ import type {
   PriceType,
 } from "@/domain/course/types";
 import { assertSafeHttpUrl } from "@/lib/url";
+import { writeAuditLog } from "@/domain/admin/audit-log";
+import { deriveFreeDurability } from "@/domain/course/free-durability";
 import { createEvidence } from "@/domain/verification/evidence";
 import { resolvePriceType } from "@/domain/verification/free-status";
-import { resolveCertificateType } from "@/domain/verification/certificate-status";
+import {
+  assertPriceTypeAllowed,
+  resolveCertificateWithPolicy,
+} from "@/domain/verification/provider-policy";
+import {
+  extractTopicSlugsFromAnalysis,
+  syncCourseTopicTags,
+} from "@/domain/taxonomy/topic-tags";
+import { logger } from "@/lib/logger";
 
 export type ApproveCandidateInput = {
   candidateId: string;
+  actorId?: string;
+  requestId?: string;
   overrides?: {
     title?: string;
     slug?: string;
@@ -144,18 +156,35 @@ export async function approveCandidate(db: Db, input: ApproveCandidateInput) {
     aiSuggestion: analysis?.price_type,
     aiConfidence: analysis?.confidence,
   });
-  const certResolved = resolveCertificateType({
+
+  let resolvedPriceType =
+    input.overrides?.priceType || priceResolved.priceType || "UNKNOWN";
+  if (input.overrides?.priceType) {
+    assertPriceTypeAllowed("MANUAL", input.overrides.priceType);
+  } else {
+    try {
+      assertPriceTypeAllowed(
+        analysis?.price_type ? "AI" : "SEARCH",
+        resolvedPriceType,
+      );
+    } catch {
+      resolvedPriceType = "UNKNOWN";
+    }
+  }
+
+  const certResolved = resolveCertificateWithPolicy({
+    providerSlug: provider.slug,
+    priceType: resolvedPriceType,
     evidenceText,
     aiSuggestion: analysis?.certificate_type,
     aiConfidence: analysis?.confidence,
   });
 
-  const resolvedPriceType =
-    input.overrides?.priceType || priceResolved.priceType || "UNKNOWN";
   const resolvedCertificateType =
     input.overrides?.certificateType ||
     certResolved.certificateType ||
     "UNKNOWN";
+  const freeDurability = deriveFreeDurability(provider.slug, resolvedPriceType);
 
   const now = new Date();
 
@@ -201,6 +230,7 @@ export async function approveCandidate(db: Db, input: ApproveCandidateInput) {
           input.overrides?.durationMinutes ?? analysis?.duration_minutes ?? null,
         priceType: resolvedPriceType,
         certificateType: resolvedCertificateType,
+        freeDurability,
         qualityScore:
           input.overrides?.qualityScore ?? analysis?.quality_score ?? null,
         aiScore: analysis?.quality_score ?? null,
@@ -257,6 +287,39 @@ export async function approveCandidate(db: Db, input: ApproveCandidateInput) {
       return created;
     });
 
+    await writeAuditLog(db, {
+      actorType: "USER",
+      actorId: input.actorId,
+      action: "CANDIDATE_APPROVE",
+      entityType: "candidate",
+      entityId: input.candidateId,
+      after: {
+        courseId: course.id,
+        priceType: course.priceType,
+        certificateType: course.certificateType,
+        status: course.status,
+      },
+      requestId: input.requestId,
+    });
+
+    // Best-effort topic tag sync — must not fail approval.
+    try {
+      const topicSlugs = extractTopicSlugsFromAnalysis(candidate.aiAnalysisJson);
+      if (topicSlugs.length > 0) {
+        await syncCourseTopicTags(
+          db,
+          course.id,
+          topicSlugs,
+          matchedCategoryIds[0] ?? null,
+        );
+      }
+    } catch (error) {
+      logger.warn("taxonomy.sync_on_approve", {
+        courseId: course.id,
+        error: error instanceof Error ? error.message : "unknown",
+      });
+    }
+
     return course;
   } catch (error) {
     if (error instanceof DuplicateCourseError) {
@@ -276,6 +339,7 @@ export async function rejectCandidate(
   db: Db,
   candidateId: string,
   reason?: string,
+  audit?: { actorId?: string; requestId?: string },
 ) {
   const candidate = await findCandidateById(db, candidateId);
   if (!candidate) {
@@ -288,9 +352,23 @@ export async function rejectCandidate(
     );
   }
 
-  return updateCandidate(db, candidateId, {
+  const updated = await updateCandidate(db, candidateId, {
     discoveryStatus: "REJECTED",
     rejectedAt: new Date(),
     errorMessage: reason?.slice(0, 500) || "Rejected by admin",
   });
+
+  await writeAuditLog(db, {
+    actorType: "USER",
+    actorId: audit?.actorId,
+    action: "CANDIDATE_REJECT",
+    entityType: "candidate",
+    entityId: candidateId,
+    before: { discoveryStatus: candidate.discoveryStatus },
+    after: { discoveryStatus: "REJECTED" },
+    reason: reason?.slice(0, 500) || null,
+    requestId: audit?.requestId,
+  });
+
+  return updated;
 }

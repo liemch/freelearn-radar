@@ -40,7 +40,16 @@ export type DiscoveryStatus =
   | "INVALID"
   | "DUPLICATE"
   | "EXPIRED"
+  | "EXPIRED_UNREVIEWED"
   | "ERROR";
+
+export type FreeDurability =
+  | "PERMANENT"
+  | "AUDIT_FOREVER"
+  | "LIMITED"
+  | "UNKNOWN";
+
+export type TrackingTier = "HIGH" | "NORMAL" | "LOW" | "DORMANT";
 
 export type SourceType = "SEARCH" | "MANUAL";
 

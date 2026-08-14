@@ -192,6 +192,17 @@ describe("cron authentication", () => {
     expect(getDb).not.toHaveBeenCalled();
   });
 
+  it("rejects /api/cron/monitor without a secret", async () => {
+    const { GET } = await import("@/app/api/cron/monitor/route");
+
+    const response = await GET(
+      new Request("http://localhost:3000/api/cron/monitor"),
+    );
+
+    expect(response.status).toBe(401);
+    expect(getDb).not.toHaveBeenCalled();
+  });
+
   it("accepts the Vercel bearer secret and then fails closed on missing search config", async () => {
     const { GET } = await import("@/app/api/cron/discover/route");
 

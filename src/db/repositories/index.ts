@@ -5,3 +5,6 @@ export * from "@/db/repositories/course-repository";
 export * from "@/db/repositories/candidate-repository";
 export * from "@/db/repositories/discovery-query-repository";
 export * from "@/db/repositories/outbound-click-repository";
+export * from "@/db/repositories/audit-log-repository";
+export * from "@/db/repositories/observation-repository";
+export * from "@/db/repositories/price-event-repository";

@@ -1,4 +1,4 @@
-import { and, asc, eq } from "drizzle-orm";
+import { and, asc, desc, eq } from "drizzle-orm";
 
 import type { Db } from "@/db";
 import {
@@ -15,6 +15,47 @@ export async function listEnabledDiscoveryQueries(
     .from(discoveryQueries)
     .where(eq(discoveryQueries.enabled, true))
     .orderBy(asc(discoveryQueries.lastRunAt));
+}
+
+export async function listDiscoveryQueries(
+  db: Db,
+): Promise<DiscoveryQuery[]> {
+  return db
+    .select()
+    .from(discoveryQueries)
+    .orderBy(desc(discoveryQueries.junkRate), asc(discoveryQueries.provider));
+}
+
+export async function findDiscoveryQueryById(
+  db: Db,
+  id: string,
+): Promise<DiscoveryQuery | null> {
+  const rows = await db
+    .select()
+    .from(discoveryQueries)
+    .where(eq(discoveryQueries.id, id))
+    .limit(1);
+
+  return rows[0] ?? null;
+}
+
+export async function updateDiscoveryQuery(
+  db: Db,
+  id: string,
+  input: Partial<Pick<NewDiscoveryQuery, "enabled">>,
+): Promise<DiscoveryQuery> {
+  const rows = await db
+    .update(discoveryQueries)
+    .set(input)
+    .where(eq(discoveryQueries.id, id))
+    .returning();
+
+  const query = rows[0];
+  if (!query) {
+    throw new Error("Discovery query not found");
+  }
+
+  return query;
 }
 
 export type DiscoveryQueryFacets = {

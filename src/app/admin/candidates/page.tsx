@@ -7,12 +7,15 @@ import { EmptyState } from "@/components/public/empty-state";
 import { Button } from "@/components/ui/button";
 import { getDb } from "@/db";
 import { listCandidates } from "@/db/repositories/candidate-repository";
+import { isAutoRejectedCandidate } from "@/domain/candidate/auto-reject";
+import { sortCandidatesForReview } from "@/domain/candidate/review-priority";
 import type { DiscoveryStatus } from "@/domain/course/types";
 import { getDiscoveryStatusLabel } from "@/domain/course/labels";
 import {
   canApproveCandidate,
   canRejectCandidate,
 } from "@/domain/course/transitions";
+import { AI_CONFIDENCE } from "@/domain/quality/confidence";
 import { getSession } from "@/lib/auth/guards";
 import { getAdminDictionary } from "@/lib/i18n/admin";
 import { getAdminLocale } from "@/lib/i18n/admin-locale";
@@ -28,19 +31,82 @@ const REVIEW_QUEUE_STATUSES = new Set<DiscoveryStatus>([
   "ERROR",
 ]);
 
-export default async function AdminCandidatesPage() {
+type CandidateView =
+  | "all"
+  | "error"
+  | "ready"
+  | "low_confidence"
+  | "auto_rejected"
+  | "expired";
+
+function parseView(raw: string | string[] | undefined): CandidateView {
+  const value = Array.isArray(raw) ? raw[0] : raw;
+  switch (value) {
+    case "error":
+    case "ready":
+    case "low_confidence":
+    case "auto_rejected":
+    case "expired":
+      return value;
+    default:
+      return "all";
+  }
+}
+
+function confidenceOf(confidence: string | null, aiJson: unknown): number {
+  const fromColumn = Number(confidence);
+  if (Number.isFinite(fromColumn)) return fromColumn;
+  if (aiJson && typeof aiJson === "object" && aiJson !== null) {
+    const fromJson = Number((aiJson as Record<string, unknown>).confidence);
+    if (Number.isFinite(fromJson)) return fromJson;
+  }
+  return Number.NaN;
+}
+
+type PageProps = {
+  searchParams: Promise<Record<string, string | string[] | undefined>>;
+};
+
+export default async function AdminCandidatesPage({ searchParams }: PageProps) {
   const session = await getSession();
   if (!session) redirect("/admin/login");
 
   const locale = await getAdminLocale();
   const t = getAdminDictionary(locale);
+  const params = await searchParams;
+  const view = parseView(params.view);
 
   let candidates: Awaited<ReturnType<typeof listCandidates>> = [];
   try {
-    const all = await listCandidates(getDb(), { limit: 200 });
-    candidates = all.filter((candidate) =>
-      REVIEW_QUEUE_STATUSES.has(candidate.discoveryStatus),
-    );
+    const all = await listCandidates(getDb(), { limit: 300 });
+
+    if (view === "expired") {
+      candidates = all.filter(
+        (candidate) => candidate.discoveryStatus === "EXPIRED_UNREVIEWED",
+      );
+    } else if (view === "auto_rejected") {
+      candidates = all.filter(isAutoRejectedCandidate);
+    } else {
+      candidates = all.filter((candidate) =>
+        REVIEW_QUEUE_STATUSES.has(candidate.discoveryStatus),
+      );
+      if (view === "error") {
+        candidates = candidates.filter((c) => c.discoveryStatus === "ERROR");
+      } else if (view === "ready") {
+        candidates = candidates.filter(
+          (c) => c.discoveryStatus === "READY_FOR_REVIEW",
+        );
+      } else if (view === "low_confidence") {
+        candidates = candidates.filter((c) => {
+          const conf = confidenceOf(c.confidence, c.aiAnalysisJson);
+          return (
+            Number.isFinite(conf) && conf < AI_CONFIDENCE.REVIEW_THRESHOLD
+          );
+        });
+      }
+    }
+
+    candidates = sortCandidatesForReview(candidates);
   } catch {
     candidates = [];
   }
@@ -56,6 +122,35 @@ export default async function AdminCandidatesPage() {
     actionFailed: t.candidates.actionFailed,
     actionTimedOut: t.candidates.actionTimedOut,
   };
+
+  const views: Array<{ key: CandidateView; label: string; href: string }> = [
+    { key: "all", label: t.candidates.viewAll, href: "/admin/candidates" },
+    {
+      key: "error",
+      label: t.candidates.viewError,
+      href: "/admin/candidates?view=error",
+    },
+    {
+      key: "ready",
+      label: t.candidates.viewReady,
+      href: "/admin/candidates?view=ready",
+    },
+    {
+      key: "low_confidence",
+      label: t.candidates.viewLowConfidence,
+      href: "/admin/candidates?view=low_confidence",
+    },
+    {
+      key: "auto_rejected",
+      label: t.candidates.viewAutoRejected,
+      href: "/admin/candidates?view=auto_rejected",
+    },
+    {
+      key: "expired",
+      label: t.candidates.viewExpired,
+      href: "/admin/candidates?view=expired",
+    },
+  ];
 
   return (
     <div className="min-h-screen bg-background">
@@ -83,6 +178,19 @@ export default async function AdminCandidatesPage() {
       </header>
 
       <main className="mx-auto max-w-6xl space-y-4 px-6 py-8">
+        <div className="flex flex-wrap gap-2">
+          {views.map((item) => (
+            <Button
+              key={item.key}
+              asChild
+              size="sm"
+              variant={view === item.key ? "default" : "outline"}
+            >
+              <Link href={item.href}>{item.label}</Link>
+            </Button>
+          ))}
+        </div>
+
         {candidates.map((candidate) => (
           <article
             key={candidate.id}

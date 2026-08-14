@@ -4,6 +4,7 @@ import {
   eq,
   ilike,
   isNotNull,
+  notInArray,
   or,
   sql,
   type SQL,
@@ -22,7 +23,10 @@ import {
 } from "@/db/schema";
 import type { CatalogFilters, CatalogSort } from "@/domain/course/catalog-query";
 import { DEFAULT_PAGE_SIZE } from "@/domain/course/catalog-query";
-import type { CourseStatus } from "@/domain/course/types";
+import { isEligibleForFreeLists } from "@/domain/course/free-durability";
+import type { CertificateType, CourseStatus } from "@/domain/course/types";
+
+export { isEligibleForFreeLists };
 
 export type CourseWithProvider = Course & {
   provider: Provider;
@@ -122,6 +126,9 @@ export function buildCatalogConditions(
 
   if (filters.priceType) {
     conditions.push(eq(courses.priceType, filters.priceType));
+  } else if (publishedOnly) {
+    // Default free catalog: FREE_TRIAL / PAID never appear in free lists (§66.4).
+    conditions.push(notInArray(courses.priceType, ["FREE_TRIAL", "PAID"]));
   }
 
   if (filters.durationMaxMinutes != null) {
@@ -241,12 +248,19 @@ export async function updateCourse(
 
 export async function listCourses(
   db: Db,
-  options?: { status?: CourseStatus; limit?: number },
+  options?: {
+    status?: CourseStatus;
+    certificateType?: CertificateType;
+    limit?: number;
+  },
 ): Promise<CourseWithProvider[]> {
   const conditions: SQL[] = [];
 
   if (options?.status) {
     conditions.push(eq(courses.status, options.status));
+  }
+  if (options?.certificateType) {
+    conditions.push(eq(courses.certificateType, options.certificateType));
   }
 
   const query = db
@@ -419,6 +433,23 @@ export async function countCoursesByStatus(
     .select({ count: sql<number>`count(*)::int` })
     .from(courses)
     .where(eq(courses.status, status));
+
+  return rows[0]?.count ?? 0;
+}
+
+export async function countPublishedCoursesByCertificate(
+  db: Db,
+  certificateType: CertificateType,
+): Promise<number> {
+  const rows = await db
+    .select({ count: sql<number>`count(*)::int` })
+    .from(courses)
+    .where(
+      and(
+        eq(courses.status, "PUBLISHED"),
+        eq(courses.certificateType, certificateType),
+      ),
+    );
 
   return rows[0]?.count ?? 0;
 }

@@ -2,6 +2,7 @@ import {
   boolean,
   index,
   integer,
+  numeric,
   pgTable,
   text,
   timestamp,
@@ -20,6 +21,8 @@ export const discoveryQueries = pgTable(
     nextRunAt: timestamp("next_run_at", { withTimezone: true }),
     successCount: integer("success_count").notNull().default(0),
     failureCount: integer("failure_count").notNull().default(0),
+    junkRate: numeric("junk_rate", { precision: 5, scale: 4 }),
+    lastJunkReviewAt: timestamp("last_junk_review_at", { withTimezone: true }),
   },
   (table) => [
     index("discovery_queries_enabled_next_run_at_idx").on(

@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { z } from "zod";
 
 import { getDb } from "@/db";
+import { writeAuditLog } from "@/domain/admin/audit-log";
 import { analyzeCandidate } from "@/domain/candidate/analyze-candidate";
 import {
   approveCandidate,
@@ -43,9 +44,12 @@ export async function POST(request: Request, context: RouteContext) {
 
   try {
     const db = getDb();
+    const actorId = auth.session!.userId;
 
     if (body.action === "reject") {
-      const candidate = await rejectCandidate(db, id, body.reason);
+      const candidate = await rejectCandidate(db, id, body.reason, {
+        actorId,
+      });
       return NextResponse.json({ candidate });
     }
 
@@ -62,6 +66,16 @@ export async function POST(request: Request, context: RouteContext) {
       }
       const candidate = await analyzeCandidate(db, createAIProvider(), id, {
         force: true,
+      });
+      await writeAuditLog(db, {
+        actorType: "USER",
+        actorId,
+        action: "CANDIDATE_REANALYZE",
+        entityType: "candidate",
+        entityId: id,
+        after: {
+          discoveryStatus: candidate.discoveryStatus,
+        },
       });
       return NextResponse.json({ candidate });
     }
@@ -114,6 +128,7 @@ export async function POST(request: Request, context: RouteContext) {
       const course = await approveCandidate(db, {
         candidateId: id,
         overrides,
+        actorId,
       });
       return NextResponse.json({ course });
     }

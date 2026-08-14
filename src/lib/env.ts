@@ -37,6 +37,17 @@ const baseEnvSchema = z.object({
     .positive()
     .default(512 * 1024),
   SOURCE_MAX_REDIRECTS: z.coerce.number().int().positive().default(5),
+  MONITOR_DAILY_FETCH_BUDGET: z.coerce.number().int().positive().default(50),
+  MONITOR_CONCURRENCY: z.coerce.number().int().positive().default(2),
+  MONITOR_WORKER_VERSION: z.string().default("m19.5"),
+  FEATURE_TRACKER_UI: optionalString,
+  FEATURE_PRICE_ALERTS: optionalString,
+  FEATURE_PUBLIC_FEED: optionalString,
+  FEATURE_AUTO_STATUS: optionalString,
+  FEATURE_TOPIC_PAGES: optionalString,
+  EMAIL_DRY_RUN: z.string().default("true"),
+  RESEND_API_KEY: optionalString,
+  EMAIL_FROM: optionalString,
 });
 
 export type ServerEnv = z.infer<typeof baseEnvSchema>;

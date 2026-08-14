@@ -16,6 +16,7 @@ import {
   queryCatalog,
 } from "@/db/repositories/course-repository";
 import { listProviders } from "@/db/repositories/provider-repository";
+import { isEligibleForFreeLists } from "@/domain/course/free-durability";
 import { currentBestPath } from "@/domain/discovery/monthly-collection";
 import { rankCourses } from "@/domain/ranking/ranking";
 import { isLocale, type Locale } from "@/lib/i18n/config";
@@ -123,7 +124,10 @@ export default async function HomePage({ params }: HomePageProps) {
       ),
     ]);
 
-  const ranked = rankCourses(published);
+  const freeEligible = published.filter((course) =>
+    isEligibleForFreeLists(course.priceType),
+  );
+  const ranked = rankCourses(freeEligible);
   const best = ranked.slice(0, 6);
   const freeThisWeek = ranked
     .filter(
@@ -133,7 +137,7 @@ export default async function HomePage({ params }: HomePageProps) {
         course.priceType === "FREE_FULL",
     )
     .slice(0, 6);
-  const recentlyVerified = [...published]
+  const recentlyVerified = [...freeEligible]
     .filter((course) => course.lastVerifiedAt)
     .sort(
       (a, b) =>

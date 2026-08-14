@@ -1,6 +1,6 @@
 # FreeLearn Radar — MVP Project Plan
 
-**Progress (as of 2026-08-14):** WP0–WP14 shipped · M15–M17 complete · **WP18 / M18.1–M18.4 complete** · M18.5 & M19 not started. See §49 for work-package status and report links.
+**Progress (as of 2026-08-14):** WP0–WP14 shipped · M15–M17 complete · WP18 / M18.1–M18.4 complete · **M19 core complete** (flags OFF; see `docs/M19_FINAL_REPORT.md` + `project-plan-v1.2.md`). M18.5 not started.
 
 ## 1. Product Vision
 
@@ -2148,12 +2148,14 @@ discovery/run API accepts ignoreSchedule
 admin route loading.tsx + skeleton component
 ```
 
-Not yet in plan as separate milestones:
+Not yet in plan as separate milestones / deferred polish:
 
 ```text
 M18.5 — deferred / not started
-M19 — deferred / not started
+M19 keyboard shortcuts / bulk undo / collections admin / monorepo — deferred (see docs/M19_FINAL_REPORT.md)
 ```
+
+M19 (v1.2) core is **implemented** with feature flags default OFF — see `project-plan-v1.2.md` and `docs/M19_FINAL_REPORT.md`.
 
 Acceptance for WP18:
 

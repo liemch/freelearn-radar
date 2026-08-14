@@ -116,6 +116,7 @@ export type Dictionary = {
     topicEmptyTitle: string;
     topicEmptyDescription: string;
     topicFullCategory: (name: string) => string;
+    topicTagIntro: (name: string) => string;
     providerHeading: (name: string) => string;
     providerIntro: string;
     providerNotHosted: string;
@@ -147,6 +148,8 @@ export type Dictionary = {
     language: string;
     instructor: string;
     lastVerified: string;
+    lastObserved: string;
+    freeDurability: string;
     provider: string;
     notListed: string;
     notVerified: string;
@@ -160,6 +163,20 @@ export type Dictionary = {
     moreFrom: (provider: string) => string;
     monthlyBest: string;
     fallbackSummary: string;
+    trackerHeading: string;
+    watchHeading: string;
+    watchEmail: string;
+    watchSubmit: string;
+    watchSubmitting: string;
+    watchSuccess: string;
+    watchError: string;
+  };
+  tracker: {
+    heading: string;
+    description: string;
+    emptyTitle: string;
+    emptyDescription: string;
+    unknownCourse: string;
   };
   meta: {
     categoryNotFound: string;
@@ -167,6 +184,7 @@ export type Dictionary = {
     courseNotFound: string;
     collectionNotFound: string;
     topicNotFound: string;
+    trackerNotFound: string;
     certificatesTitle: string;
   };
   a11y: {

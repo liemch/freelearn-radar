@@ -6,6 +6,7 @@ import { CourseStatusActions } from "@/components/admin/course-status-actions";
 import { Button } from "@/components/ui/button";
 import { getDb } from "@/db";
 import { listCourses } from "@/db/repositories/course-repository";
+import type { CertificateType } from "@/domain/course/types";
 import {
   getCourseStatusLabel,
   getPriceTypeLabel,
@@ -16,7 +17,28 @@ import { getAdminLocale } from "@/lib/i18n/admin-locale";
 
 export const dynamic = "force-dynamic";
 
-export default async function AdminCoursesPage() {
+const CERTIFICATE_VALUES = new Set<CertificateType>([
+  "FREE_CERTIFICATE",
+  "PAID_CERTIFICATE",
+  "NO_CERTIFICATE",
+  "UNKNOWN",
+]);
+
+function parseCertificate(
+  raw: string | string[] | undefined,
+): CertificateType | undefined {
+  const value = Array.isArray(raw) ? raw[0] : raw;
+  if (value && CERTIFICATE_VALUES.has(value as CertificateType)) {
+    return value as CertificateType;
+  }
+  return undefined;
+}
+
+type PageProps = {
+  searchParams: Promise<Record<string, string | string[] | undefined>>;
+};
+
+export default async function AdminCoursesPage({ searchParams }: PageProps) {
   const session = await getSession();
   if (!session) {
     redirect("/admin/login");
@@ -24,12 +46,17 @@ export default async function AdminCoursesPage() {
 
   const locale = await getAdminLocale();
   const t = getAdminDictionary(locale);
+  const params = await searchParams;
+  const certificateType = parseCertificate(params.certificate);
 
   let courses: Awaited<ReturnType<typeof listCourses>> = [];
   let databaseReady = true;
 
   try {
-    courses = await listCourses(getDb());
+    courses = await listCourses(getDb(), {
+      certificateType,
+      limit: 200,
+    });
   } catch {
     databaseReady = false;
   }
@@ -68,6 +95,15 @@ export default async function AdminCoursesPage() {
       </header>
 
       <main className="mx-auto max-w-6xl space-y-6 px-6 py-8">
+        {certificateType ? (
+          <p className="text-sm text-muted-foreground">
+            {t.courses.certificate}: {certificateType}{" "}
+            <Link href="/admin/courses" className="text-primary hover:underline">
+              ({t.common.all})
+            </Link>
+          </p>
+        ) : null}
+
         {!databaseReady ? (
           <p className="rounded-xl border border-dashed border-border p-6 text-sm text-muted-foreground">
             {t.courses.databaseNotReady}

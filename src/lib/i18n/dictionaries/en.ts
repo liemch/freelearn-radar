@@ -126,6 +126,7 @@ export const en: Dictionary = {
     topicEmptyTitle: "No courses match these filters",
     topicEmptyDescription: "Try clearing filters or browse a related topic.",
     topicFullCategory: (name) => `Full ${name} category`,
+    topicTagIntro: (name) => `Free courses tagged “${name}”.`,
     providerHeading: (name) => `Free courses from ${name}`,
     providerIntro: "Factual listing of curated free courses linked from",
     providerNotHosted: "FreeLearn Radar does not host course content.",
@@ -166,6 +167,8 @@ export const en: Dictionary = {
     language: "Language",
     instructor: "Instructor",
     lastVerified: "Last verified",
+    lastObserved: "Last observed",
+    freeDurability: "Free durability",
     provider: "Provider",
     notListed: "Not listed",
     notVerified: "Not verified",
@@ -181,6 +184,22 @@ export const en: Dictionary = {
     moreFrom: (provider) => `More from ${provider}`,
     monthlyBest: "Monthly best",
     fallbackSummary: "Curated free course.",
+    trackerHeading: "Price tracking",
+    watchHeading: "Watch for free",
+    watchEmail: "Email",
+    watchSubmit: "Notify me",
+    watchSubmitting: "Saving…",
+    watchSuccess: "Check your email to confirm the watch.",
+    watchError: "Could not save your watch. Try again.",
+  },
+  tracker: {
+    heading: "Free course tracker",
+    description:
+      "Recent confirmed price events across the catalog. Coming into view as we observe more courses.",
+    emptyTitle: "Tracker is warming up",
+    emptyDescription:
+      "No public price events yet. Check back after monitoring runs, or browse the catalog.",
+    unknownCourse: "Unknown course",
   },
   meta: {
     categoryNotFound: "Category not found",
@@ -188,6 +207,7 @@ export const en: Dictionary = {
     courseNotFound: "Course not found",
     collectionNotFound: "Collection not found",
     topicNotFound: "Topic not found",
+    trackerNotFound: "Tracker not found",
     certificatesTitle: "Free Certificate Courses",
   },
   a11y: {

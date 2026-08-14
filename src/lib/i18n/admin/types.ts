@@ -40,6 +40,10 @@ export type AdminDictionary = {
     candidates: string;
     discovery: string;
     analytics: string;
+    providers: string;
+    discoveryQueries: string;
+    users: string;
+    taxonomy: string;
   };
   login: {
     heading: string;
@@ -58,6 +62,8 @@ export type AdminDictionary = {
     operationsDescription: string;
     databaseNotReady: string;
     databaseNotReadyDescription: string;
+    workList: string;
+    workListDescription: string;
     stats: {
       pendingReview: string;
       publishedCourses: string;
@@ -65,6 +71,7 @@ export type AdminDictionary = {
       providers: string;
       categories: string;
       discoveryErrors: string;
+      unknownCertificate: string;
     };
   };
   courses: {
@@ -153,6 +160,60 @@ export type AdminDictionary = {
     /** Placeholders: {price}, {certificate} */
     aiSuggestionNote: string;
     notAvailable: string;
+    viewAll: string;
+    viewError: string;
+    viewReady: string;
+    viewLowConfidence: string;
+    viewAutoRejected: string;
+    viewExpired: string;
+    bulkReject: string;
+    bulkApprove: string;
+  };
+  providers: {
+    heading: string;
+    description: string;
+    empty: string;
+    domain: string;
+    active: string;
+    affiliateEnabled: string;
+    affiliateTemplate: string;
+    save: string;
+    saved: string;
+    saveFailed: string;
+    tryUrl: string;
+    tryUrlHint: string;
+    classify: string;
+    classifying: string;
+  };
+  discoveryQueries: {
+    heading: string;
+    description: string;
+    empty: string;
+    enabled: string;
+    junkRate: string;
+    successCount: string;
+    failureCount: string;
+    toggleFailed: string;
+  };
+  users: {
+    heading: string;
+    description: string;
+    empty: string;
+    email: string;
+    role: string;
+    updateFailed: string;
+    lastAdmin: string;
+  };
+  taxonomy: {
+    heading: string;
+    description: string;
+    empty: string;
+    slug: string;
+    nameEn: string;
+    nameVi: string;
+    courseCount: string;
+    active: string;
+    readOnlyNote: string;
   };
   discovery: {
     heading: string;

@@ -107,6 +107,7 @@ export const DISCOVERY_STATUS_LABELS: Record<DiscoveryStatus, string> = {
   INVALID: "Invalid",
   DUPLICATE: "Duplicate",
   EXPIRED: "Expired",
+  EXPIRED_UNREVIEWED: "Expired unreviewed",
   ERROR: "Error",
 };
 

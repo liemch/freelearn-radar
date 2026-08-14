@@ -1,7 +1,9 @@
 import { NextResponse } from "next/server";
 
 import { getDb } from "@/db";
+import { writeAuditLog } from "@/domain/admin/audit-log";
 import { runDiscoveryBatch } from "@/domain/discovery/discovery-engine";
+import { expireStaleCandidates } from "@/domain/candidate/expire-stale";
 import { fetchPendingCandidates } from "@/domain/candidate/fetch-candidate-source";
 import { analyzePendingCandidates } from "@/domain/candidate/analyze-candidate";
 import { verifyCronAuth } from "@/lib/cron-auth";
@@ -36,6 +38,10 @@ export async function GET(request: Request) {
     }
 
     const db = getDb();
+
+    // Cheap queue hygiene before discovery spend (M19.0b).
+    const expired = await expireStaleCandidates(db, 30, { limit: 50 });
+
     const searchProvider = createSearchProvider();
     const summary = await runDiscoveryBatch(db, searchProvider, {
       queryLimit: env.DISCOVERY_QUERY_LIMIT,
@@ -63,9 +69,23 @@ export async function GET(request: Request) {
       analyzed = results.length;
     }
 
+    await writeAuditLog(db, {
+      actorType: "CRON",
+      action: "DISCOVERY_RUN",
+      entityType: "discovery",
+      entityId: "cron",
+      after: {
+        ...summary,
+        expiredUnreviewed: expired.expired,
+        sourceFetched: fetched.length,
+        analyzed,
+      },
+    });
+
     logger.info("cron.discover", {
       status: "success",
       ...summary,
+      expiredUnreviewed: expired.expired,
       sourceFetched: fetched.length,
       analyzed,
     });
@@ -73,6 +93,7 @@ export async function GET(request: Request) {
     return NextResponse.json({
       ok: true,
       discovery: summary,
+      expiredUnreviewed: expired.expired,
       sourceFetched: fetched.length,
       analyzed,
       pendingManualIntegrationTest: !env.NVIDIA_API_KEY,

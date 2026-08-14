@@ -84,4 +84,18 @@ describe("catalog search", () => {
     const { sql } = catalogSql({ q: "python" });
     expect(sql.toLowerCase()).toContain('"status"');
   });
+
+  it("excludes FREE_TRIAL and PAID from default free catalog SQL", () => {
+    const { sql, params } = catalogSql({});
+    const lower = sql.toLowerCase();
+    expect(lower).toContain("price_type");
+    expect(lower).toMatch(/not in/i);
+    expect(params).toEqual(expect.arrayContaining(["FREE_TRIAL", "PAID"]));
+  });
+
+  it("does not apply free-list exclusion when priceType is explicit", () => {
+    const { sql, params } = catalogSql({ priceType: "FREE_TRIAL" });
+    expect(params).toContain("FREE_TRIAL");
+    expect(sql.toLowerCase()).not.toMatch(/not in/i);
+  });
 });

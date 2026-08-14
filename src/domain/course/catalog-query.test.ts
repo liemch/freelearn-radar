@@ -7,6 +7,7 @@ import {
   parseCatalogSort,
   parsePositiveInt,
 } from "@/domain/course/catalog-query";
+import { isEligibleForFreeLists } from "@/domain/course/free-durability";
 
 describe("catalog query helpers", () => {
   it("parses sort values with a safe default", () => {
@@ -58,5 +59,11 @@ describe("catalog query helpers", () => {
       durationMax: "60",
       sort: undefined,
     });
+  });
+
+  it("never treats FREE_TRIAL as free-list eligible", () => {
+    expect(isEligibleForFreeLists("FREE_TRIAL")).toBe(false);
+    expect(isEligibleForFreeLists("PAID")).toBe(false);
+    expect(isEligibleForFreeLists("FREE_FULL")).toBe(true);
   });
 });

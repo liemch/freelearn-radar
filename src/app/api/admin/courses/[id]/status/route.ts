@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { z } from "zod";
 
 import { getDb } from "@/db";
+import { writeAuditLog } from "@/domain/admin/audit-log";
 import {
   findCourseById,
   updateCourse,
@@ -58,6 +59,16 @@ export async function POST(request: Request, context: RouteContext) {
         body.status === "PUBLISHED"
           ? existing.lastVerifiedAt ?? now
           : existing.lastVerifiedAt,
+    });
+
+    await writeAuditLog(db, {
+      actorType: "USER",
+      actorId: session.userId,
+      action: "COURSE_STATUS",
+      entityType: "course",
+      entityId: course.id,
+      before: { status: existing.status },
+      after: { status: course.status },
     });
 
     logger.info("admin.courses.status", {

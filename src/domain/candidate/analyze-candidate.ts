@@ -3,6 +3,10 @@ import {
   findCandidateById,
   updateCandidate,
 } from "@/db/repositories/candidate-repository";
+import {
+  applyAutoReject,
+  evaluateAutoReject,
+} from "@/domain/candidate/auto-reject";
 import { shouldRouteToExtraReview } from "@/domain/quality/confidence";
 import {
   prefilterCandidate,
@@ -43,6 +47,11 @@ export async function analyzeCandidate(
       );
     }
     return candidate;
+  }
+
+  const earlyReject = evaluateAutoReject(candidate);
+  if (earlyReject.reject) {
+    return applyAutoReject(db, candidateId, earlyReject.rule);
   }
 
   const prefilter = prefilterCandidate({
@@ -104,22 +113,36 @@ export async function analyzeCandidate(
     const needsExtraReview =
       analysis.is_course && shouldRouteToExtraReview(analysis.confidence);
 
-    return updateCandidate(db, candidateId, {
-      discoveryStatus: !analysis.is_course
-        ? "INVALID"
-        : needsExtraReview
-          ? "ANALYZED"
-          : "READY_FOR_REVIEW",
+    const analyzedFields = {
       aiAnalysisJson: { ...analysis, _contentHash: contentHash },
       confidence: String(analysis.confidence),
       analyzedAt: new Date(),
-      errorMessage: !analysis.is_course
-        ? "AI marked content as not a course"
-        : needsExtraReview
-          ? "Low AI confidence — extra human review recommended"
-          : null,
       provider: analysis.provider,
       rawTitle: analysis.title || candidate.rawTitle,
+    };
+
+    if (!analysis.is_course) {
+      const decision = evaluateAutoReject({
+        ...candidate,
+        ...analyzedFields,
+      });
+      if (decision.reject) {
+        await updateCandidate(db, candidateId, analyzedFields);
+        return applyAutoReject(db, candidateId, decision.rule);
+      }
+      return updateCandidate(db, candidateId, {
+        ...analyzedFields,
+        discoveryStatus: "INVALID",
+        errorMessage: "AI marked content as not a course",
+      });
+    }
+
+    return updateCandidate(db, candidateId, {
+      ...analyzedFields,
+      discoveryStatus: needsExtraReview ? "ANALYZED" : "READY_FOR_REVIEW",
+      errorMessage: needsExtraReview
+        ? "Low AI confidence — extra human review recommended"
+        : null,
     });
   } catch (error) {
     logger.error("candidate.analyze", {

@@ -1,6 +1,7 @@
 export * from "@/domain/verification/evidence";
 export * from "@/domain/verification/free-status";
 export * from "@/domain/verification/certificate-status";
+export * from "@/domain/verification/provider-policy";
 export * from "@/domain/verification/trust";
 export * from "@/domain/verification/freshness-policy";
 export * from "@/domain/verification/priority";

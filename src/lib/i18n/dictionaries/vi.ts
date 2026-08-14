@@ -126,6 +126,7 @@ export const vi: Dictionary = {
     topicEmptyTitle: "Không có khóa nào khớp bộ lọc",
     topicEmptyDescription: "Hãy xóa bộ lọc hoặc xem một chủ đề liên quan.",
     topicFullCategory: (name) => `Toàn bộ chủ đề ${name}`,
+    topicTagIntro: (name) => `Khóa học miễn phí gắn thẻ “${name}”.`,
     providerHeading: (name) => `Khóa học miễn phí từ ${name}`,
     providerIntro: "Danh sách khóa học miễn phí được tuyển chọn, liên kết từ",
     providerNotHosted:
@@ -167,6 +168,8 @@ export const vi: Dictionary = {
     language: "Ngôn ngữ",
     instructor: "Giảng viên",
     lastVerified: "Xác minh gần nhất",
+    lastObserved: "Quan sát gần nhất",
+    freeDurability: "Độ bền miễn phí",
     provider: "Nền tảng",
     notListed: "Không có thông tin",
     notVerified: "Chưa xác minh",
@@ -182,6 +185,22 @@ export const vi: Dictionary = {
     moreFrom: (provider) => `Xem thêm từ ${provider}`,
     monthlyBest: "Hay nhất tháng",
     fallbackSummary: "Khóa học miễn phí được tuyển chọn.",
+    trackerHeading: "Theo dõi giá",
+    watchHeading: "Báo khi miễn phí",
+    watchEmail: "Địa chỉ email",
+    watchSubmit: "Nhận thông báo",
+    watchSubmitting: "Đang lưu…",
+    watchSuccess: "Hãy kiểm tra email để xác nhận theo dõi.",
+    watchError: "Không lưu được. Vui lòng thử lại.",
+  },
+  tracker: {
+    heading: "Theo dõi khóa miễn phí",
+    description:
+      "Các sự kiện giá đã xác nhận gần đây. Sẽ đầy dần khi hệ thống quan sát thêm khóa học.",
+    emptyTitle: "Tracker đang chuẩn bị",
+    emptyDescription:
+      "Chưa có sự kiện giá công khai. Quay lại sau các lần monitor, hoặc duyệt danh mục.",
+    unknownCourse: "Khóa học không rõ",
   },
   meta: {
     categoryNotFound: "Không tìm thấy chủ đề",
@@ -189,6 +208,7 @@ export const vi: Dictionary = {
     courseNotFound: "Không tìm thấy khóa học",
     collectionNotFound: "Không tìm thấy bộ sưu tập",
     topicNotFound: "Không tìm thấy chủ đề",
+    trackerNotFound: "Không tìm thấy tracker",
     certificatesTitle: "Khóa học có chứng chỉ miễn phí",
   },
   a11y: {

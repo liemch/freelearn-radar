@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { z } from "zod";
 
 import { getDb } from "@/db";
+import { writeAuditLog } from "@/domain/admin/audit-log";
 import { runDiscoveryBatch } from "@/domain/discovery/discovery-engine";
 import {
   getSession,
@@ -54,6 +55,15 @@ export async function POST(request: Request) {
       provider: body.provider,
       category: body.category,
       ignoreSchedule: body.ignoreSchedule ?? false,
+    });
+
+    await writeAuditLog(db, {
+      actorType: "USER",
+      actorId: session.userId,
+      action: "DISCOVERY_RUN",
+      entityType: "discovery",
+      entityId: body.provider ?? body.category ?? "batch",
+      after: summary,
     });
 
     logger.info("admin.discovery.run", {

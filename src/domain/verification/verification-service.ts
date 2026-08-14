@@ -10,7 +10,11 @@ import {
   type EvidenceRecord,
 } from "@/domain/verification/evidence";
 import { decideExpiration } from "@/domain/verification/expiration";
-import { resolveCertificateType } from "@/domain/verification/certificate-status";
+import {
+  assertPriceTypeAllowed,
+  resolveCertificateWithPolicy,
+  type PriceTypeSource,
+} from "@/domain/verification/provider-policy";
 import { resolvePriceType } from "@/domain/verification/free-status";
 import { assessCourseTrust } from "@/domain/verification/trust";
 import { assessMetadataCompleteness } from "@/domain/quality/metadata-completeness";
@@ -100,7 +104,26 @@ export function produceVerificationResult(
     aiConfidence: evidenceInput.aiConfidence,
   });
 
-  const certificate = resolveCertificateType({
+  const priceSource: PriceTypeSource =
+    method === "MANUAL"
+      ? "MANUAL"
+      : method === "AI_EXTRACTION"
+        ? "AI"
+        : "SEARCH";
+  let resolvedPriceType = price.priceType;
+  let priceRationale = price.rationale;
+  try {
+    assertPriceTypeAllowed(priceSource, resolvedPriceType);
+  } catch {
+    // FREE_WITH_COUPON is MANUAL-only — coerce rather than fail the batch.
+    resolvedPriceType = "UNKNOWN";
+    priceRationale = `${price.rationale} (FREE_WITH_COUPON blocked for non-MANUAL source)`;
+  }
+
+  const certificate = resolveCertificateWithPolicy({
+    providerSlug: course.providerSlug,
+    priceType:
+      resolvedPriceType !== "UNKNOWN" ? resolvedPriceType : course.priceType,
     evidenceText: text,
     aiSuggestion: evidenceInput.aiCertificateType,
     aiConfidence: evidenceInput.aiConfidence,
@@ -110,7 +133,7 @@ export function produceVerificationResult(
 
   const expiration = decideExpiration({
     currentStatus: course.status,
-    observedPriceType: price.priceType,
+    observedPriceType: resolvedPriceType,
     availability,
     pricingConfidence: price.confidence,
   });
@@ -127,7 +150,7 @@ export function produceVerificationResult(
         type: "PRICE",
         sourceUrl: evidenceInput.sourceUrl,
         sourceProvider: evidenceInput.sourceProvider,
-        observedValue: `${price.priceType}: ${price.rationale}`,
+        observedValue: `${resolvedPriceType}: ${priceRationale}`,
         confidence: price.confidence,
         method,
         observedAt: now,
@@ -169,7 +192,8 @@ export function produceVerificationResult(
       canonicalUrl: course.canonicalUrl,
     },
     next: {
-      priceType: price.priceType === "UNKNOWN" ? course.priceType : price.priceType,
+      priceType:
+        resolvedPriceType === "UNKNOWN" ? course.priceType : resolvedPriceType,
       certificateType:
         certificate.certificateType === "UNKNOWN"
           ? course.certificateType
@@ -181,7 +205,7 @@ export function produceVerificationResult(
   });
 
   const finalPrice =
-    price.priceType !== "UNKNOWN" ? price.priceType : course.priceType;
+    resolvedPriceType !== "UNKNOWN" ? resolvedPriceType : course.priceType;
   const finalCert =
     certificate.certificateType !== "UNKNOWN"
       ? certificate.certificateType
@@ -226,7 +250,7 @@ export function produceVerificationResult(
    * is never presented as freshly verified (project plan §44, §58 Principle 4).
    */
   const conclusive =
-    price.priceType !== "UNKNOWN" || availability === "UNAVAILABLE";
+    resolvedPriceType !== "UNKNOWN" || availability === "UNAVAILABLE";
 
   let status: VerificationResult["status"] = conclusive ? "VERIFIED" : "FAILED";
   if (nextStatus === "EXPIRED") {
@@ -243,7 +267,7 @@ export function produceVerificationResult(
     evidence,
     changeSummary: summarizeChanges(changes),
     notes: [
-      price.rationale,
+      priceRationale,
       certificate.rationale,
       expiration.reason,
       `Resolved ${finalPrice}/${finalCert}`,

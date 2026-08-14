@@ -9,6 +9,10 @@ import {
 } from "@/domain/course/labels";
 import { formatDuration } from "@/domain/course/recommendation";
 import {
+  freeDurabilityLabel,
+  selectCourseBadgeSlots,
+} from "@/domain/tracker/vocabulary";
+import {
   isStaleForPublicWarning,
   verificationAgeLabel,
 } from "@/domain/verification/freshness-policy";
@@ -34,6 +38,14 @@ export function CourseCard({ course, locale }: CourseCardProps) {
     course.priceType,
   );
   const courseHref = localePath(locale, `/course/${course.slug}`);
+  const badgeSlots = selectCourseBadgeSlots({
+    certificateKnown: course.certificateType !== "UNKNOWN",
+    freeDurability: course.freeDurability ?? "UNKNOWN",
+  });
+  const durability = freeDurabilityLabel(
+    course.freeDurability ?? "UNKNOWN",
+    locale,
+  );
 
   return (
     <article className="group flex h-full flex-col overflow-hidden rounded-xl bg-card ring-1 ring-border/70 transition hover:ring-primary/30 hover:shadow-md sm:hover:-translate-y-0.5 motion-reduce:transition-none motion-reduce:hover:translate-y-0">
@@ -43,13 +55,20 @@ export function CourseCard({ course, locale }: CourseCardProps) {
 
       <div className="flex flex-1 flex-col p-3.5 pt-3 sm:p-4">
         <div className="flex flex-wrap items-center gap-2">
-          <FreeStatusBadge
-            priceType={course.priceType}
-            locale={locale}
-            size="sm"
-          />
-          {course.certificateType !== "UNKNOWN" ? (
+          {badgeSlots.includes("price") ? (
+            <FreeStatusBadge
+              priceType={course.priceType}
+              locale={locale}
+              size="sm"
+            />
+          ) : null}
+          {badgeSlots.includes("certificate") ? (
             <span className="text-xs text-muted-foreground">{certificate}</span>
+          ) : null}
+          {badgeSlots.includes("durability") ? (
+            <span className="rounded-full border border-border px-2 py-0.5 text-xs text-muted-foreground">
+              {durability}
+            </span>
           ) : null}
         </div>
 

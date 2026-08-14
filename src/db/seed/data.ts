@@ -57,12 +57,17 @@ const SEED_DISCOVERY_QUERIES = [
   {
     provider: "microsoft-learn",
     category: "cloud",
-    query: "site:learn.microsoft.com AI learning path",
+    query: "site:learn.microsoft.com/training AI learning path",
+  },
+  {
+    provider: "microsoft-learn",
+    category: "ai",
+    query: 'site:learn.microsoft.com/training/paths "artificial intelligence"',
   },
   {
     provider: "freecodecamp",
     category: "data-science",
-    query: "site:freecodecamp.org learn data analysis",
+    query: "site:freecodecamp.org/learn data analysis",
   },
 ] as const;
 

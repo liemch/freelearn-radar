@@ -5,7 +5,10 @@ import { AdminLanguageSwitcher } from "@/components/admin/admin-language-switche
 import { AdminLogoutButton } from "@/components/admin/logout-button";
 import { Button } from "@/components/ui/button";
 import { countCandidatesByStatus } from "@/db/repositories/candidate-repository";
-import { countCoursesByStatus } from "@/db/repositories/course-repository";
+import {
+  countCoursesByStatus,
+  countPublishedCoursesByCertificate,
+} from "@/db/repositories/course-repository";
 import { listCategories } from "@/db/repositories/category-repository";
 import { listProviders } from "@/db/repositories/provider-repository";
 import { getDb } from "@/db";
@@ -26,13 +29,29 @@ export default async function AdminDashboardPage() {
   const t = getAdminDictionary(locale);
   const db = getDb();
 
+  let workItems: Array<{ label: string; value: number; href: string }> = [
+    {
+      label: t.dashboard.stats.discoveryErrors,
+      value: 0,
+      href: "/admin/candidates?view=error",
+    },
+    {
+      label: t.dashboard.stats.pendingReview,
+      value: 0,
+      href: "/admin/candidates?view=ready",
+    },
+    {
+      label: t.dashboard.stats.unknownCertificate,
+      value: 0,
+      href: "/admin/courses?certificate=UNKNOWN",
+    },
+  ];
+
   let stats = [
-    { label: t.dashboard.stats.pendingReview, value: 0 },
-    { label: t.dashboard.stats.publishedCourses, value: 0 },
-    { label: t.dashboard.stats.draftCourses, value: 0 },
-    { label: t.dashboard.stats.providers, value: 0 },
-    { label: t.dashboard.stats.categories, value: 0 },
-    { label: t.dashboard.stats.discoveryErrors, value: 0 },
+    { label: t.dashboard.stats.publishedCourses, value: 0, href: "/admin/courses" },
+    { label: t.dashboard.stats.draftCourses, value: 0, href: "/admin/courses" },
+    { label: t.dashboard.stats.providers, value: 0, href: "/admin/providers" },
+    { label: t.dashboard.stats.categories, value: 0, href: "/admin" },
   ];
   let databaseReady = true;
 
@@ -44,6 +63,7 @@ export default async function AdminDashboardPage() {
       providers,
       categories,
       discoveryErrors,
+      unknownCertificate,
     ] = await Promise.all([
       countCandidatesByStatus(db, "READY_FOR_REVIEW"),
       countCoursesByStatus(db, "PUBLISHED"),
@@ -51,15 +71,48 @@ export default async function AdminDashboardPage() {
       listProviders(db, false),
       listCategories(db),
       countCandidatesByStatus(db, "ERROR"),
+      countPublishedCoursesByCertificate(db, "UNKNOWN"),
     ]);
 
+    workItems = [
+      {
+        label: t.dashboard.stats.discoveryErrors,
+        value: discoveryErrors,
+        href: "/admin/candidates?view=error",
+      },
+      {
+        label: t.dashboard.stats.pendingReview,
+        value: pendingReview,
+        href: "/admin/candidates?view=ready",
+      },
+      {
+        label: t.dashboard.stats.unknownCertificate,
+        value: unknownCertificate,
+        href: "/admin/courses?certificate=UNKNOWN",
+      },
+    ];
+
     stats = [
-      { label: t.dashboard.stats.pendingReview, value: pendingReview },
-      { label: t.dashboard.stats.publishedCourses, value: publishedCourses },
-      { label: t.dashboard.stats.draftCourses, value: draftCourses },
-      { label: t.dashboard.stats.providers, value: providers.length },
-      { label: t.dashboard.stats.categories, value: categories.length },
-      { label: t.dashboard.stats.discoveryErrors, value: discoveryErrors },
+      {
+        label: t.dashboard.stats.publishedCourses,
+        value: publishedCourses,
+        href: "/admin/courses",
+      },
+      {
+        label: t.dashboard.stats.draftCourses,
+        value: draftCourses,
+        href: "/admin/courses",
+      },
+      {
+        label: t.dashboard.stats.providers,
+        value: providers.length,
+        href: "/admin/providers",
+      },
+      {
+        label: t.dashboard.stats.categories,
+        value: categories.length,
+        href: "/admin",
+      },
     ];
   } catch {
     databaseReady = false;
@@ -93,15 +146,37 @@ export default async function AdminDashboardPage() {
       </header>
 
       <main className="mx-auto max-w-6xl px-6 py-8">
-        <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+        <section className="space-y-3">
+          <div>
+            <h2 className="text-lg font-semibold">{t.dashboard.workList}</h2>
+            <p className="text-sm text-muted-foreground">
+              {t.dashboard.workListDescription}
+            </p>
+          </div>
+          <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+            {workItems.map((item) => (
+              <Link
+                key={item.label}
+                href={item.href}
+                className="rounded-xl border border-border bg-card p-5 shadow-sm transition hover:border-primary"
+              >
+                <p className="text-sm text-muted-foreground">{item.label}</p>
+                <p className="mt-2 text-3xl font-semibold">{item.value}</p>
+              </Link>
+            ))}
+          </div>
+        </section>
+
+        <div className="mt-8 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
           {stats.map((stat) => (
-            <article
+            <Link
               key={stat.label}
-              className="rounded-xl border border-border bg-card p-5 shadow-sm"
+              href={stat.href}
+              className="rounded-xl border border-border bg-card p-5 shadow-sm transition hover:border-primary"
             >
               <p className="text-sm text-muted-foreground">{stat.label}</p>
               <p className="mt-2 text-3xl font-semibold">{stat.value}</p>
-            </article>
+            </Link>
           ))}
         </div>
 
@@ -140,6 +215,22 @@ export default async function AdminDashboardPage() {
             <Button asChild variant="outline">
               <Link href="/admin/discovery">{t.nav.discovery}</Link>
             </Button>
+            <Button asChild variant="outline">
+              <Link href="/admin/providers">{t.nav.providers}</Link>
+            </Button>
+            <Button asChild variant="outline">
+              <Link href="/admin/taxonomy">{t.nav.taxonomy}</Link>
+            </Button>
+            <Button asChild variant="outline">
+              <Link href="/admin/discovery/queries">
+                {t.nav.discoveryQueries}
+              </Link>
+            </Button>
+            {session.role === "ADMIN" ? (
+              <Button asChild variant="outline">
+                <Link href="/admin/users">{t.nav.users}</Link>
+              </Button>
+            ) : null}
             <Button asChild variant="outline">
               <Link href="/admin/analytics">{t.nav.analytics}</Link>
             </Button>
