@@ -16,6 +16,9 @@ import { getServerEnv } from "@/lib/env";
 import { logger } from "@/lib/logger";
 import { createAIProvider } from "@/services/ai/nvidia-nim-provider";
 
+/** Re-analyze calls NVIDIA synchronously; the platform default (10s) kills it mid-flight. */
+export const maxDuration = 60;
+
 type RouteContext = { params: Promise<{ id: string }> };
 
 async function requireAdmin() {

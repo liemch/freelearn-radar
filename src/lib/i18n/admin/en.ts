@@ -136,6 +136,8 @@ export const adminEn: AdminDictionary = {
     score: "Score",
     detail: "Detail",
     actionFailed: "Action failed. Please try again.",
+    actionTimedOut:
+      "The AI model did not respond in time. The candidate was left unchanged — please try again.",
     unknownProvider: "Unknown provider",
     untitled: "Untitled candidate",
     providerHint: "Provider hint",

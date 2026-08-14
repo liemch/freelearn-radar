@@ -54,6 +54,7 @@ export default async function AdminCandidatesPage() {
     reanalyzing: t.candidates.reanalyzing,
     reanalyzeHint: t.candidates.reanalyzeHint,
     actionFailed: t.candidates.actionFailed,
+    actionTimedOut: t.candidates.actionTimedOut,
   };
 
   return (

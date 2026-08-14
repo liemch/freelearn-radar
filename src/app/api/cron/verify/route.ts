@@ -11,6 +11,9 @@ import {
 import type { VerificationEvidenceInput } from "@/domain/verification/verification-service";
 import { createSearchProvider } from "@/services/search/tavily-search-provider";
 
+/** Re-verifies a batch of courses against the search provider. */
+export const maxDuration = 300;
+
 function unauthorized() {
   return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 }

@@ -19,16 +19,20 @@ type ChatCompletionResponse = {
   }>;
 };
 
+const DEFAULT_TIMEOUT_MS = 45_000;
+
 export class NvidiaNimProvider implements AIProvider {
   private readonly apiKey: string;
   private readonly baseUrl: string;
   private readonly model: string;
+  private readonly timeoutMs: number;
   private readonly fetchImpl: FetchLike;
 
   constructor(options?: {
     apiKey?: string;
     baseUrl?: string;
     model?: string;
+    timeoutMs?: number;
     fetchImpl?: FetchLike;
   }) {
     let env: ReturnType<typeof getServerEnv> | null = null;
@@ -47,6 +51,8 @@ export class NvidiaNimProvider implements AIProvider {
       options?.model ||
       env?.NVIDIA_MODEL ||
       "nvidia/nemotron-3-super-120b-a12b";
+    this.timeoutMs =
+      options?.timeoutMs ?? env?.AI_REQUEST_TIMEOUT_MS ?? DEFAULT_TIMEOUT_MS;
     this.fetchImpl = options?.fetchImpl ?? fetch;
 
     if (!this.apiKey) {
@@ -100,28 +106,47 @@ export class NvidiaNimProvider implements AIProvider {
     options: { jsonMode: boolean },
   ): Promise<string> {
     const prompt = buildCourseAnalysisPrompt(input);
-    const response = await this.fetchImpl(`${this.baseUrl}/chat/completions`, {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        Authorization: `Bearer ${this.apiKey}`,
-      },
-      body: JSON.stringify({
-        model: this.model,
-        temperature: 0.1,
-        ...(options.jsonMode
-          ? { response_format: { type: "json_object" } }
-          : {}),
-        messages: [
-          { role: "system", content: prompt.system },
-          { role: "user", content: prompt.user },
-        ],
-      }),
-    });
+    // Without this the request can hang until the serverless function is killed.
+    const controller = new AbortController();
+    const timer = setTimeout(() => controller.abort(), this.timeoutMs);
+
+    let response: Response;
+    try {
+      response = await this.fetchImpl(`${this.baseUrl}/chat/completions`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${this.apiKey}`,
+        },
+        body: JSON.stringify({
+          model: this.model,
+          temperature: 0.1,
+          ...(options.jsonMode
+            ? { response_format: { type: "json_object" } }
+            : {}),
+          messages: [
+            { role: "system", content: prompt.system },
+            { role: "user", content: prompt.user },
+          ],
+        }),
+        signal: controller.signal,
+      });
+    } catch (error) {
+      if (error instanceof Error && error.name === "AbortError") {
+        throw new Error(
+          `NVIDIA request timed out after ${this.timeoutMs}ms (model ${this.model})`,
+        );
+      }
+      throw error;
+    } finally {
+      clearTimeout(timer);
+    }
 
     if (!response.ok) {
       const body = await response.text();
-      throw new Error(`NVIDIA request failed (${response.status}): ${body}`);
+      throw new Error(
+        `NVIDIA request failed (${response.status}): ${body.slice(0, 300)}`,
+      );
     }
 
     const payload = (await response.json()) as ChatCompletionResponse;

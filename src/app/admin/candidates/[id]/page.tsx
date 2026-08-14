@@ -88,6 +88,7 @@ export default async function AdminCandidateDetailPage({ params }: PageProps) {
     reanalyzing: t.candidates.reanalyzing,
     reanalyzeHint: t.candidates.reanalyzeHint,
     actionFailed: t.candidates.actionFailed,
+    actionTimedOut: t.candidates.actionTimedOut,
   };
 
   return (

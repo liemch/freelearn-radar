@@ -10,6 +10,9 @@ import { logger } from "@/lib/logger";
 import { createAIProvider } from "@/services/ai/nvidia-nim-provider";
 import { createSearchProvider } from "@/services/search/tavily-search-provider";
 
+/** Search + source fetch + AI analysis for a whole batch. */
+export const maxDuration = 300;
+
 function unauthorized() {
   return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 }

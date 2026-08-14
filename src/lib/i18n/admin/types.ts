@@ -133,6 +133,7 @@ export type AdminDictionary = {
     score: string;
     detail: string;
     actionFailed: string;
+    actionTimedOut: string;
     unknownProvider: string;
     untitled: string;
     providerHint: string;

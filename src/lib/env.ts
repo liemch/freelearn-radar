@@ -23,6 +23,7 @@ const baseEnvSchema = z.object({
     .url()
     .default("https://integrate.api.nvidia.com/v1"),
   NVIDIA_MODEL: optionalString,
+  AI_REQUEST_TIMEOUT_MS: z.coerce.number().int().positive().default(45_000),
   TAVILY_API_KEY: optionalString,
   DISCOVERY_QUERY_LIMIT: z.coerce.number().int().positive().default(15),
   DISCOVERY_RESULT_LIMIT: z.coerce.number().int().positive().default(5),

@@ -12,6 +12,9 @@ import { getServerEnv } from "@/lib/env";
 import { logger } from "@/lib/logger";
 import { createSearchProvider } from "@/services/search/tavily-search-provider";
 
+/** A manual run fans out to Tavily plus per-result ingestion. */
+export const maxDuration = 60;
+
 const bodySchema = z.object({
   provider: z.string().optional(),
   category: z.string().optional(),

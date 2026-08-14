@@ -17,7 +17,33 @@ type CandidateActionsLabels = {
   reanalyzing: string;
   reanalyzeHint: string;
   actionFailed: string;
+  actionTimedOut: string;
 };
+
+/**
+ * A gateway timeout returns an HTML body, so response.json() throws and the real
+ * status is lost. Read the status first and only then try to parse.
+ */
+async function readActionError(
+  response: Response,
+  labels: { actionFailed: string; actionTimedOut: string },
+): Promise<string | null> {
+  if (response.ok) return null;
+
+  let detail = "";
+  try {
+    const payload = (await response.clone().json()) as { error?: string };
+    detail = payload.error ?? "";
+  } catch {
+    detail = "";
+  }
+
+  if (response.status === 504 || response.status === 408) {
+    return labels.actionTimedOut;
+  }
+
+  return detail || `${labels.actionFailed} (HTTP ${response.status})`;
+}
 
 type CandidateActionsProps = {
   candidateId: string;
@@ -54,9 +80,9 @@ export function CandidateActions({
           reason: action === "reject" ? "Rejected by admin" : undefined,
         }),
       });
-      const payload = (await response.json()) as { error?: string };
-      if (!response.ok) {
-        setError(payload.error ?? labels.actionFailed);
+      const failure = await readActionError(response, labels);
+      if (failure) {
+        setError(failure);
         return;
       }
       if (action === "approve") {

@@ -177,6 +177,33 @@ describe("NvidiaNimProvider", () => {
     ).toThrow("AI_PARSE_ERROR");
   });
 
+  // An unbounded fetch used to hang until the serverless function was killed.
+  it("aborts a hanging NVIDIA request instead of hanging forever", async () => {
+    const fetchImpl = vi.fn(
+      (_url: string, init?: { signal?: AbortSignal }) =>
+        new Promise<Response>((_resolve, reject) => {
+          init?.signal?.addEventListener("abort", () => {
+            const error = new Error("aborted");
+            error.name = "AbortError";
+            reject(error);
+          });
+        }),
+    );
+
+    const provider = new NvidiaNimProvider({
+      apiKey: "test-key",
+      timeoutMs: 20,
+      fetchImpl: fetchImpl as unknown as typeof fetch,
+    });
+
+    await expect(
+      provider.analyzeCourse({
+        url: "https://coursera.org/learn/python",
+        content: "x",
+      }),
+    ).rejects.toThrow(/timed out after 20ms/);
+  });
+
   it("rejects empty NVIDIA message content", async () => {
     const fetchImpl = vi.fn().mockResolvedValue({
       ok: true,

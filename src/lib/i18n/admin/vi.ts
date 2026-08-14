@@ -139,6 +139,8 @@ export const adminVi: AdminDictionary = {
     score: "Điểm",
     detail: "Chi tiết",
     actionFailed: "Thao tác thất bại. Vui lòng thử lại.",
+    actionTimedOut:
+      "Mô hình AI không phản hồi kịp. Khóa học chưa bị thay đổi — vui lòng thử lại.",
     unknownProvider: "Nền tảng chưa rõ",
     untitled: "Khóa chưa có tiêu đề",
     providerHint: "Gợi ý nền tảng",
