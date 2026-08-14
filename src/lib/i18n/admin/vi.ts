@@ -133,6 +133,8 @@ export const adminVi: AdminDictionary = {
     approving: "Đang duyệt...",
     rejecting: "Đang từ chối...",
     reanalyze: "Phân tích lại",
+    reanalyzing: "Đang phân tích...",
+    reanalyzeHint: "Đang gọi mô hình AI, thường mất 10-30 giây.",
     source: "Nguồn",
     score: "Điểm",
     detail: "Chi tiết",
@@ -170,6 +172,11 @@ export const adminVi: AdminDictionary = {
     lastRuns: "Lần chạy gần đây",
     empty: "Chưa có lần thu thập nào.",
     runFailed: "Chạy thu thập thất bại.",
+    ignoreSchedule: "Bỏ qua lịch (chạy ngay)",
+    ignoreScheduleHint:
+      "Mỗi truy vấn bị hoãn 24 giờ sau khi chạy thành công. Tích vào đây để chạy lại ngay.",
+    nothingDue:
+      "Không có truy vấn nào đến hạn. Tích \"Bỏ qua lịch\" để chạy lại trước khi hết 24 giờ.",
     formDescription:
       "Chạy các truy vấn thu thập đến hạn qua nhà cung cấp tìm kiếm, rồi tạo khóa chờ duyệt. Cần TAVILY_API_KEY.",
     topic: "Chủ đề",

@@ -1,6 +1,7 @@
 import { getServerEnv } from "@/lib/env";
 import { logger } from "@/lib/logger";
 import {
+  AIParseError,
   buildCourseAnalysisPrompt,
   parseCourseAnalysisJson,
   type AIProvider,
@@ -58,13 +59,17 @@ export class NvidiaNimProvider implements AIProvider {
 
     for (let attempt = 0; attempt < 2; attempt += 1) {
       try {
-        const content = await this.complete(input);
+        // Not every NIM model honours response_format; retry without it.
+        const content = await this.complete(input, {
+          jsonMode: attempt === 0,
+        });
         return parseCourseAnalysisJson(content);
       } catch (error) {
         lastError = error;
         logger.warn("ai.nvidia.analyze", {
           status: "retry",
           attempt,
+          model: this.model,
           error: error instanceof Error ? error.message : "Unknown error",
         });
       }
@@ -90,7 +95,10 @@ export class NvidiaNimProvider implements AIProvider {
     return analysis.summary_vi;
   }
 
-  private async complete(input: CourseAnalysisInput): Promise<string> {
+  private async complete(
+    input: CourseAnalysisInput,
+    options: { jsonMode: boolean },
+  ): Promise<string> {
     const prompt = buildCourseAnalysisPrompt(input);
     const response = await this.fetchImpl(`${this.baseUrl}/chat/completions`, {
       method: "POST",
@@ -101,7 +109,9 @@ export class NvidiaNimProvider implements AIProvider {
       body: JSON.stringify({
         model: this.model,
         temperature: 0.1,
-        response_format: { type: "json_object" },
+        ...(options.jsonMode
+          ? { response_format: { type: "json_object" } }
+          : {}),
         messages: [
           { role: "system", content: prompt.system },
           { role: "user", content: prompt.user },
@@ -117,7 +127,10 @@ export class NvidiaNimProvider implements AIProvider {
     const payload = (await response.json()) as ChatCompletionResponse;
     const content = payload.choices?.[0]?.message?.content;
     if (!content) {
-      throw new Error("AI_PARSE_ERROR");
+      throw new AIParseError(
+        "empty",
+        `no message content from model ${this.model}`,
+      );
     }
 
     return content;

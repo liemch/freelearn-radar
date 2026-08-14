@@ -127,6 +127,8 @@ export type AdminDictionary = {
     approving: string;
     rejecting: string;
     reanalyze: string;
+    reanalyzing: string;
+    reanalyzeHint: string;
     source: string;
     score: string;
     detail: string;
@@ -163,6 +165,9 @@ export type AdminDictionary = {
     lastRuns: string;
     empty: string;
     runFailed: string;
+    ignoreSchedule: string;
+    ignoreScheduleHint: string;
+    nothingDue: string;
     formDescription: string;
     topic: string;
     allTopics: string;

@@ -10,18 +10,26 @@ import { getServerEnv } from "@/lib/env";
 export async function listDueDiscoveryQueries(
   db: Db,
   limit?: number,
-  scope?: { provider?: string; category?: string },
+  scope?: {
+    provider?: string;
+    category?: string;
+    /** Manual admin runs bypass the 24h cooldown set by the last successful run. */
+    ignoreSchedule?: boolean;
+  },
 ): Promise<DiscoveryQuery[]> {
   const queryLimit = limit ?? getServerEnv().DISCOVERY_QUERY_LIMIT;
   const now = new Date();
 
-  const conditions = [
-    eq(discoveryQueries.enabled, true),
-    or(
-      isNull(discoveryQueries.nextRunAt),
-      lte(discoveryQueries.nextRunAt, now),
-    )!,
-  ];
+  const conditions = [eq(discoveryQueries.enabled, true)];
+
+  if (!scope?.ignoreSchedule) {
+    conditions.push(
+      or(
+        isNull(discoveryQueries.nextRunAt),
+        lte(discoveryQueries.nextRunAt, now),
+      )!,
+    );
+  }
 
   if (scope?.provider) {
     conditions.push(eq(discoveryQueries.provider, scope.provider));

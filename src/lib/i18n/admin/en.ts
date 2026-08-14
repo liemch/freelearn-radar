@@ -130,6 +130,8 @@ export const adminEn: AdminDictionary = {
     approving: "Approving...",
     rejecting: "Rejecting...",
     reanalyze: "Re-analyze",
+    reanalyzing: "Analyzing...",
+    reanalyzeHint: "Calling the AI model. This usually takes 10-30 seconds.",
     source: "Source",
     score: "Score",
     detail: "Detail",
@@ -167,6 +169,11 @@ export const adminEn: AdminDictionary = {
     lastRuns: "Recent runs",
     empty: "No discovery runs yet.",
     runFailed: "Discovery run failed.",
+    ignoreSchedule: "Ignore schedule (run now)",
+    ignoreScheduleHint:
+      "Each query is put on a 24h cooldown after a successful run. Tick this to run it again immediately.",
+    nothingDue:
+      "No query was due. Tick \"Ignore schedule\" to run again before the 24h cooldown ends.",
     formDescription:
       "Runs the next due discovery queries through the search provider, then creates candidates. Requires TAVILY_API_KEY.",
     topic: "Topic",

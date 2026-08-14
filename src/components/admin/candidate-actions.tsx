@@ -1,14 +1,21 @@
 "use client";
 
+import { Loader2 } from "lucide-react";
 import { useRouter } from "next/navigation";
-import { useState } from "react";
+import { useState, useTransition } from "react";
 
 import { Button } from "@/components/ui/button";
+
+type CandidateAction = "approve" | "reject" | "reanalyze";
 
 type CandidateActionsLabels = {
   approve: string;
   reject: string;
   reanalyze: string;
+  approving: string;
+  rejecting: string;
+  reanalyzing: string;
+  reanalyzeHint: string;
   actionFailed: string;
 };
 
@@ -28,11 +35,15 @@ export function CandidateActions({
   labels,
 }: CandidateActionsProps) {
   const router = useRouter();
-  const [busy, setBusy] = useState(false);
+  const [pending, setPending] = useState<CandidateAction | null>(null);
   const [error, setError] = useState<string | null>(null);
+  // router.refresh() is async; keep the spinner up until the new data paints.
+  const [isRefreshing, startTransition] = useTransition();
 
-  async function run(action: "approve" | "reject" | "reanalyze") {
-    setBusy(true);
+  const busy = pending !== null || isRefreshing;
+
+  async function run(action: CandidateAction) {
+    setPending(action);
     setError(null);
     try {
       const response = await fetch(`/api/admin/candidates/${candidateId}`, {
@@ -48,14 +59,15 @@ export function CandidateActions({
         setError(payload.error ?? labels.actionFailed);
         return;
       }
-      router.refresh();
       if (action === "approve") {
         router.push("/admin/courses");
+        return;
       }
+      startTransition(() => router.refresh());
     } catch {
       setError(labels.actionFailed);
     } finally {
-      setBusy(false);
+      setPending(null);
     }
   }
 
@@ -63,36 +75,55 @@ export function CandidateActions({
     return null;
   }
 
+  function actionButton(
+    action: CandidateAction,
+    variant: "default" | "destructive" | "secondary",
+    idleLabel: string,
+    pendingLabel: string,
+  ) {
+    const isPending = pending === action;
+    return (
+      <Button
+        size="sm"
+        variant={variant}
+        disabled={busy}
+        aria-busy={isPending}
+        onClick={() => run(action)}
+      >
+        {isPending ? <Loader2 className="animate-spin" aria-hidden /> : null}
+        {isPending ? pendingLabel : idleLabel}
+      </Button>
+    );
+  }
+
   return (
     <div className="space-y-2">
-      <div className="flex flex-wrap gap-2">
-        {canApprove ? (
-          <Button size="sm" disabled={busy} onClick={() => run("approve")}>
-            {labels.approve}
-          </Button>
-        ) : null}
-        {canReject ? (
-          <Button
-            size="sm"
-            variant="destructive"
-            disabled={busy}
-            onClick={() => run("reject")}
-          >
-            {labels.reject}
-          </Button>
-        ) : null}
-        {canReanalyze ? (
-          <Button
-            size="sm"
-            variant="secondary"
-            disabled={busy}
-            onClick={() => run("reanalyze")}
-          >
-            {labels.reanalyze}
-          </Button>
-        ) : null}
+      <div className="flex flex-wrap items-center gap-2">
+        {canApprove
+          ? actionButton("approve", "default", labels.approve, labels.approving)
+          : null}
+        {canReject
+          ? actionButton("reject", "destructive", labels.reject, labels.rejecting)
+          : null}
+        {canReanalyze
+          ? actionButton(
+              "reanalyze",
+              "secondary",
+              labels.reanalyze,
+              labels.reanalyzing,
+            )
+          : null}
       </div>
-      {error ? <p className="text-xs text-destructive">{error}</p> : null}
+      {pending === "reanalyze" ? (
+        <p className="text-xs text-muted-foreground" role="status">
+          {labels.reanalyzeHint}
+        </p>
+      ) : null}
+      {error ? (
+        <p className="text-xs text-destructive" role="alert">
+          {error}
+        </p>
+      ) : null}
     </div>
   );
 }

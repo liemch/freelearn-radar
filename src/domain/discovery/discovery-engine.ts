@@ -41,6 +41,8 @@ export async function runDiscoveryBatch(
     /** Optional admin scoping (project plan §31): restrict the run to one provider/topic. */
     provider?: string;
     category?: string;
+    /** Manual admin runs may bypass the per-query 24h cooldown. */
+    ignoreSchedule?: boolean;
   },
 ): Promise<DiscoveryRunSummary> {
   const env = getServerEnv();
@@ -50,6 +52,7 @@ export async function runDiscoveryBatch(
   const queries = await listDueDiscoveryQueries(db, queryLimit, {
     provider: options?.provider,
     category: options?.category,
+    ignoreSchedule: options?.ignoreSchedule,
   });
   const summary: DiscoveryRunSummary = {
     queriesProcessed: 0,

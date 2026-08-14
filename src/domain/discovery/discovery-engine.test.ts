@@ -189,6 +189,27 @@ describe("runDiscoveryBatch", () => {
     });
   });
 
+  // A successful run pushes nextRunAt 24h out, so a manual re-run found nothing.
+  it("forwards ignoreSchedule so manual runs bypass the 24h cooldown", async () => {
+    listDueDiscoveryQueries.mockResolvedValue([]);
+
+    const { runDiscoveryBatch } = await import(
+      "@/domain/discovery/discovery-engine"
+    );
+
+    await runDiscoveryBatch(
+      {} as never,
+      { search: async () => [] },
+      { queryLimit: 3, ignoreSchedule: true },
+    );
+
+    expect(listDueDiscoveryQueries).toHaveBeenCalledWith(
+      {},
+      3,
+      expect.objectContaining({ ignoreSchedule: true }),
+    );
+  });
+
   it("records query failures without crashing the batch", async () => {
     listDueDiscoveryQueries.mockResolvedValue([
       {

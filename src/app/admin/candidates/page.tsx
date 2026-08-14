@@ -49,6 +49,10 @@ export default async function AdminCandidatesPage() {
     approve: t.candidates.approve,
     reject: t.candidates.reject,
     reanalyze: t.candidates.reanalyze,
+    approving: t.candidates.approving,
+    rejecting: t.candidates.rejecting,
+    reanalyzing: t.candidates.reanalyzing,
+    reanalyzeHint: t.candidates.reanalyzeHint,
     actionFailed: t.candidates.actionFailed,
   };
 

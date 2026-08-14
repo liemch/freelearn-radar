@@ -1,5 +1,7 @@
 # FreeLearn Radar — MVP Project Plan
 
+**Progress (as of 2026-08-14):** WP0–WP14 shipped · M15–M17 complete · **WP18 / M18.1–M18.4 complete** · M18.5 & M19 not started. See §49 for work-package status and report links.
+
 ## 1. Product Vision
 
 **FreeLearn Radar** là website tự động tìm, phân loại và tuyển chọn những khóa học miễn phí đáng học từ nhiều nguồn.
@@ -378,7 +380,7 @@ State machine:
 ```text
 DISCOVERED
    ↓
-FETCHED
+FETCHED          ← SSRF-safe source page fetch + metadata/evidence (WP18 / M18.4)
    ↓
 ANALYZED
    ↓
@@ -398,6 +400,18 @@ DUPLICATE
 EXPIRED
 ERROR
 ```
+
+Pipeline order (implemented):
+
+```text
+Search → ingest (DISCOVERED)
+  → source fetch (FETCHED / soft-fail / INVALID)
+  → NVIDIA analyze (FETCHED first, then remaining DISCOVERED)
+  → Admin review → approve / reject / force re-analyze
+```
+
+Admin **Re-analyze** may force retry from `ERROR`, `ANALYZED`, or `READY_FOR_REVIEW`.
+Terminal statuses (`REJECTED`, `APPROVED`, …) must not show reject/re-analyze actions.
 
 ---
 
@@ -502,9 +516,16 @@ status
 published_at
 last_verified_at
 
+image_source_url
+image_storage_url
+image_last_verified_at
+image_policy
+
 created_at
 updated_at
 ```
+
+Image policy examples: `REMOTE_ONLY`, `STORE_COPY`, `NO_EXTERNAL_IMAGE`.
 
 ---
 
@@ -658,11 +679,18 @@ approved_at
 rejected_at
 
 error_message
+
+source_evidence_json
+source_fetched_at
+source_final_url
+source_image_url
 ```
 
 Candidate riêng với Course.
 
 Không pollute bảng production.
+
+Source fields are filled by the Course Source Fetcher (WP18 / M18.4) before AI analysis when possible.
 
 ---
 
@@ -725,11 +753,17 @@ Ví dụ:
 
 Schema validate bằng Zod.
 
+The NVIDIA **system prompt must document this exact contract** (required keys + enums).
+A vague “return JSON” prompt causes schema mismatches that surface as opaque parse errors.
+
 Nếu invalid:
 
 ```text
-AI_PARSE_ERROR
+AI_PARSE_ERROR (empty|json|schema): <short detail>
 ```
+
+Persist the detail on `course_candidates.error_message` for admin diagnosis.
+Retry once; optionally retry without `response_format` for models that reject JSON mode.
 
 Không auto-repair vô hạn.
 
@@ -1034,26 +1068,35 @@ AI Errors
 /admin/candidates
 ```
 
-Card:
+Review queue shows actionable statuses only:
+
+```text
+DISCOVERED | FETCHED | ANALYZED | READY_FOR_REVIEW | ERROR
+```
+
+Hide `REJECTED` and `APPROVED` from the default queue.
+
+Card / detail:
 
 ```text
 Course title
 
 Provider
-URL
+URL / final source URL
 
 AI classification
 
 Price status
 Certificate
+Evidence (expandable technical details)
 
 AI confidence
 
 AI summary
 
-[Approve]
-[Edit]
-[Reject]
+[Approve]   — only when transition allows
+[Reject]    — only when transition allows
+[Re-analyze] — force retry when allowed; show spinner + pending label
 ```
 
 Human-in-the-loop bắt buộc trong MVP.
@@ -1116,10 +1159,20 @@ Coursera
 Limit:
 10
 
+Ignore schedule (run now):
+☑  ← bypass per-query 24h cooldown after a successful run
+
 [Run]
 ```
 
 Cho phép test pipeline mà không phải chờ Cron.
+
+Notes (implemented):
+
+- Cron/due selection still respects `next_run_at` (success → +24h, failure → +6h).
+- Manual admin runs default to **ignore schedule** so operators can re-run immediately.
+- If zero queries are due and schedule is not ignored, UI must explain the cooldown instead of a silent `queries=0`.
+- Discovery / re-analyze / approve / reject actions must show clear busy/loading feedback.
 
 ---
 
@@ -1135,6 +1188,18 @@ Endpoint:
 
 ```text
 /api/cron/discover
+```
+
+Also (post-MVP / M16+):
+
+```text
+/api/cron/verify
+```
+
+Discover cron order:
+
+```text
+due queries → search ingest → source fetch batch → AI analyze batch
 ```
 
 Security:
@@ -1942,11 +2007,166 @@ Smoke test.
 
 ---
 
+## M15 — Production Hardening & Engineering Review (implemented)
+
+Status: **READY_FOR_LIVE_INTEGRATION** (code + quality gates).
+
+Delivered:
+
+```text
+outbound URL allowlist
+production secret enforcement
+admin/API guards + ADMIN-only discovery/candidate actions
+cron fail-closed auth
+login soft rate limit
+security headers + admin noindex
+prompt wrapping + Zod AI output validation
+docs/SECURITY.md + engineering review
+```
+
+Report: `docs/M15_FINAL_REPORT.md`
+
+---
+
 ## M16 — Course Intelligence & Data Quality (implemented)
 
 Architecture reference: `docs/COURSE_VERIFICATION_ENGINE.md`
 
 Activated `course_verifications` with evidence history, deterministic free/certificate classifiers, trust/freshness/recheck priority, `/api/cron/verify`, ranking trust penalties, discovery prefilter + AI confidence routing. AI assists classification only; human approval remains the publish gate.
+
+Report: `docs/M16_FINAL_REPORT.md`
+
+---
+
+## M17 — Product Experience, Discovery & SEO Growth (implemented)
+
+Status: **READY_FOR_LIVE_VALIDATION**
+
+Delivered:
+
+```text
+homepage IA sections (data-gated)
+course detail “why learn” / free / certificate / verification UX
+filters: certificate + duration + shareable pagination
+related courses
+routes:
+  /free-courses/[topic]
+  /provider/[slug]
+  /free-certificate-courses
+  /collections/under-1-hour | under-5-hours | weekend
+metadata + canonical + OG/Twitter
+sitemap readiness for growth pages
+```
+
+Report: `docs/M17_FINAL_REPORT.md`
+
+---
+
+## WP18 — Public Product Polish, I18N, Source Fetching (implemented)
+
+WP18 is the post-MVP productization track after WP0–WP14 + M15–M17.
+It was executed as sequenced milestones **M18.1 → M18.4**, then small operational polish from live admin usage.
+
+### M18.1 — Project Plan Conformance Audit
+
+Status: **COMPLETE**
+
+- Independent audit of WP0–WP14 against this plan
+- Remediation of P0/P1 trust-boundary and catalog integrity defects
+- Scorecard + residual gaps documented
+
+Reports: `docs/M18_1_FINAL_REPORT.md`, `docs/M18_1_CONFORMANCE_AUDIT.md`
+
+### M18.2 — Public UI Visual Redesign + Bilingual Routes
+
+Status: **COMPLETE**
+
+```text
+neutral teal discovery UI (not SaaS/dashboard)
+compact hero + course cards as primary visual
+locale routes /en/... and /vi/...
+dictionaries + middleware locale negotiation
+course image fields + SSRF-safe image service
+hreflang / sitemap for both locales
+```
+
+Reports: `docs/M18_2_VISUAL_REDESIGN.md`, `docs/DESIGN_SYSTEM.md`, `docs/UI_UX_GUIDELINES.md`
+
+### M18.3 — I18N Routing Persistence + Full EN/VI UI
+
+Status: **COMPLETE**
+
+```text
+LocalizedLink / localizeHref / useLocalizedPath
+language switch preserves path + query
+flr_locale preference cookie (URL locale still authoritative)
+public + admin dictionaries complete (EN/VI)
+admin language switcher (cookie-based; admin has no /vi prefix)
+translation completeness regression tests
+```
+
+Reports: `docs/M18_3_I18N_ROUTING_REPORT.md`, `docs/M18_4_TRANSLATION_COMPLETENESS.md`
+
+### M18.4 — Course Source Fetching & Evidence Extraction
+
+Status: **M18_4_SOURCE_FETCH_COMPLETE**
+
+```text
+CourseSourceFetcher abstraction
+SSRF-safe URL validation on initial URL + every redirect hop
+bounded timeout / bytes / redirects / fetches-per-run
+provider fetch policy (FETCH_ALLOWED / METADATA_ONLY / NO_FETCH)
+JSON-LD → OpenGraph → HTML meta → bounded text
+evidence model for free + certificate signals
+source_* columns on course_candidates (migration 0004)
+pipeline: search → fetch → AI → review
+admin candidate evidence UX (final URL, fetchedAt, technical details)
+```
+
+Reports:
+
+```text
+docs/M18_4_IMPLEMENTATION_PLAN.md
+docs/COURSE_SOURCE_FETCHING.md
+docs/COURSE_EVIDENCE_MODEL.md
+docs/M18_4_SOURCE_FETCH_REPORT.md
+```
+
+### WP18 operational polish (post live admin usage)
+
+Status: **IMPLEMENTED** (working tree / pending deploy as of 2026-08-14)
+
+```text
+hide REJECTED/APPROVED from candidate review queue
+hide invalid reject/re-analyze actions by status transitions
+force re-analyze from ERROR / ANALYZED / READY_FOR_REVIEW
+AI prompt documents full Zod JSON contract (fixes opaque AI_PARSE_ERROR)
+AI_PARSE_ERROR reports empty | json | schema detail
+candidate action loading: spinner + pending labels + reanalyze hint
+discovery admin: ignoreSchedule checkbox (default on) + nothing-due hint
+discovery/run API accepts ignoreSchedule
+admin route loading.tsx + skeleton component
+```
+
+Not yet in plan as separate milestones:
+
+```text
+M18.5 — deferred / not started
+M19 — deferred / not started
+```
+
+Acceptance for WP18:
+
+```text
+npm run lint        PASS
+npm run typecheck   PASS
+npm run test        PASS
+npm run build       PASS
+locale never silently resets on public navigation
+source fetch never follows unsafe redirects
+AI never auto-publishes
+manual discovery can re-run without waiting 24h
+```
 
 ---
 
@@ -2068,62 +2288,71 @@ src/
 
   app/
 
-    (public)/
+    [locale]/                 # public EN/VI routes (M18.2+)
       page.tsx
-
-      course/
-        [slug]/
-
-      category/
-        [slug]/
-
+      course/[slug]/
+      category/[slug]/
       search/
-
-      best/
-        [year]/
-          [month]/
+      provider/[slug]/
+      free-courses/[topic]/
+      free-certificate-courses/
+      collections/
+      best/[year]/[month]/
 
     admin/
-      dashboard/
+      page.tsx
       courses/
       candidates/
       discovery/
+      loading.tsx
 
     api/
-      cron/
+      cron/                   # discover + verify
       admin/
 
   components/
+    public/
+    admin/
+    ui/
 
   domain/
-
     course/
-    candidate/
+    candidate/                # ingest, fetch-source, analyze, approve
     discovery/
     ranking/
+    quality/
+    verification/
     provider/
 
   services/
-
     ai/
       ai-provider.ts
       nvidia-nim-provider.ts
-
     search/
       search-provider.ts
       tavily-search-provider.ts
+    fetch/                    # M18.4 CourseSourceFetcher
+      course-source-fetcher.ts
+      safe-http-client.ts
+      metadata-extractor.ts
+      provider-fetch-policy.ts
+    images/
+      course-image-service.ts
 
   db/
-
     schema/
-    migrations/
     repositories/
 
   lib/
-
     env.ts
     logger.ts
     url.ts
+    safe-fetch-url.ts
+    i18n/
+      dictionaries/
+      admin/
+      seo.ts
+      server-locale.ts
 
   test/
 ```
@@ -2155,13 +2384,28 @@ TAVILY_API_KEY=
 AUTH_SECRET=
 
 ADMIN_EMAILS=
+ADMIN_BOOTSTRAP_PASSWORD=
 
 CRON_SECRET=
 
 APP_URL=
+
+# Discovery / AI batch budgets
+DISCOVERY_QUERY_LIMIT=
+DISCOVERY_RESULT_LIMIT=
+AI_ANALYSIS_LIMIT=
+MAX_VERIFICATIONS_PER_RUN=
+
+# Course source fetch budgets (M18.4)
+MAX_SOURCE_FETCHES_PER_RUN=
+SOURCE_FETCH_TIMEOUT_MS=
+SOURCE_MAX_RESPONSE_BYTES=
+SOURCE_MAX_REDIRECTS=
 ```
 
 Validate ngay startup bằng Zod.
+
+Optional variables may be empty in local/dev; production runtime enforces stronger secret requirements (see M15).
 
 ---
 

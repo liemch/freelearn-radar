@@ -1,5 +1,6 @@
 "use client";
 
+import { Loader2 } from "lucide-react";
 import { useState } from "react";
 
 import { Button } from "@/components/ui/button";
@@ -15,6 +16,9 @@ type DiscoveryRunFormLabels = {
   allProviders: string;
   queryLimit: string;
   runFailed: string;
+  ignoreSchedule: string;
+  ignoreScheduleHint: string;
+  nothingDue: string;
   /** Placeholders: {queriesProcessed}, {created}, {duplicates}, {invalid}, {errors} */
   summary: string;
 };
@@ -54,13 +58,16 @@ export function DiscoveryRunForm({
   const [provider, setProvider] = useState("");
   const [category, setCategory] = useState("");
   const [limit, setLimit] = useState(5);
+  const [ignoreSchedule, setIgnoreSchedule] = useState(true);
   const [busy, setBusy] = useState(false);
   const [message, setMessage] = useState<string | null>(null);
+  const [hint, setHint] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
 
   async function handleRun() {
     setBusy(true);
     setMessage(null);
+    setHint(null);
     setError(null);
 
     try {
@@ -72,6 +79,7 @@ export function DiscoveryRunForm({
           resultLimit: 5,
           provider: provider || undefined,
           category: category || undefined,
+          ignoreSchedule,
         }),
       });
       const payload = (await response.json()) as {
@@ -91,15 +99,19 @@ export function DiscoveryRunForm({
         return;
       }
 
+      const processed = payload.summary?.queriesProcessed ?? 0;
       setMessage(
         formatDiscoverySummary(labels.summary, {
-          queriesProcessed: payload.summary?.queriesProcessed ?? 0,
+          queriesProcessed: processed,
           created: payload.summary?.created ?? 0,
           duplicates: payload.summary?.duplicates ?? 0,
           invalid: payload.summary?.invalid ?? 0,
           errors: payload.summary?.errors ?? 0,
         }),
       );
+      if (processed === 0) {
+        setHint(labels.nothingDue);
+      }
     } catch {
       setError(labels.runFailed);
     } finally {
@@ -166,12 +178,31 @@ export function DiscoveryRunForm({
         </div>
       </div>
 
-      <Button onClick={handleRun} disabled={busy}>
+      <div className="space-y-1.5">
+        <label className="flex items-center gap-2 text-sm">
+          <input
+            type="checkbox"
+            className="size-4 rounded border-input"
+            checked={ignoreSchedule}
+            onChange={(event) => setIgnoreSchedule(event.target.checked)}
+          />
+          {labels.ignoreSchedule}
+        </label>
+        <p className="text-xs text-muted-foreground">
+          {labels.ignoreScheduleHint}
+        </p>
+      </div>
+
+      <Button onClick={handleRun} disabled={busy} aria-busy={busy}>
+        {busy ? <Loader2 className="animate-spin" aria-hidden /> : null}
         {busy ? labels.running : labels.runDiscovery}
       </Button>
       {message ? (
-        <p className="text-sm text-muted-foreground">{message}</p>
+        <p className="text-sm text-muted-foreground" role="status">
+          {message}
+        </p>
       ) : null}
+      {hint ? <p className="text-sm text-amber-700">{hint}</p> : null}
       {error ? <p className="text-sm text-destructive">{error}</p> : null}
     </div>
   );

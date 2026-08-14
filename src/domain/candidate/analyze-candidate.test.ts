@@ -145,4 +145,95 @@ describe("analyzeCandidate", () => {
     expect(result.discoveryStatus).toBe("ERROR");
     expect(result.errorMessage).toContain("AI_PARSE_ERROR");
   });
+
+  const successfulAi = {
+    analyzeCourse: async () => ({
+      is_course: true as const,
+      provider: "Coursera",
+      title: "Retried",
+      categories: [],
+      level: "BEGINNER" as const,
+      language: "English",
+      price_type: "FREE_AUDIT" as const,
+      certificate_type: "UNKNOWN" as const,
+      duration_minutes: null,
+      summary_vi: "x",
+      why_learn: "y",
+      pros: [],
+      cons: [],
+      quality_score: 70,
+      confidence: 0.9,
+    }),
+    categorizeCourse: async () => [],
+    summarizeCourse: async () => "x",
+  };
+
+  // Admin "Re-analyze" silently no-opped because ERROR is not an auto-analyzable status.
+  it("re-analyzes a candidate stuck in ERROR when forced", async () => {
+    findCandidateById.mockResolvedValue({
+      id: "c4",
+      discoveryStatus: "ERROR",
+      canonicalUrl: "https://coursera.org/learn/retry",
+      rawTitle: "Retried",
+      rawDescription: "d",
+      rawContent: "content",
+      provider: "coursera",
+      errorMessage: "AI_PARSE_ERROR",
+    });
+    updateCandidate.mockImplementation(async (_db, _id, input) => ({
+      id: "c4",
+      ...input,
+    }));
+
+    const { analyzeCandidate } = await import(
+      "@/domain/candidate/analyze-candidate"
+    );
+
+    const result = await analyzeCandidate({} as never, successfulAi, "c4", {
+      force: true,
+    });
+
+    expect(result.discoveryStatus).toBe("READY_FOR_REVIEW");
+  });
+
+  it("leaves an ERROR candidate untouched during an unforced batch run", async () => {
+    findCandidateById.mockResolvedValue({
+      id: "c5",
+      discoveryStatus: "ERROR",
+      canonicalUrl: "https://coursera.org/learn/retry",
+      rawTitle: "Retried",
+      rawDescription: "d",
+      rawContent: "content",
+      provider: "coursera",
+    });
+
+    const { analyzeCandidate } = await import(
+      "@/domain/candidate/analyze-candidate"
+    );
+
+    const result = await analyzeCandidate({} as never, successfulAi, "c5");
+
+    expect(result.discoveryStatus).toBe("ERROR");
+    expect(updateCandidate).not.toHaveBeenCalled();
+  });
+
+  it("refuses to force a candidate out of a terminal status", async () => {
+    findCandidateById.mockResolvedValue({
+      id: "c6",
+      discoveryStatus: "REJECTED",
+      canonicalUrl: "https://coursera.org/learn/rejected",
+      rawTitle: "Rejected",
+      rawDescription: null,
+      rawContent: null,
+      provider: "coursera",
+    });
+
+    const { analyzeCandidate } = await import(
+      "@/domain/candidate/analyze-candidate"
+    );
+
+    await expect(
+      analyzeCandidate({} as never, successfulAi, "c6", { force: true }),
+    ).rejects.toThrow(/Cannot re-analyze/i);
+  });
 });

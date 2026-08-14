@@ -57,6 +57,9 @@ export default async function AdminDiscoveryPage() {
             allProviders: t.discovery.allProviders,
             queryLimit: t.discovery.queryLimit,
             runFailed: t.discovery.runFailed,
+            ignoreSchedule: t.discovery.ignoreSchedule,
+            ignoreScheduleHint: t.discovery.ignoreScheduleHint,
+            nothingDue: t.discovery.nothingDue,
             summary: t.discovery.summary,
           }}
         />

@@ -17,6 +17,7 @@ const bodySchema = z.object({
   category: z.string().optional(),
   limit: z.number().int().positive().max(30).optional(),
   resultLimit: z.number().int().positive().max(10).optional(),
+  ignoreSchedule: z.boolean().optional(),
 });
 
 export async function POST(request: Request) {
@@ -49,6 +50,7 @@ export async function POST(request: Request) {
       resultLimit: body.resultLimit ?? env.DISCOVERY_RESULT_LIMIT,
       provider: body.provider,
       category: body.category,
+      ignoreSchedule: body.ignoreSchedule ?? false,
     });
 
     logger.info("admin.discovery.run", {

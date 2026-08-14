@@ -57,7 +57,9 @@ export async function POST(request: Request, context: RouteContext) {
           { status: 503 },
         );
       }
-      const candidate = await analyzeCandidate(db, createAIProvider(), id);
+      const candidate = await analyzeCandidate(db, createAIProvider(), id, {
+        force: true,
+      });
       return NextResponse.json({ candidate });
     }
 

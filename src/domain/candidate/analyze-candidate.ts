@@ -13,20 +13,35 @@ import { getServerEnv } from "@/lib/env";
 import { logger } from "@/lib/logger";
 import type { AIProvider } from "@/services/ai/ai-provider";
 
+const ANALYZABLE_STATUSES = new Set(["DISCOVERED", "FETCHED"]);
+
+/** Statuses an admin may explicitly retry from. */
+const RETRYABLE_STATUSES = new Set([
+  "DISCOVERED",
+  "FETCHED",
+  "ANALYZED",
+  "READY_FOR_REVIEW",
+  "ERROR",
+]);
+
 export async function analyzeCandidate(
   db: Db,
   ai: AIProvider,
   candidateId: string,
+  options: { force?: boolean } = {},
 ) {
   const candidate = await findCandidateById(db, candidateId);
   if (!candidate) {
     throw new Error("Candidate not found");
   }
 
-  if (
-    candidate.discoveryStatus !== "DISCOVERED" &&
-    candidate.discoveryStatus !== "FETCHED"
-  ) {
+  const allowed = options.force ? RETRYABLE_STATUSES : ANALYZABLE_STATUSES;
+  if (!allowed.has(candidate.discoveryStatus)) {
+    if (options.force) {
+      throw new Error(
+        `Cannot re-analyze a candidate in status ${candidate.discoveryStatus}`,
+      );
+    }
     return candidate;
   }
 
@@ -62,6 +77,7 @@ export async function analyzeCandidate(
       : null;
 
   if (
+    !options.force &&
     shouldReuseAnalysis({
       previousContentHash: previousHash,
       currentContentHash: contentHash,
