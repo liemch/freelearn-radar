@@ -4,7 +4,10 @@ import { redirect } from "next/navigation";
 import { AdminEmptyState } from "@/components/admin/admin-empty-state";
 import { AdminPageHeader } from "@/components/admin/admin-page-header";
 import { AdminPanel } from "@/components/admin/admin-panel";
-import { CandidateActions } from "@/components/admin/candidate-actions";
+import {
+  CandidateBulkList,
+  type BulkCandidateRow,
+} from "@/components/admin/candidate-bulk-list";
 import { Badge, type BadgeProps } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { getDb } from "@/db";
@@ -135,20 +138,25 @@ export default async function AdminCandidatesPage({ searchParams }: PageProps) {
     candidates = [];
   }
 
-  const actionLabels = {
-    approve: t.candidates.approve,
-    reject: t.candidates.reject,
-    reanalyze: t.candidates.reanalyze,
-    approving: t.candidates.approving,
-    rejecting: t.candidates.rejecting,
-    reanalyzing: t.candidates.reanalyzing,
-    reanalyzeHint: t.candidates.reanalyzeHint,
-    refreshSource: t.candidates.refreshSource,
-    refreshingSource: t.candidates.refreshingSource,
-    refreshSourceHint: t.candidates.refreshSourceHint,
-    actionFailed: t.candidates.actionFailed,
-    actionTimedOut: t.candidates.actionTimedOut,
-  };
+  const rows: BulkCandidateRow[] = candidates.map((candidate) => ({
+    id: candidate.id,
+    title: candidate.rawTitle || candidate.canonicalUrl,
+    provider: candidate.provider || t.candidates.unknownProvider,
+    canonicalUrl: candidate.canonicalUrl,
+    description: candidate.rawDescription
+      ? candidate.rawDescription.slice(0, 240)
+      : null,
+    statusLabel: getDiscoveryStatusLabel(candidate.discoveryStatus),
+    statusVariant: discoveryStatusVariant(candidate.discoveryStatus),
+    canApprove: canApproveCandidate(candidate.discoveryStatus),
+    canReject: canRejectCandidate(candidate.discoveryStatus),
+    canReanalyze:
+      candidate.discoveryStatus === "DISCOVERED" ||
+      candidate.discoveryStatus === "FETCHED" ||
+      candidate.discoveryStatus === "ANALYZED" ||
+      candidate.discoveryStatus === "READY_FOR_REVIEW" ||
+      candidate.discoveryStatus === "ERROR",
+  }));
 
   const views: Array<{ key: CandidateView; label: string; href: string }> = [
     { key: "all", label: t.candidates.viewAll, href: "/admin/candidates" },
@@ -225,62 +233,32 @@ export default async function AdminCandidatesPage({ searchParams }: PageProps) {
               }
             />
           ) : (
-            <ul className="divide-y divide-border/60">
-              {candidates.map((candidate) => (
-                <li
-                  key={candidate.id}
-                  className="flex flex-wrap items-start justify-between gap-3 px-3.5 py-3 transition hover:bg-muted/40"
-                >
-                  <div className="min-w-0 space-y-1">
-                    <div className="flex flex-wrap items-center gap-2">
-                      <Link
-                        href={`/admin/candidates/${candidate.id}`}
-                        className="text-[0.8125rem] font-semibold hover:text-primary"
-                      >
-                        {candidate.rawTitle || candidate.canonicalUrl}
-                      </Link>
-                      <Badge
-                        variant={discoveryStatusVariant(
-                          candidate.discoveryStatus,
-                        )}
-                      >
-                        {getDiscoveryStatusLabel(candidate.discoveryStatus)}
-                      </Badge>
-                    </div>
-                    <p className="text-xs text-muted-foreground">
-                      {candidate.provider || t.candidates.unknownProvider}
-                    </p>
-                    <a
-                      href={candidate.canonicalUrl}
-                      target="_blank"
-                      rel="noreferrer"
-                      className="block break-all text-[0.6875rem] text-primary"
-                    >
-                      {candidate.canonicalUrl}
-                    </a>
-                    {candidate.rawDescription ? (
-                      <p className="max-w-3xl text-xs text-muted-foreground">
-                        {candidate.rawDescription.slice(0, 240)}
-                      </p>
-                    ) : null}
-                  </div>
-                  <CandidateActions
-                    candidateId={candidate.id}
-                    canApprove={canApproveCandidate(candidate.discoveryStatus)}
-                    canReject={canRejectCandidate(candidate.discoveryStatus)}
-                    canReanalyze={
-                      candidate.discoveryStatus === "DISCOVERED" ||
-                      candidate.discoveryStatus === "FETCHED" ||
-                      candidate.discoveryStatus === "ANALYZED" ||
-                      candidate.discoveryStatus === "READY_FOR_REVIEW" ||
-                      candidate.discoveryStatus === "ERROR"
-                    }
-                    canRefreshSource={false}
-                    labels={actionLabels}
-                  />
-                </li>
-              ))}
-            </ul>
+            <CandidateBulkList
+              candidates={rows}
+              labels={{
+                approve: t.candidates.approve,
+                reject: t.candidates.reject,
+                reanalyze: t.candidates.reanalyze,
+                approving: t.candidates.approving,
+                rejecting: t.candidates.rejecting,
+                reanalyzing: t.candidates.reanalyzing,
+                reanalyzeHint: t.candidates.reanalyzeHint,
+                refreshSource: t.candidates.refreshSource,
+                refreshingSource: t.candidates.refreshingSource,
+                refreshSourceHint: t.candidates.refreshSourceHint,
+                actionFailed: t.candidates.actionFailed,
+                actionTimedOut: t.candidates.actionTimedOut,
+                bulkApprove: t.candidates.bulkApprove,
+                bulkReject: t.candidates.bulkReject,
+                bulkApproving: t.candidates.bulkApproving,
+                bulkRejecting: t.candidates.bulkRejecting,
+                bulkSelected: t.candidates.bulkSelected,
+                bulkNoneSelected: t.candidates.bulkNoneSelected,
+                bulkFailed: t.candidates.bulkFailed,
+                bulkSummary: t.candidates.bulkSummary,
+                selectAll: t.candidates.selectAll,
+              }}
+            />
           )}
         </AdminPanel>
       </div>

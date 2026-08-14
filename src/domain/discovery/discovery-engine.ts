@@ -27,6 +27,10 @@ function inferDomain(providerSlug: string): string | undefined {
     aws: "aws.amazon.com",
     google: "developers.google.com",
     "linkedin-learning": "linkedin.com",
+    "hubspot-academy": "academy.hubspot.com",
+    "ibm-skillsbuild": "skillsbuild.org",
+    "salesforce-trailhead": "trailhead.salesforce.com",
+    "kaggle-learn": "kaggle.com",
   };
 
   return map[providerSlug];

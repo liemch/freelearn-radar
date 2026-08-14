@@ -221,6 +221,13 @@ export const adminEn: AdminDictionary = {
     viewExpired: "Expired",
     bulkReject: "Bulk reject",
     bulkApprove: "Bulk approve",
+    bulkApproving: "Approving selected...",
+    bulkRejecting: "Rejecting selected...",
+    bulkSelected: "selected",
+    bulkNoneSelected: "Select at least one candidate.",
+    bulkFailed: "Bulk action failed.",
+    bulkSummary: "Done: {ok} ok, {failed} failed.",
+    selectAll: "Select all",
   },
   providers: {
     heading: "Providers",
@@ -306,14 +313,16 @@ export const adminEn: AdminDictionary = {
     nothingDue:
       "No query was due. Tick \"Ignore schedule\" to run again before the 24h cooldown ends.",
     formDescription:
-      "Runs the next due discovery queries through the search provider, then creates candidates. Requires TAVILY_API_KEY.",
+      "Runs due discovery queries, then fetch + AI analyze like the cron pipeline. Requires TAVILY_API_KEY (and NVIDIA_API_KEY for analysis).",
     topic: "Topic",
     allTopics: "All topics",
     allProviders: "All providers",
     queryLimit: "Query limit",
+    resultLimit: "Results / query",
     afterRunHint: "After discovery, review candidates at",
     summary:
-      "Queries {queriesProcessed}, created {created}, duplicates {duplicates}, invalid {invalid}, errors {errors}",
+      "Queries {queriesProcessed}, created {created}, duplicates {duplicates}, invalid {invalid}, errors {errors}.",
+    pipelineSummary: "Fetched {fetched}, analyzed {analyzed}.",
     aiCheckHeading: "AI connection check",
     aiCheckDescription:
       "Sends one small sample course to the model and reports the exact response time and error. Use this before blaming a candidate.",

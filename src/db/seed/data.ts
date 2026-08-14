@@ -21,6 +21,27 @@ const SEED_PROVIDERS = [
     slug: "linkedin-learning",
     domain: "linkedin.com",
   },
+  // §68 Group-A academies (coverage track)
+  {
+    name: "HubSpot Academy",
+    slug: "hubspot-academy",
+    domain: "academy.hubspot.com",
+  },
+  {
+    name: "IBM SkillsBuild",
+    slug: "ibm-skillsbuild",
+    domain: "skillsbuild.org",
+  },
+  {
+    name: "Salesforce Trailhead",
+    slug: "salesforce-trailhead",
+    domain: "trailhead.salesforce.com",
+  },
+  {
+    name: "Kaggle Learn",
+    slug: "kaggle-learn",
+    domain: "kaggle.com",
+  },
 ] as const;
 
 const SEED_CATEGORIES = [
@@ -227,6 +248,108 @@ const SEED_DISCOVERY_QUERIES = [
     provider: "google",
     category: "programming",
     query: "site:developers.google.com/learn android OR flutter OR web",
+  },
+
+  // LinkedIn Learning (often limited free / trial — still discoverable)
+  {
+    provider: "linkedin-learning",
+    category: "soft-skills",
+    query: 'site:linkedin.com/learning "free" leadership OR communication course',
+  },
+  {
+    provider: "linkedin-learning",
+    category: "product-management",
+    query: 'site:linkedin.com/learning "product management" free course',
+  },
+  {
+    provider: "linkedin-learning",
+    category: "business",
+    query: 'site:linkedin.com/learning "project management" free course',
+  },
+
+  // Existing providers — thin categories
+  {
+    provider: "coursera",
+    category: "product-management",
+    query: 'site:coursera.org/learn "product management" free course',
+  },
+  {
+    provider: "coursera",
+    category: "soft-skills",
+    query: 'site:coursera.org/learn "soft skills" OR communication OR leadership free',
+  },
+  {
+    provider: "edx",
+    category: "soft-skills",
+    query: "site:edx.org/learn leadership OR communication free course",
+  },
+
+  // HubSpot Academy
+  {
+    provider: "hubspot-academy",
+    category: "marketing",
+    query: "site:academy.hubspot.com courses marketing OR inbound free",
+  },
+  {
+    provider: "hubspot-academy",
+    category: "business",
+    query: "site:academy.hubspot.com courses sales OR service free",
+  },
+  {
+    provider: "hubspot-academy",
+    category: "soft-skills",
+    query: "site:academy.hubspot.com courses content OR social media",
+  },
+
+  // IBM SkillsBuild
+  {
+    provider: "ibm-skillsbuild",
+    category: "ai",
+    query: "site:skillsbuild.org course artificial intelligence OR machine learning",
+  },
+  {
+    provider: "ibm-skillsbuild",
+    category: "cybersecurity",
+    query: "site:skillsbuild.org course cybersecurity OR security",
+  },
+  {
+    provider: "ibm-skillsbuild",
+    category: "data-science",
+    query: "site:skillsbuild.org course data science OR data analysis",
+  },
+
+  // Salesforce Trailhead
+  {
+    provider: "salesforce-trailhead",
+    category: "business",
+    query: "site:trailhead.salesforce.com trail admin OR sales cloud",
+  },
+  {
+    provider: "salesforce-trailhead",
+    category: "programming",
+    query: "site:trailhead.salesforce.com trail apex OR lightning OR developer",
+  },
+  {
+    provider: "salesforce-trailhead",
+    category: "soft-skills",
+    query: "site:trailhead.salesforce.com trail soft skills OR career",
+  },
+
+  // Kaggle Learn
+  {
+    provider: "kaggle-learn",
+    category: "data-science",
+    query: "site:kaggle.com/learn python OR pandas OR data visualization",
+  },
+  {
+    provider: "kaggle-learn",
+    category: "ai",
+    query: "site:kaggle.com/learn machine learning OR deep learning OR intro to ai",
+  },
+  {
+    provider: "kaggle-learn",
+    category: "programming",
+    query: "site:kaggle.com/learn sql OR python intro",
   },
 ] as const;
 

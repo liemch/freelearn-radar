@@ -25,11 +25,11 @@ const baseEnvSchema = z.object({
   NVIDIA_MODEL: optionalString,
   AI_REQUEST_TIMEOUT_MS: z.coerce.number().int().positive().default(45_000),
   TAVILY_API_KEY: optionalString,
-  DISCOVERY_QUERY_LIMIT: z.coerce.number().int().positive().max(200).default(25),
-  DISCOVERY_RESULT_LIMIT: z.coerce.number().int().positive().default(5),
-  AI_ANALYSIS_LIMIT: z.coerce.number().int().positive().default(30),
+  DISCOVERY_QUERY_LIMIT: z.coerce.number().int().positive().max(200).default(50),
+  DISCOVERY_RESULT_LIMIT: z.coerce.number().int().positive().default(10),
+  AI_ANALYSIS_LIMIT: z.coerce.number().int().positive().default(60),
   MAX_VERIFICATIONS_PER_RUN: z.coerce.number().int().positive().default(25),
-  MAX_SOURCE_FETCHES_PER_RUN: z.coerce.number().int().positive().default(20),
+  MAX_SOURCE_FETCHES_PER_RUN: z.coerce.number().int().positive().default(60),
   SOURCE_FETCH_TIMEOUT_MS: z.coerce.number().int().positive().default(10_000),
   SOURCE_MAX_RESPONSE_BYTES: z.coerce
     .number()

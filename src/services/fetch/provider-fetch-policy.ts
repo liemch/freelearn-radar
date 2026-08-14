@@ -51,6 +51,36 @@ const BY_SLUG: Record<string, ProviderFetchPolicy> = {
     image: "NO_EXTERNAL_IMAGE",
     label: "LinkedIn Learning",
   },
+  aws: {
+    fetch: "FETCH_ALLOWED",
+    image: "REMOTE_ONLY",
+    label: "AWS",
+  },
+  google: {
+    fetch: "FETCH_ALLOWED",
+    image: "REMOTE_ONLY",
+    label: "Google",
+  },
+  "hubspot-academy": {
+    fetch: "METADATA_ONLY",
+    image: "REMOTE_ONLY",
+    label: "HubSpot Academy",
+  },
+  "ibm-skillsbuild": {
+    fetch: "METADATA_ONLY",
+    image: "REMOTE_ONLY",
+    label: "IBM SkillsBuild",
+  },
+  "salesforce-trailhead": {
+    fetch: "METADATA_ONLY",
+    image: "REMOTE_ONLY",
+    label: "Salesforce Trailhead",
+  },
+  "kaggle-learn": {
+    fetch: "METADATA_ONLY",
+    image: "REMOTE_ONLY",
+    label: "Kaggle Learn",
+  },
 };
 
 const BY_DOMAIN: Record<string, ProviderFetchPolicy> = {
@@ -65,6 +95,15 @@ const BY_DOMAIN: Record<string, ProviderFetchPolicy> = {
   "www.freecodecamp.org": BY_SLUG.freecodecamp!,
   "linkedin.com": BY_SLUG["linkedin-learning"]!,
   "www.linkedin.com": BY_SLUG["linkedin-learning"]!,
+  "aws.amazon.com": BY_SLUG.aws!,
+  "skillbuilder.aws": BY_SLUG.aws!,
+  "developers.google.com": BY_SLUG.google!,
+  "academy.hubspot.com": BY_SLUG["hubspot-academy"]!,
+  "skillsbuild.org": BY_SLUG["ibm-skillsbuild"]!,
+  "www.skillsbuild.org": BY_SLUG["ibm-skillsbuild"]!,
+  "trailhead.salesforce.com": BY_SLUG["salesforce-trailhead"]!,
+  "kaggle.com": BY_SLUG["kaggle-learn"]!,
+  "www.kaggle.com": BY_SLUG["kaggle-learn"]!,
 };
 
 const DEFAULT_POLICY: ProviderFetchPolicy = {

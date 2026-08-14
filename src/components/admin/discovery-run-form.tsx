@@ -16,12 +16,15 @@ type DiscoveryRunFormLabels = {
   provider: string;
   allProviders: string;
   queryLimit: string;
+  resultLimit: string;
   runFailed: string;
   ignoreSchedule: string;
   ignoreScheduleHint: string;
   nothingDue: string;
   /** Placeholders: {queriesProcessed}, {created}, {duplicates}, {invalid}, {errors} */
   summary: string;
+  /** Placeholders: {fetched}, {analyzed} */
+  pipelineSummary: string;
 };
 
 function formatDiscoverySummary(
@@ -60,7 +63,8 @@ export function DiscoveryRunForm({
 }: DiscoveryRunFormProps) {
   const [provider, setProvider] = useState("");
   const [category, setCategory] = useState("");
-  const [limit, setLimit] = useState(5);
+  const [limit, setLimit] = useState(25);
+  const [resultLimit, setResultLimit] = useState(10);
   const [ignoreSchedule, setIgnoreSchedule] = useState(true);
   const [busy, setBusy] = useState(false);
   const [message, setMessage] = useState<string | null>(null);
@@ -79,7 +83,7 @@ export function DiscoveryRunForm({
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           limit,
-          resultLimit: 5,
+          resultLimit,
           provider: provider || undefined,
           category: category || undefined,
           ignoreSchedule,
@@ -93,6 +97,8 @@ export function DiscoveryRunForm({
           duplicates: number;
           invalid: number;
           errors: number;
+          sourceFetched?: number;
+          analyzed?: number;
         };
         pendingManualIntegrationTest?: boolean;
       };
@@ -103,15 +109,17 @@ export function DiscoveryRunForm({
       }
 
       const processed = payload.summary?.queriesProcessed ?? 0;
-      setMessage(
-        formatDiscoverySummary(labels.summary, {
-          queriesProcessed: processed,
-          created: payload.summary?.created ?? 0,
-          duplicates: payload.summary?.duplicates ?? 0,
-          invalid: payload.summary?.invalid ?? 0,
-          errors: payload.summary?.errors ?? 0,
-        }),
-      );
+      const base = formatDiscoverySummary(labels.summary, {
+        queriesProcessed: processed,
+        created: payload.summary?.created ?? 0,
+        duplicates: payload.summary?.duplicates ?? 0,
+        invalid: payload.summary?.invalid ?? 0,
+        errors: payload.summary?.errors ?? 0,
+      });
+      const pipeline = labels.pipelineSummary
+        .replaceAll("{fetched}", String(payload.summary?.sourceFetched ?? 0))
+        .replaceAll("{analyzed}", String(payload.summary?.analyzed ?? 0));
+      setMessage(`${base} ${pipeline}`);
       if (processed === 0) {
         setHint(labels.nothingDue);
       }
@@ -125,7 +133,7 @@ export function DiscoveryRunForm({
   return (
     <AdminPanel title={labels.runDiscovery} description={labels.formDescription}>
       <div className="space-y-3">
-        <div className="grid gap-3 sm:grid-cols-3">
+        <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
           <div className="space-y-1">
             <Label htmlFor="discovery-topic" className={fieldLabelClass}>
               {labels.topic}
@@ -174,7 +182,25 @@ export function DiscoveryRunForm({
               value={limit}
               onChange={(event) => setLimit(Number(event.target.value))}
             >
-              {[1, 3, 5, 10, 15].map((item) => (
+              {[5, 10, 15, 25, 50].map((item) => (
+                <option key={item} value={item}>
+                  {item}
+                </option>
+              ))}
+            </select>
+          </div>
+
+          <div className="space-y-1">
+            <Label htmlFor="discovery-result-limit" className={fieldLabelClass}>
+              {labels.resultLimit}
+            </Label>
+            <select
+              id="discovery-result-limit"
+              className={selectClass}
+              value={resultLimit}
+              onChange={(event) => setResultLimit(Number(event.target.value))}
+            >
+              {[3, 5, 8, 10].map((item) => (
                 <option key={item} value={item}>
                   {item}
                 </option>
@@ -213,7 +239,6 @@ export function DiscoveryRunForm({
           </Button>
         </div>
 
-        {/* Outcome sits inside the panel that produced it, not further down the page. */}
         {message || hint || error ? (
           <div className="space-y-1 rounded border border-border/60 bg-muted/40 px-3 py-2">
             {message ? (

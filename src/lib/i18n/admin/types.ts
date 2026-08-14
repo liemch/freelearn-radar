@@ -214,6 +214,14 @@ export type AdminDictionary = {
     viewExpired: string;
     bulkReject: string;
     bulkApprove: string;
+    bulkApproving: string;
+    bulkRejecting: string;
+    bulkSelected: string;
+    bulkNoneSelected: string;
+    bulkFailed: string;
+    /** Placeholders: {ok}, {failed} */
+    bulkSummary: string;
+    selectAll: string;
   };
   providers: {
     heading: string;
@@ -301,9 +309,12 @@ export type AdminDictionary = {
     allTopics: string;
     allProviders: string;
     queryLimit: string;
+    resultLimit: string;
     afterRunHint: string;
     /** Placeholders: {queriesProcessed}, {created}, {duplicates}, {invalid}, {errors} */
     summary: string;
+    /** Placeholders: {fetched}, {analyzed} */
+    pipelineSummary: string;
     aiCheckHeading: string;
     aiCheckDescription: string;
     aiCheckRun: string;

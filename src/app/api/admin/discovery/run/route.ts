@@ -3,6 +3,8 @@ import { z } from "zod";
 
 import { getDb } from "@/db";
 import { writeAuditLog } from "@/domain/admin/audit-log";
+import { analyzePendingCandidates } from "@/domain/candidate/analyze-candidate";
+import { fetchPendingCandidates } from "@/domain/candidate/fetch-candidate-source";
 import { runDiscoveryBatch } from "@/domain/discovery/discovery-engine";
 import {
   getSession,
@@ -11,15 +13,16 @@ import {
 } from "@/lib/auth/guards";
 import { getServerEnv } from "@/lib/env";
 import { logger } from "@/lib/logger";
+import { createAIProvider } from "@/services/ai/nvidia-nim-provider";
 import { createSearchProvider } from "@/services/search/tavily-search-provider";
 
-/** A manual run fans out to Tavily plus per-result ingestion. */
-export const maxDuration = 60;
+/** Manual run: search + fetch + analyze (same pipeline as cron). */
+export const maxDuration = 300;
 
 const bodySchema = z.object({
   provider: z.string().optional(),
   category: z.string().optional(),
-  limit: z.number().int().positive().max(30).optional(),
+  limit: z.number().int().positive().max(200).optional(),
   resultLimit: z.number().int().positive().max(10).optional(),
   ignoreSchedule: z.boolean().optional(),
 });
@@ -49,13 +52,44 @@ export async function POST(request: Request) {
 
     const db = getDb();
     const searchProvider = createSearchProvider();
+    const queryLimit = Math.min(
+      body.limit ?? 25,
+      env.DISCOVERY_QUERY_LIMIT,
+    );
     const summary = await runDiscoveryBatch(db, searchProvider, {
-      queryLimit: body.limit ?? 5,
+      queryLimit,
       resultLimit: body.resultLimit ?? env.DISCOVERY_RESULT_LIMIT,
       provider: body.provider,
       category: body.category,
       ignoreSchedule: body.ignoreSchedule ?? false,
     });
+
+    const fetched = await fetchPendingCandidates(
+      db,
+      env.MAX_SOURCE_FETCHES_PER_RUN,
+      {
+        timeoutMs: env.SOURCE_FETCH_TIMEOUT_MS,
+        maxRedirects: env.SOURCE_MAX_REDIRECTS,
+        maxBytes: env.SOURCE_MAX_RESPONSE_BYTES,
+      },
+    );
+
+    let analyzed = 0;
+    if (env.NVIDIA_API_KEY) {
+      const ai = createAIProvider();
+      const results = await analyzePendingCandidates(
+        db,
+        ai,
+        env.AI_ANALYSIS_LIMIT,
+      );
+      analyzed = results.length;
+    }
+
+    const after = {
+      ...summary,
+      sourceFetched: fetched.length,
+      analyzed,
+    };
 
     await writeAuditLog(db, {
       actorType: "USER",
@@ -63,7 +97,7 @@ export async function POST(request: Request) {
       action: "DISCOVERY_RUN",
       entityType: "discovery",
       entityId: body.provider ?? body.category ?? "batch",
-      after: summary,
+      after,
     });
 
     logger.info("admin.discovery.run", {
@@ -71,10 +105,14 @@ export async function POST(request: Request) {
       userId: session.userId,
       provider: body.provider ?? null,
       category: body.category ?? null,
-      ...summary,
+      ...after,
     });
 
-    return NextResponse.json({ ok: true, summary });
+    return NextResponse.json({
+      ok: true,
+      summary: after,
+      pendingManualIntegrationTest: !env.NVIDIA_API_KEY,
+    });
   } catch (error) {
     if (error instanceof z.ZodError) {
       return NextResponse.json({ error: "Invalid payload" }, { status: 400 });

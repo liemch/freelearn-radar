@@ -18,9 +18,10 @@ Documented in `.env.example`:
 | `NVIDIA_API_KEY` | for AI | for AI | Soft-fail without it |
 | `NVIDIA_BASE_URL` | optional | optional | Default NIM endpoint |
 | `NVIDIA_MODEL` | optional | optional | Default `nvidia/nemotron-3-super-120b-a12b` (Meta Llama NIM endpoints deprecate 2026-08-25) |
-| `DISCOVERY_QUERY_LIMIT` | optional | optional | Default 25 (project plan §74) |
-| `DISCOVERY_RESULT_LIMIT` | optional | optional | Default 5 |
-| `AI_ANALYSIS_LIMIT` | optional | optional | Default 30 |
+| `DISCOVERY_QUERY_LIMIT` | optional | optional | Default 50 (coverage track) |
+| `DISCOVERY_RESULT_LIMIT` | optional | optional | Default 10 |
+| `AI_ANALYSIS_LIMIT` | optional | optional | Default 60 |
+| `MAX_SOURCE_FETCHES_PER_RUN` | optional | optional | Default 60 |
 | `MAX_VERIFICATIONS_PER_RUN` | optional | optional | Default 25 (M16 verify cron) |
 
 Never use `NEXT_PUBLIC_` for secrets.

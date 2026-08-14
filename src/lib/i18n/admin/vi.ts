@@ -224,6 +224,13 @@ export const adminVi: AdminDictionary = {
     viewExpired: "Hết hạn",
     bulkReject: "Từ chối hàng loạt",
     bulkApprove: "Duyệt hàng loạt",
+    bulkApproving: "Đang duyệt các mục đã chọn...",
+    bulkRejecting: "Đang từ chối các mục đã chọn...",
+    bulkSelected: "đã chọn",
+    bulkNoneSelected: "Chọn ít nhất một ứng viên.",
+    bulkFailed: "Thao tác hàng loạt thất bại.",
+    bulkSummary: "Xong: {ok} thành công, {failed} lỗi.",
+    selectAll: "Chọn tất cả",
   },
   providers: {
     heading: "Nền tảng",
@@ -309,14 +316,16 @@ export const adminVi: AdminDictionary = {
     nothingDue:
       "Không có truy vấn nào đến hạn. Tích \"Bỏ qua lịch\" để chạy lại trước khi hết 24 giờ.",
     formDescription:
-      "Chạy các truy vấn thu thập đến hạn qua nhà cung cấp tìm kiếm, rồi tạo khóa chờ duyệt. Cần TAVILY_API_KEY.",
+      "Chạy truy vấn đến hạn, rồi fetch + phân tích AI giống cron. Cần TAVILY_API_KEY (và NVIDIA_API_KEY để phân tích).",
     topic: "Chủ đề",
     allTopics: "Tất cả chủ đề",
     allProviders: "Tất cả nền tảng",
     queryLimit: "Giới hạn truy vấn",
+    resultLimit: "Kết quả / truy vấn",
     afterRunHint: "Sau khi thu thập, duyệt khóa tại",
     summary:
-      "Truy vấn {queriesProcessed}, tạo mới {created}, trùng {duplicates}, không hợp lệ {invalid}, lỗi {errors}",
+      "Truy vấn {queriesProcessed}, tạo mới {created}, trùng {duplicates}, không hợp lệ {invalid}, lỗi {errors}.",
+    pipelineSummary: "Fetch {fetched}, phân tích {analyzed}.",
     aiCheckHeading: "Kiểm tra kết nối AI",
     aiCheckDescription:
       "Gửi một khóa học mẫu nhỏ tới mô hình và báo đúng thời gian phản hồi cùng lỗi thật. Hãy chạy thử ở đây trước khi nghi ngờ dữ liệu khóa học.",
