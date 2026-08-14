@@ -76,7 +76,7 @@ Architecture choice: **no monorepo** — monitor runs in the same Next.js app vi
 - `drizzle/0005_m19_coverage_truth_time.sql`
 - Also reflected in `scripts/neon-bootstrap.sql`
 
-**Deploy note:** run migrate on Neon/Vercel before relying on new tables.
+**Deploy note:** Production builds run `npm run vercel-build` (= `db:migrate:run` → `db:seed` → `next build`) via `vercel.json` `buildCommand`. Migration `0005` applies automatically on the next main deploy when `DATABASE_URL` is set.
 
 ---
 
