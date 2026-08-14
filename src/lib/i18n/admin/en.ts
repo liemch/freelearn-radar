@@ -227,6 +227,7 @@ export const adminEn: AdminDictionary = {
     bulkNoneSelected: "Select at least one candidate.",
     bulkFailed: "Bulk action failed.",
     bulkSummary: "Done: {ok} ok, {failed} failed.",
+    bulkErrorsHeading: "Not processed — reason from the system:",
     selectAll: "Select all",
   },
   providers: {

@@ -64,6 +64,13 @@
       "when": 1724140800000,
       "tag": "0008_m20_1_lexical",
       "breakpoints": true
+    },
+    {
+      "idx": 9,
+      "version": "7",
+      "when": 1724227200000,
+      "tag": "0009_provider_policy_catalog_free",
+      "breakpoints": true
     }
   ]
 }

@@ -527,6 +527,156 @@ CREATE INDEX IF NOT EXISTS "course_watches_confirm_token_idx"
 CREATE INDEX IF NOT EXISTS "course_watches_unsubscribe_token_idx"
   ON "course_watches" ("unsubscribe_token");
 
+-- ========== MIGRATION 0007_m20_foundation ==========
+-- M20.0 foundation: search instrumentation + evaluation scaffolding
+-- Additive and idempotent. Table never existed in this repo — CREATE, not ALTER-only.
+
+DO $$ BEGIN
+  CREATE TYPE "public"."search_retrieval_mode" AS ENUM('LEXICAL', 'SEMANTIC', 'HYBRID');
+EXCEPTION WHEN duplicate_object THEN NULL; END $$;
+
+DO $$ BEGIN
+  CREATE TYPE "public"."search_query_language" AS ENUM('EN', 'VI', 'VI_NO_DIACRITIC', 'UNKNOWN');
+EXCEPTION WHEN duplicate_object THEN NULL; END $$;
+
+DO $$ BEGIN
+  CREATE TYPE "public"."search_eval_locale" AS ENUM('EN', 'VI', 'VI_NO_DIACRITIC');
+EXCEPTION WHEN duplicate_object THEN NULL; END $$;
+
+DO $$ BEGIN
+  CREATE TYPE "public"."search_eval_group" AS ENUM(
+    'EXACT',
+    'KEYWORD',
+    'NL',
+    'CONSTRAINT',
+    'CROSS_LANG',
+    'NEGATIVE'
+  );
+EXCEPTION WHEN duplicate_object THEN NULL; END $$;
+
+CREATE TABLE IF NOT EXISTS "search_queries" (
+  "id" uuid PRIMARY KEY DEFAULT gen_random_uuid() NOT NULL,
+  "query_hash" text NOT NULL,
+  "normalized_query" text,
+  "locale" text,
+  "query_language" "search_query_language" DEFAULT 'UNKNOWN' NOT NULL,
+  "result_count" integer DEFAULT 0 NOT NULL,
+  "zero_result" boolean DEFAULT false NOT NULL,
+  "clicked_course_id" uuid,
+  "filters_json" jsonb,
+  "latency_ms" integer,
+  "retrieval_mode" "search_retrieval_mode" DEFAULT 'LEXICAL' NOT NULL,
+  "degraded" boolean DEFAULT false NOT NULL,
+  "top_score" numeric(8, 4),
+  "unmet_intent" boolean DEFAULT false NOT NULL,
+  "lexical_would_be_zero" boolean,
+  "ranking_config_version" text,
+  "session_hash" text,
+  "created_at" timestamp with time zone DEFAULT now() NOT NULL
+);
+
+DO $$ BEGIN
+  ALTER TABLE "search_queries" ADD CONSTRAINT "search_queries_clicked_course_id_courses_id_fk"
+    FOREIGN KEY ("clicked_course_id") REFERENCES "public"."courses"("id") ON DELETE set null ON UPDATE no action;
+EXCEPTION WHEN duplicate_object THEN NULL; END $$;
+
+CREATE INDEX IF NOT EXISTS "search_queries_created_at_idx"
+  ON "search_queries" ("created_at");
+CREATE INDEX IF NOT EXISTS "search_queries_query_hash_created_at_idx"
+  ON "search_queries" ("query_hash", "created_at");
+CREATE INDEX IF NOT EXISTS "search_queries_zero_result_created_at_idx"
+  ON "search_queries" ("zero_result", "created_at");
+CREATE INDEX IF NOT EXISTS "search_queries_unmet_intent_created_at_idx"
+  ON "search_queries" ("unmet_intent", "created_at");
+
+CREATE TABLE IF NOT EXISTS "search_evaluations" (
+  "id" uuid PRIMARY KEY DEFAULT gen_random_uuid() NOT NULL,
+  "dataset_version" text NOT NULL,
+  "catalog_snapshot_id" text,
+  "query_id" text NOT NULL,
+  "locale" "search_eval_locale" NOT NULL,
+  "query_group" "search_eval_group" NOT NULL,
+  "query_text" text NOT NULL,
+  "expected_labels_json" jsonb,
+  "annotator_agreement" numeric(5, 4),
+  "created_at" timestamp with time zone DEFAULT now() NOT NULL
+);
+
+CREATE UNIQUE INDEX IF NOT EXISTS "search_evaluations_dataset_query_uidx"
+  ON "search_evaluations" ("dataset_version", "query_id");
+CREATE INDEX IF NOT EXISTS "search_evaluations_dataset_version_idx"
+  ON "search_evaluations" ("dataset_version");
+
+CREATE TABLE IF NOT EXISTS "search_benchmark_runs" (
+  "id" uuid PRIMARY KEY DEFAULT gen_random_uuid() NOT NULL,
+  "dataset_version" text NOT NULL,
+  "retrieval_mode" "search_retrieval_mode" NOT NULL,
+  "ranking_config_version" text,
+  "embedding_model" text,
+  "ndcg_at_10" numeric(8, 4),
+  "precision_at_5" numeric(8, 4),
+  "exact_title_success" numeric(8, 4),
+  "latency_p95" integer,
+  "cost_estimate" numeric(10, 6),
+  "label_decay_rate" numeric(5, 4),
+  "metrics_json" jsonb,
+  "created_at" timestamp with time zone DEFAULT now() NOT NULL
+);
+
+CREATE INDEX IF NOT EXISTS "search_benchmark_runs_created_at_idx"
+  ON "search_benchmark_runs" ("created_at");
+CREATE INDEX IF NOT EXISTS "search_benchmark_runs_dataset_mode_idx"
+  ON "search_benchmark_runs" ("dataset_version", "retrieval_mode");
+
+-- ========== MIGRATION 0008_m20_1_lexical ==========
+-- M20.1 lexical relevance: unaccent + pg_trgm + immutable wrapper + indexes
+-- Additive / idempotent. Safe on Neon when extensions are allowed.
+
+CREATE EXTENSION IF NOT EXISTS unaccent;
+CREATE EXTENSION IF NOT EXISTS pg_trgm;
+
+-- unaccent() is STABLE; indexes and generated expressions need IMMUTABLE.
+CREATE OR REPLACE FUNCTION public.immutable_unaccent(text)
+RETURNS text
+LANGUAGE sql
+IMMUTABLE
+PARALLEL SAFE
+STRICT
+AS $$
+  SELECT public.unaccent('public.unaccent', $1)
+$$;
+
+-- Trigram indexes for typo / partial match on primary text fields.
+CREATE INDEX IF NOT EXISTS "courses_title_unaccent_trgm_idx"
+  ON "courses" USING gin (public.immutable_unaccent(lower(coalesce("title", ''))) gin_trgm_ops);
+
+CREATE INDEX IF NOT EXISTS "courses_short_description_unaccent_trgm_idx"
+  ON "courses" USING gin (public.immutable_unaccent(lower(coalesce("short_description", ''))) gin_trgm_ops);
+
+CREATE INDEX IF NOT EXISTS "courses_description_unaccent_trgm_idx"
+  ON "courses" USING gin (public.immutable_unaccent(lower(coalesce("description", ''))) gin_trgm_ops);
+
+CREATE INDEX IF NOT EXISTS "providers_name_unaccent_trgm_idx"
+  ON "providers" USING gin (public.immutable_unaccent(lower(coalesce("name", ''))) gin_trgm_ops);
+
+CREATE INDEX IF NOT EXISTS "topic_tags_name_en_unaccent_trgm_idx"
+  ON "topic_tags" USING gin (public.immutable_unaccent(lower(coalesce("name_en", ''))) gin_trgm_ops);
+
+CREATE INDEX IF NOT EXISTS "topic_tags_name_vi_unaccent_trgm_idx"
+  ON "topic_tags" USING gin (public.immutable_unaccent(lower(coalesce("name_vi", ''))) gin_trgm_ops);
+
+CREATE INDEX IF NOT EXISTS "categories_name_unaccent_trgm_idx"
+  ON "categories" USING gin (public.immutable_unaccent(lower(coalesce("name", ''))) gin_trgm_ops);
+
+-- ========== MIGRATION 0009_provider_policy_catalog_free ==========
+-- Coverage track: mark providers whose entire published catalog is free by policy,
+-- so a candidate page that simply never mentions price can be classified from the
+-- provider policy instead of falling back to UNKNOWN (§66.2 / §66.3).
+-- Additive and idempotent.
+
+ALTER TABLE "provider_policies"
+  ADD COLUMN IF NOT EXISTS "catalog_wide_free" boolean DEFAULT false NOT NULL;
+
 -- ========== DRIZZLE MIGRATION TRACKING ==========
 CREATE SCHEMA IF NOT EXISTS "drizzle";
 CREATE TABLE IF NOT EXISTS "drizzle"."__drizzle_migrations" (
@@ -535,26 +685,35 @@ CREATE TABLE IF NOT EXISTS "drizzle"."__drizzle_migrations" (
   created_at bigint
 );
 INSERT INTO "drizzle"."__drizzle_migrations" ("hash", "created_at")
-SELECT 'e19d994c15aa446daaa43ef9ceb49b4f1ef0157be7ba025e134df31abd0d2b5a', 1723449600000
-WHERE NOT EXISTS (SELECT 1 FROM "drizzle"."__drizzle_migrations" WHERE hash = 'e19d994c15aa446daaa43ef9ceb49b4f1ef0157be7ba025e134df31abd0d2b5a');
+SELECT 'b08add4492a300a58b6d7959bb6e3529db24d1dc19b577605d1b5d64e2dfb39f', 1723449600000
+WHERE NOT EXISTS (SELECT 1 FROM "drizzle"."__drizzle_migrations" WHERE hash = 'b08add4492a300a58b6d7959bb6e3529db24d1dc19b577605d1b5d64e2dfb39f');
 INSERT INTO "drizzle"."__drizzle_migrations" ("hash", "created_at")
-SELECT '3a2f50159856b92acffc170a058e84004572120e37e215e0e2cc9560ec097d7f', 1723536000000
-WHERE NOT EXISTS (SELECT 1 FROM "drizzle"."__drizzle_migrations" WHERE hash = '3a2f50159856b92acffc170a058e84004572120e37e215e0e2cc9560ec097d7f');
+SELECT '5d67fb13aad149afcd1cb813600abc0e8a3284010f26b72071e5f5af251e2bb4', 1723536000000
+WHERE NOT EXISTS (SELECT 1 FROM "drizzle"."__drizzle_migrations" WHERE hash = '5d67fb13aad149afcd1cb813600abc0e8a3284010f26b72071e5f5af251e2bb4');
 INSERT INTO "drizzle"."__drizzle_migrations" ("hash", "created_at")
-SELECT 'b633f43170c93e82a5543eeef2cf399bfa6e5663b4f336842d24a34b322970da', 1723622400000
-WHERE NOT EXISTS (SELECT 1 FROM "drizzle"."__drizzle_migrations" WHERE hash = 'b633f43170c93e82a5543eeef2cf399bfa6e5663b4f336842d24a34b322970da');
+SELECT '9539bd8062647a58e4616fda0413652fc3dda86d42ab85dedbbbb82a5d4c12a4', 1723622400000
+WHERE NOT EXISTS (SELECT 1 FROM "drizzle"."__drizzle_migrations" WHERE hash = '9539bd8062647a58e4616fda0413652fc3dda86d42ab85dedbbbb82a5d4c12a4');
 INSERT INTO "drizzle"."__drizzle_migrations" ("hash", "created_at")
-SELECT 'df4a2645f3d2e18221448c5184f61ac3d169e6080225993cdf5fa5469d01c559', 1723708800000
-WHERE NOT EXISTS (SELECT 1 FROM "drizzle"."__drizzle_migrations" WHERE hash = 'df4a2645f3d2e18221448c5184f61ac3d169e6080225993cdf5fa5469d01c559');
+SELECT '9b5585cc468d77c20518fea79209aaa6379e3581cfc20b618d35ad77a3883fbf', 1723708800000
+WHERE NOT EXISTS (SELECT 1 FROM "drizzle"."__drizzle_migrations" WHERE hash = '9b5585cc468d77c20518fea79209aaa6379e3581cfc20b618d35ad77a3883fbf');
 INSERT INTO "drizzle"."__drizzle_migrations" ("hash", "created_at")
-SELECT '59762599af669989db83bd79d34043bc41dc2e47b754e821646df04cc71d5d7d', 1723795200000
-WHERE NOT EXISTS (SELECT 1 FROM "drizzle"."__drizzle_migrations" WHERE hash = '59762599af669989db83bd79d34043bc41dc2e47b754e821646df04cc71d5d7d');
+SELECT 'b42f9dbd2e47c2eb515142098eccf47631254bbc1aac3c0e048707e7e7804e34', 1723795200000
+WHERE NOT EXISTS (SELECT 1 FROM "drizzle"."__drizzle_migrations" WHERE hash = 'b42f9dbd2e47c2eb515142098eccf47631254bbc1aac3c0e048707e7e7804e34');
 INSERT INTO "drizzle"."__drizzle_migrations" ("hash", "created_at")
-SELECT '26542c8d8683632c94f981d25f25d0505a6591c959425ccc8a086bca991ceeab', 1723881600000
-WHERE NOT EXISTS (SELECT 1 FROM "drizzle"."__drizzle_migrations" WHERE hash = '26542c8d8683632c94f981d25f25d0505a6591c959425ccc8a086bca991ceeab');
+SELECT 'a2086074093d7f04d662a21dd67da362578f5dfd5ab66da3e96202abbad6002f', 1723881600000
+WHERE NOT EXISTS (SELECT 1 FROM "drizzle"."__drizzle_migrations" WHERE hash = 'a2086074093d7f04d662a21dd67da362578f5dfd5ab66da3e96202abbad6002f');
 INSERT INTO "drizzle"."__drizzle_migrations" ("hash", "created_at")
-SELECT '150d5b1100ffc6b3ebf1854642023c60e87c22fc1cfeb080f2f5667ec54c2ace', 1723968000000
-WHERE NOT EXISTS (SELECT 1 FROM "drizzle"."__drizzle_migrations" WHERE hash = '150d5b1100ffc6b3ebf1854642023c60e87c22fc1cfeb080f2f5667ec54c2ace');
+SELECT '0b490ccc4b865cf972f607ec84a453e670b5443f9bc7177cd7cbc6902f5118ea', 1723968000000
+WHERE NOT EXISTS (SELECT 1 FROM "drizzle"."__drizzle_migrations" WHERE hash = '0b490ccc4b865cf972f607ec84a453e670b5443f9bc7177cd7cbc6902f5118ea');
+INSERT INTO "drizzle"."__drizzle_migrations" ("hash", "created_at")
+SELECT 'aaf369d3a08b1dbb819ab27817ccba32424323aaf81c56c27a37503f0d57f8ee', 1724054400000
+WHERE NOT EXISTS (SELECT 1 FROM "drizzle"."__drizzle_migrations" WHERE hash = 'aaf369d3a08b1dbb819ab27817ccba32424323aaf81c56c27a37503f0d57f8ee');
+INSERT INTO "drizzle"."__drizzle_migrations" ("hash", "created_at")
+SELECT '3c4522bd9b56659d835859e6634a6e19aa9266a0a022d33a50ff3788bb9d21ba', 1724140800000
+WHERE NOT EXISTS (SELECT 1 FROM "drizzle"."__drizzle_migrations" WHERE hash = '3c4522bd9b56659d835859e6634a6e19aa9266a0a022d33a50ff3788bb9d21ba');
+INSERT INTO "drizzle"."__drizzle_migrations" ("hash", "created_at")
+SELECT '79aa4ad71d2926277b05521a39006d5c02d62e57c32769c06ee2d695faf562d9', 1724227200000
+WHERE NOT EXISTS (SELECT 1 FROM "drizzle"."__drizzle_migrations" WHERE hash = '79aa4ad71d2926277b05521a39006d5c02d62e57c32769c06ee2d695faf562d9');
 
 -- ========== SEED: providers ==========
 INSERT INTO "providers" ("name", "slug", "domain") VALUES

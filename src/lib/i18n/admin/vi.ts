@@ -230,6 +230,7 @@ export const adminVi: AdminDictionary = {
     bulkNoneSelected: "Chọn ít nhất một ứng viên.",
     bulkFailed: "Thao tác hàng loạt thất bại.",
     bulkSummary: "Xong: {ok} thành công, {failed} lỗi.",
+    bulkErrorsHeading: "Không xử lý được — lý do hệ thống trả về:",
     selectAll: "Chọn tất cả",
   },
   providers: {

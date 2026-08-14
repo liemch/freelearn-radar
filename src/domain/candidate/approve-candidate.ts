@@ -156,10 +156,15 @@ export async function approveCandidate(db: Db, input: ApproveCandidateInput) {
     .filter(Boolean)
     .join("\n");
 
+  // One load serves both price and certificate resolution below.
+  const policies = await listProviderPolicyRules(db);
+
   const priceResolved = resolvePriceType({
     evidenceText,
     aiSuggestion: analysis?.price_type,
     aiConfidence: analysis?.confidence,
+    providerSlug: provider.slug,
+    policies,
   });
 
   let resolvedPriceType =
@@ -183,7 +188,7 @@ export async function approveCandidate(db: Db, input: ApproveCandidateInput) {
     evidenceText,
     aiSuggestion: analysis?.certificate_type,
     aiConfidence: analysis?.confidence,
-    policies: await listProviderPolicyRules(db),
+    policies,
   });
 
   const resolvedCertificateType =

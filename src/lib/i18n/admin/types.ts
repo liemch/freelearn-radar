@@ -221,6 +221,7 @@ export type AdminDictionary = {
     bulkFailed: string;
     /** Placeholders: {ok}, {failed} */
     bulkSummary: string;
+    bulkErrorsHeading: string;
     selectAll: string;
   };
   providers: {

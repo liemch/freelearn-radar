@@ -1,4 +1,8 @@
 import type { PriceType } from "@/domain/course/types";
+import {
+  findCatalogFreePricePolicy,
+  type ProviderPolicyRule,
+} from "@/domain/verification/provider-policy";
 
 export type FreeStatusClassification = {
   priceType: PriceType;
@@ -219,22 +223,49 @@ export function classifyFreeStatusFromText(
 }
 
 /**
- * Merge deterministic text classification with optional AI suggestion.
- * Explicit evidence always wins over AI.
+ * Merge deterministic text classification with provider policy and an optional AI
+ * suggestion, in the order page evidence → provider policy → AI (§66.3).
+ * Explicit page evidence always wins.
  *
  * An UNKNOWN with matched signals is a deliberate refusal (ambiguous marketing copy,
- * free preview only, conflicting signals). AI may only fill a true evidence gap —
- * it may never upgrade a refusal into a free claim.
+ * free preview only, conflicting signals). Neither policy nor AI may upgrade a
+ * refusal into a free claim — a catalog-wide policy only answers pages that say
+ * nothing about price at all.
  */
 export function resolvePriceType(input: {
   evidenceText: string;
   aiSuggestion?: PriceType | null;
   aiConfidence?: number | null;
+  providerSlug?: string | null;
+  policies?: ProviderPolicyRule[];
+  now?: Date;
 }): FreeStatusClassification {
   const deterministic = classifyFreeStatusFromText(input.evidenceText);
 
   if (deterministic.confidence >= 0.7) {
     return deterministic;
+  }
+
+  if (
+    deterministic.priceType === "UNKNOWN" &&
+    deterministic.matchedSignals.length === 0
+  ) {
+    const policy = findCatalogFreePricePolicy({
+      providerSlug: input.providerSlug,
+      policies: input.policies,
+      now: input.now,
+    });
+
+    if (policy) {
+      return {
+        priceType: policy.priceType,
+        confidence: 0.8,
+        rationale: `Provider policy (${policy.providerSlug}): whole catalog is ${policy.priceType}${
+          policy.policyNote ? ` — ${policy.policyNote}` : ""
+        }`,
+        matchedSignals: ["provider_policy"],
+      };
+    }
   }
 
   const ai = input.aiSuggestion;

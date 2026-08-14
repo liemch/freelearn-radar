@@ -3,6 +3,7 @@ import { describe, expect, it } from "vitest";
 import {
   assertCertificateResolved,
   assertPriceTypeAllowed,
+  findCatalogFreePricePolicy,
   resolveCertificateWithPolicy,
   SEED_PROVIDER_POLICIES,
 } from "@/domain/verification/provider-policy";
@@ -20,6 +21,78 @@ describe("SEED_PROVIDER_POLICIES", () => {
     expect(freeFull?.evidenceUrl).toContain("360040701614");
     expect(coupon?.certificateType).toBe("FREE_CERTIFICATE");
     expect(coupon?.evidenceUrl).toContain("1500010482202");
+  });
+});
+
+describe("findCatalogFreePricePolicy", () => {
+  it("returns the rule for a provider whose whole catalog is free", () => {
+    expect(
+      findCatalogFreePricePolicy({ providerSlug: "microsoft-learn" })?.priceType,
+    ).toBe("FREE_FULL");
+    expect(
+      findCatalogFreePricePolicy({ providerSlug: "kaggle-learn" })?.priceType,
+    ).toBe("FREE_FULL");
+  });
+
+  it("refuses providers with a mixed catalog", () => {
+    for (const slug of ["udemy", "coursera", "edx", "aws"]) {
+      expect(findCatalogFreePricePolicy({ providerSlug: slug })).toBeNull();
+    }
+  });
+
+  it("refuses when two catalog-wide rules compete", () => {
+    const result = findCatalogFreePricePolicy({
+      providerSlug: "kaggle-learn",
+      policies: [
+        {
+          providerSlug: "kaggle-learn",
+          priceType: "FREE_FULL",
+          certificateType: "FREE_CERTIFICATE",
+          catalogWideFree: true,
+        },
+        {
+          providerSlug: "kaggle-learn",
+          priceType: "FREE_AUDIT",
+          certificateType: "PAID_CERTIFICATE",
+          catalogWideFree: true,
+        },
+      ],
+    });
+
+    expect(result).toBeNull();
+  });
+
+  it("never returns a MANUAL-only coupon rule", () => {
+    const result = findCatalogFreePricePolicy({
+      providerSlug: "udemy",
+      policies: [
+        {
+          providerSlug: "udemy",
+          priceType: "FREE_WITH_COUPON",
+          certificateType: "FREE_CERTIFICATE",
+          catalogWideFree: true,
+        },
+      ],
+    });
+
+    expect(result).toBeNull();
+  });
+
+  it("respects the active flag", () => {
+    const result = findCatalogFreePricePolicy({
+      providerSlug: "microsoft-learn",
+      policies: [
+        {
+          providerSlug: "microsoft-learn",
+          priceType: "FREE_FULL",
+          certificateType: "NO_CERTIFICATE",
+          catalogWideFree: true,
+          active: false,
+        },
+      ],
+    });
+
+    expect(result).toBeNull();
   });
 });
 

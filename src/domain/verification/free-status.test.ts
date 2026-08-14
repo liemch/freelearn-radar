@@ -39,6 +39,69 @@ describe("free status classifier", () => {
   });
 });
 
+describe("provider policy as price authority", () => {
+  it("classifies a price-silent page from a catalog-wide free policy", () => {
+    const result = resolvePriceType({
+      evidenceText: "Introduction to Azure storage — module 3 of the series",
+      providerSlug: "microsoft-learn",
+    });
+    expect(result.priceType).toBe("FREE_FULL");
+    expect(result.matchedSignals).toContain("provider_policy");
+  });
+
+  it("leaves a mixed catalog unresolved", () => {
+    const result = resolvePriceType({
+      evidenceText: "The Complete Web Developer Bootcamp",
+      providerSlug: "udemy",
+    });
+    expect(result.priceType).toBe("UNKNOWN");
+  });
+
+  it("never overturns a deterministic refusal", () => {
+    const result = resolvePriceType({
+      evidenceText: "Watch the free preview lesson",
+      providerSlug: "microsoft-learn",
+    });
+    expect(result.priceType).toBe("UNKNOWN");
+  });
+
+  it("never overturns explicit paid evidence", () => {
+    const result = resolvePriceType({
+      evidenceText: "Buy now for $49",
+      providerSlug: "freecodecamp",
+    });
+    expect(result.priceType).toBe("PAID");
+  });
+
+  it("ignores a policy that is not yet effective", () => {
+    const result = resolvePriceType({
+      evidenceText: "Intro to machine learning — lesson 1",
+      providerSlug: "kaggle-learn",
+      policies: [
+        {
+          providerSlug: "kaggle-learn",
+          priceType: "FREE_FULL",
+          certificateType: "FREE_CERTIFICATE",
+          catalogWideFree: true,
+          effectiveFrom: new Date("2030-01-01"),
+        },
+      ],
+      now: new Date("2026-01-01"),
+    });
+    expect(result.priceType).toBe("UNKNOWN");
+  });
+
+  it("prefers policy over a lower-confidence AI suggestion", () => {
+    const result = resolvePriceType({
+      evidenceText: "Lesson 2 of the data cleaning course",
+      providerSlug: "kaggle-learn",
+      aiSuggestion: "FREE_TRIAL",
+      aiConfidence: 0.9,
+    });
+    expect(result.priceType).toBe("FREE_FULL");
+  });
+});
+
 describe("certificate classifier", () => {
   it.each([
     ["Free certificate included", "FREE_CERTIFICATE"],

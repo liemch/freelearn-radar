@@ -105,6 +105,9 @@ export function produceVerificationResult(
     evidenceText: text,
     aiSuggestion: evidenceInput.aiPriceType,
     aiConfidence: evidenceInput.aiConfidence,
+    providerSlug: course.providerSlug,
+    policies,
+    now,
   });
 
   const priceSource: PriceTypeSource =

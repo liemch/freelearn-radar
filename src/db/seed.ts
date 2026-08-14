@@ -24,6 +24,7 @@ import {
   deriveAdminName,
   deriveCategoryDescription,
   parseAdminEmails,
+  RETIRED_DISCOVERY_QUERIES,
   SEED_CATEGORIES,
   SEED_DISCOVERY_QUERIES,
   SEED_PROVIDERS,
@@ -84,6 +85,7 @@ async function seedProviderPolicies(db: Db) {
           evidenceUrl: policy.evidenceUrl ?? null,
           policyNote: policy.policyNote ?? null,
           active: policy.active !== false,
+          catalogWideFree: policy.catalogWideFree === true,
           updatedAt: now,
         })
         .where(eq(providerPolicies.id, existing[0].id));
@@ -97,6 +99,7 @@ async function seedProviderPolicies(db: Db) {
       evidenceUrl: policy.evidenceUrl ?? null,
       policyNote: policy.policyNote ?? null,
       active: policy.active !== false,
+      catalogWideFree: policy.catalogWideFree === true,
       effectiveFrom: now,
       reviewedAt: now,
       reviewedBy: "seed",
@@ -136,6 +139,15 @@ async function seedDiscoveryQueries(db: Db) {
     }
 
     await createDiscoveryQuery(db, query);
+  }
+
+  for (const query of RETIRED_DISCOVERY_QUERIES) {
+    await db
+      .update(discoveryQueries)
+      .set({ enabled: false })
+      .where(
+        and(eq(discoveryQueries.query, query), eq(discoveryQueries.enabled, true)),
+      );
   }
 }
 

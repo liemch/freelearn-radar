@@ -18,6 +18,12 @@ export type ProviderPolicyRule = {
   /** A policy dated in the future does not yet govern classification (§66.2). */
   effectiveFrom?: Date | null;
   active?: boolean;
+  /**
+   * Only for providers whose *entire* published catalog carries this price type.
+   * Set on a mixed catalog (Udemy, Coursera) it would assert a free price for
+   * paid pages, so it stays false there.
+   */
+  catalogWideFree?: boolean;
 };
 
 /**
@@ -53,6 +59,7 @@ export const SEED_PROVIDER_POLICIES: ProviderPolicyRule[] = [
     policyNote:
       "Microsoft Learn modules are free to complete but do not issue completion certificates the same way as paid cert exams",
     active: true,
+    catalogWideFree: true,
   },
   {
     providerSlug: "freecodecamp",
@@ -61,6 +68,7 @@ export const SEED_PROVIDER_POLICIES: ProviderPolicyRule[] = [
     evidenceUrl: "https://www.freecodecamp.org/learn/",
     policyNote: "freeCodeCamp issues free certificates on curriculum completion",
     active: true,
+    catalogWideFree: true,
   },
   {
     providerSlug: "coursera",
@@ -81,7 +89,90 @@ export const SEED_PROVIDER_POLICIES: ProviderPolicyRule[] = [
       "edX audit track gives free access to course content; the verified certificate requires payment",
     active: true,
   },
+  {
+    providerSlug: "kaggle-learn",
+    priceType: "FREE_FULL",
+    certificateType: "FREE_CERTIFICATE",
+    evidenceUrl: "https://www.kaggle.com/learn",
+    policyNote:
+      "Every Kaggle Learn course is free and issues a free completion certificate",
+    active: true,
+    catalogWideFree: true,
+  },
+  {
+    providerSlug: "hubspot-academy",
+    priceType: "FREE_FULL",
+    certificateType: "FREE_CERTIFICATE",
+    evidenceUrl: "https://academy.hubspot.com/courses",
+    policyNote:
+      "HubSpot Academy courses and certifications are free with a HubSpot account",
+    active: true,
+    catalogWideFree: true,
+  },
+  {
+    providerSlug: "ibm-skillsbuild",
+    priceType: "FREE_FULL",
+    certificateType: "FREE_CERTIFICATE",
+    evidenceUrl: "https://skillsbuild.org/",
+    policyNote:
+      "IBM SkillsBuild learning is free and awards free digital credentials",
+    active: true,
+    catalogWideFree: true,
+  },
+  {
+    providerSlug: "salesforce-trailhead",
+    priceType: "FREE_FULL",
+    certificateType: "NO_CERTIFICATE",
+    evidenceUrl: "https://trailhead.salesforce.com/",
+    policyNote:
+      "Trailhead trails and modules are free; they award badges, and the Salesforce certification exams they prepare for are paid separately",
+    active: true,
+    catalogWideFree: true,
+  },
+  {
+    providerSlug: "google",
+    priceType: "FREE_FULL",
+    certificateType: "NO_CERTIFICATE",
+    evidenceUrl: "https://developers.google.com/learn",
+    policyNote:
+      "Google Developers learning pathways are free to access and do not issue a completion certificate",
+    active: true,
+    catalogWideFree: true,
+  },
 ];
+
+/**
+ * The provider-level price authority used when a page says nothing about price
+ * (§66.3 step 2). Returns null unless a single unambiguous catalog-wide rule
+ * applies, so a provider with two competing free rules is escalated rather than
+ * guessed at. FREE_WITH_COUPON is excluded: it is MANUAL-only.
+ */
+export function findCatalogFreePricePolicy(input: {
+  providerSlug?: string | null;
+  policies?: ProviderPolicyRule[];
+  now?: Date;
+}): ProviderPolicyRule | null {
+  const slug = (input.providerSlug ?? "").toLowerCase().trim();
+  if (!slug) {
+    return null;
+  }
+
+  const now = input.now ?? new Date();
+  const matches = (input.policies ?? SEED_PROVIDER_POLICIES).filter(
+    (policy) =>
+      policy.catalogWideFree === true &&
+      policy.providerSlug.toLowerCase() === slug &&
+      policy.priceType !== "FREE_WITH_COUPON" &&
+      policy.active !== false &&
+      (!policy.effectiveFrom || policy.effectiveFrom <= now),
+  );
+
+  if (matches.length !== 1) {
+    return null;
+  }
+
+  return matches[0];
+}
 
 /**
  * FREE_WITH_COUPON may only be set via MANUAL (project plan M19.1).

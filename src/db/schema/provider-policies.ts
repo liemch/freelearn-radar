@@ -25,6 +25,8 @@ export const providerPolicies = pgTable(
     reviewedAt: timestamp("reviewed_at", { withTimezone: true }),
     reviewedBy: text("reviewed_by"),
     active: boolean("active").notNull().default(true),
+    /** True only when every published course on the provider carries this price type. */
+    catalogWideFree: boolean("catalog_wide_free").notNull().default(false),
     createdAt: timestamp("created_at", { withTimezone: true })
       .notNull()
       .defaultNow(),

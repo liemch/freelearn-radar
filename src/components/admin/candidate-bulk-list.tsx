@@ -42,7 +42,14 @@ type BulkLabels = {
   bulkNoneSelected: string;
   bulkFailed: string;
   bulkSummary: string;
+  bulkErrorsHeading: string;
   selectAll: string;
+};
+
+type BulkFailure = {
+  id: string;
+  title: string;
+  error: string;
 };
 
 type CandidateBulkListProps = {
@@ -62,6 +69,7 @@ export function CandidateBulkList({
   );
   const [message, setMessage] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const [failures, setFailures] = useState<BulkFailure[]>([]);
 
   const selectableIds = useMemo(
     () =>
@@ -103,6 +111,7 @@ export function CandidateBulkList({
     setBusyAction(action);
     setMessage(null);
     setError(null);
+    setFailures([]);
 
     try {
       const response = await fetch("/api/admin/candidates/bulk", {
@@ -116,7 +125,7 @@ export function CandidateBulkList({
       });
       const payload = (await response.json().catch(() => ({}))) as {
         error?: string;
-        results?: Array<{ ok: boolean }>;
+        results?: Array<{ id: string; ok: boolean; error?: string }>;
       };
 
       if (!response.ok) {
@@ -124,12 +133,26 @@ export function CandidateBulkList({
         return;
       }
 
-      const ok = payload.results?.filter((r) => r.ok).length ?? 0;
-      const failed = (payload.results?.length ?? 0) - ok;
+      const results = payload.results ?? [];
+      const ok = results.filter((r) => r.ok).length;
+      const failed = results.length - ok;
       setMessage(
         labels.bulkSummary
           .replaceAll("{ok}", String(ok))
           .replaceAll("{failed}", String(failed)),
+      );
+      // A refused approval leaves the candidate untouched, so the reason has to be
+      // visible here — otherwise the reviewer cannot tell refusal from rejection.
+      setFailures(
+        results
+          .filter((r) => !r.ok)
+          .map((r) => ({
+            id: r.id,
+            title:
+              candidates.find((candidate) => candidate.id === r.id)?.title ??
+              r.id,
+            error: r.error ?? labels.bulkFailed,
+          })),
       );
       setSelected(new Set());
       startTransition(() => router.refresh());
@@ -206,8 +229,8 @@ export function CandidateBulkList({
         </div>
       </div>
 
-      {message || error ? (
-        <div className="border-b border-border/60 px-3.5 py-2 text-xs">
+      {message || error || failures.length > 0 ? (
+        <div className="space-y-2 border-b border-border/60 px-3.5 py-2 text-xs">
           {message ? (
             <p className="text-foreground" role="status">
               {message}
@@ -217,6 +240,24 @@ export function CandidateBulkList({
             <p className="text-destructive-foreground" role="alert">
               {error}
             </p>
+          ) : null}
+          {failures.length > 0 ? (
+            <div className="space-y-1" role="alert">
+              <p className="font-medium">{labels.bulkErrorsHeading}</p>
+              <ul className="space-y-1">
+                {failures.map((failure) => (
+                  <li key={failure.id} className="text-muted-foreground">
+                    <a
+                      href={`/admin/candidates/${failure.id}`}
+                      className="font-medium text-primary"
+                    >
+                      {failure.title}
+                    </a>{" "}
+                    — {failure.error}
+                  </li>
+                ))}
+              </ul>
+            </div>
           ) : null}
         </div>
       ) : null}

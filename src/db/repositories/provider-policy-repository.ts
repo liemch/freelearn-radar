@@ -5,9 +5,10 @@ import { providerPolicies, providers } from "@/db/schema";
 import type { ProviderPolicyRule } from "@/domain/verification/provider-policy";
 
 /**
- * Certificate policies as the resolver wants them: keyed by provider slug rather
+ * Provider policies as the resolvers want them: keyed by provider slug rather
  * than id, with the DB row's lifecycle columns carried through so
- * `resolveCertificateWithPolicy` can apply `active` and `effective_from` itself.
+ * `resolveCertificateWithPolicy` and `resolvePriceType` can apply `active` and
+ * `effective_from` themselves.
  *
  * Reading these per call would be wasteful; callers load once per batch or per
  * request and pass the result down.
@@ -24,6 +25,7 @@ export async function listProviderPolicyRules(
       policyNote: providerPolicies.policyNote,
       effectiveFrom: providerPolicies.effectiveFrom,
       active: providerPolicies.active,
+      catalogWideFree: providerPolicies.catalogWideFree,
     })
     .from(providerPolicies)
     .innerJoin(providers, eq(providerPolicies.providerId, providers.id));
@@ -36,5 +38,6 @@ export async function listProviderPolicyRules(
     policyNote: row.policyNote,
     effectiveFrom: row.effectiveFrom,
     active: row.active,
+    catalogWideFree: row.catalogWideFree,
   }));
 }

@@ -123,21 +123,6 @@ const SEED_DISCOVERY_QUERIES = [
     category: "data-science",
     query: 'site:udemy.com/course "free" "data science" OR "machine learning" course',
   },
-  {
-    provider: "udemy",
-    category: "design",
-    query: 'site:udemy.com/course "free" design OR figma OR uiux course',
-  },
-  {
-    provider: "udemy",
-    category: "marketing",
-    query: 'site:udemy.com/course "free" marketing OR seo OR "digital marketing" course',
-  },
-  {
-    provider: "udemy",
-    category: "devops",
-    query: 'site:udemy.com/course "free" devops OR docker OR kubernetes course',
-  },
 
   // edX
   {
@@ -197,6 +182,36 @@ const SEED_DISCOVERY_QUERIES = [
     category: "programming",
     query: "site:learn.microsoft.com/training/paths python OR csharp OR javascript",
   },
+  {
+    provider: "microsoft-learn",
+    category: "data-science",
+    query: 'site:learn.microsoft.com/training/modules "power bi" OR "data analysis"',
+  },
+  {
+    provider: "microsoft-learn",
+    category: "ai",
+    query: "site:learn.microsoft.com/training/modules azure ai OR openai OR copilot",
+  },
+  {
+    provider: "microsoft-learn",
+    category: "cloud",
+    query: "site:learn.microsoft.com/training/modules azure storage OR networking OR compute",
+  },
+  {
+    provider: "microsoft-learn",
+    category: "devops",
+    query: "site:learn.microsoft.com/training/modules github actions OR pipelines",
+  },
+  {
+    provider: "microsoft-learn",
+    category: "cybersecurity",
+    query: "site:learn.microsoft.com/training/modules identity OR defender OR zero trust",
+  },
+  {
+    provider: "microsoft-learn",
+    category: "programming",
+    query: "site:learn.microsoft.com/training/modules python OR dotnet OR typescript",
+  },
 
   // freeCodeCamp
   {
@@ -214,6 +229,21 @@ const SEED_DISCOVERY_QUERIES = [
     provider: "freecodecamp",
     category: "cybersecurity",
     query: "site:freecodecamp.org/learn information security OR cybersecurity",
+  },
+  {
+    provider: "freecodecamp",
+    category: "programming",
+    query: "site:freecodecamp.org/learn front end libraries OR react",
+  },
+  {
+    provider: "freecodecamp",
+    category: "programming",
+    query: "site:freecodecamp.org/learn apis OR microservices OR node",
+  },
+  {
+    provider: "freecodecamp",
+    category: "programming",
+    query: "site:freecodecamp.org/learn algorithms OR data structures",
   },
 
   // AWS Skill Builder / training
@@ -250,23 +280,6 @@ const SEED_DISCOVERY_QUERIES = [
     query: "site:developers.google.com/learn android OR flutter OR web",
   },
 
-  // LinkedIn Learning (often limited free / trial — still discoverable)
-  {
-    provider: "linkedin-learning",
-    category: "soft-skills",
-    query: 'site:linkedin.com/learning "free" leadership OR communication course',
-  },
-  {
-    provider: "linkedin-learning",
-    category: "product-management",
-    query: 'site:linkedin.com/learning "product management" free course',
-  },
-  {
-    provider: "linkedin-learning",
-    category: "business",
-    query: 'site:linkedin.com/learning "project management" free course',
-  },
-
   // Existing providers — thin categories
   {
     provider: "coursera",
@@ -300,6 +313,21 @@ const SEED_DISCOVERY_QUERIES = [
     category: "soft-skills",
     query: "site:academy.hubspot.com courses content OR social media",
   },
+  {
+    provider: "hubspot-academy",
+    category: "marketing",
+    query: "site:academy.hubspot.com courses email marketing OR seo",
+  },
+  {
+    provider: "hubspot-academy",
+    category: "business",
+    query: "site:academy.hubspot.com courses crm OR revenue operations",
+  },
+  {
+    provider: "hubspot-academy",
+    category: "product-management",
+    query: "site:academy.hubspot.com courses customer success OR onboarding",
+  },
 
   // IBM SkillsBuild
   {
@@ -316,6 +344,21 @@ const SEED_DISCOVERY_QUERIES = [
     provider: "ibm-skillsbuild",
     category: "data-science",
     query: "site:skillsbuild.org course data science OR data analysis",
+  },
+  {
+    provider: "ibm-skillsbuild",
+    category: "cloud",
+    query: "site:skillsbuild.org course cloud computing OR containers",
+  },
+  {
+    provider: "ibm-skillsbuild",
+    category: "programming",
+    query: "site:skillsbuild.org course web development OR python",
+  },
+  {
+    provider: "ibm-skillsbuild",
+    category: "soft-skills",
+    query: "site:skillsbuild.org course design thinking OR professional skills",
   },
 
   // Salesforce Trailhead
@@ -334,6 +377,26 @@ const SEED_DISCOVERY_QUERIES = [
     category: "soft-skills",
     query: "site:trailhead.salesforce.com trail soft skills OR career",
   },
+  {
+    provider: "salesforce-trailhead",
+    category: "data-science",
+    query: "site:trailhead.salesforce.com trail data OR analytics OR tableau",
+  },
+  {
+    provider: "salesforce-trailhead",
+    category: "cybersecurity",
+    query: "site:trailhead.salesforce.com trail security OR identity",
+  },
+  {
+    provider: "salesforce-trailhead",
+    category: "marketing",
+    query: "site:trailhead.salesforce.com trail marketing cloud OR campaigns",
+  },
+  {
+    provider: "salesforce-trailhead",
+    category: "project-management",
+    query: "site:trailhead.salesforce.com trail agile OR project management",
+  },
 
   // Kaggle Learn
   {
@@ -351,9 +414,58 @@ const SEED_DISCOVERY_QUERIES = [
     category: "programming",
     query: "site:kaggle.com/learn sql OR python intro",
   },
+  {
+    provider: "kaggle-learn",
+    category: "data-science",
+    query: "site:kaggle.com/learn feature engineering OR time series",
+  },
+  {
+    provider: "kaggle-learn",
+    category: "ai",
+    query: "site:kaggle.com/learn computer vision OR natural language processing",
+  },
+  {
+    provider: "kaggle-learn",
+    category: "data-science",
+    query: "site:kaggle.com/learn data cleaning OR geospatial analysis",
+  },
+
+  // Google Developers — free pathways
+  {
+    provider: "google",
+    category: "programming",
+    query: "site:developers.google.com/learn firebase OR maps OR pathway",
+  },
+  {
+    provider: "google",
+    category: "data-science",
+    query: "site:developers.google.com/learn data OR bigquery OR analytics",
+  },
 ] as const;
 
-export { SEED_CATEGORIES, SEED_DISCOVERY_QUERIES, SEED_PROVIDERS };
+/**
+ * Queries kept in the schema but switched off: they returned mostly paid or
+ * trial-only pages, which cost a reviewer one manual page visit each and can
+ * never be published (FREE_TRIAL and PAID are barred from the free catalog).
+ *
+ * The seed re-asserts `enabled = false` on every run, so a query is only brought
+ * back by removing it from this list.
+ */
+const RETIRED_DISCOVERY_QUERIES = [
+  'site:linkedin.com/learning "free" leadership OR communication course',
+  'site:linkedin.com/learning "product management" free course',
+  'site:linkedin.com/learning "project management" free course',
+  'site:udemy.com/course "free" design OR figma OR uiux course',
+  'site:udemy.com/course "free" marketing OR seo OR "digital marketing" course',
+  'site:udemy.com/course "free" devops OR docker OR kubernetes course',
+] as const;
+
+export {
+  RETIRED_DISCOVERY_QUERIES,
+  SEED_CATEGORIES,
+  SEED_DISCOVERY_QUERIES,
+  SEED_PROVIDERS,
+};
 export { SEED_COURSES } from "@/db/seed/courses";
 
 export function parseAdminEmails(raw: string | undefined): string[] {

@@ -256,6 +256,7 @@ export default async function AdminCandidatesPage({ searchParams }: PageProps) {
                 bulkNoneSelected: t.candidates.bulkNoneSelected,
                 bulkFailed: t.candidates.bulkFailed,
                 bulkSummary: t.candidates.bulkSummary,
+                bulkErrorsHeading: t.candidates.bulkErrorsHeading,
                 selectAll: t.candidates.selectAll,
               }}
             />
