@@ -153,6 +153,9 @@ export const adminVi: AdminDictionary = {
     unableToSave: "Không thể lưu khóa học",
     statusUpdateFailed: "Cập nhật trạng thái thất bại",
     unableToUpdateStatus: "Không thể cập nhật trạng thái",
+    hiddenFromCatalog: "Ẩn khỏi trang chủ",
+    publishBlockedHint:
+      "Khóa trả phí hoặc dùng thử không hiển thị trên web công khai. Hãy đổi loại giá trước.",
     seedRequired: "Hãy seed nền tảng/chủ đề trước khi tạo khóa học.",
     databaseNotReady:
       "Cơ sở dữ liệu chưa sẵn sàng. Hãy chạy migrate và seed trước.",

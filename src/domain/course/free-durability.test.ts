@@ -1,8 +1,10 @@
 import { describe, expect, it } from "vitest";
 
 import {
+  assertVisibleOnPublicCatalog,
   deriveFreeDurability,
   isEligibleForFreeLists,
+  PublicCatalogVisibilityError,
 } from "@/domain/course/free-durability";
 import type { PriceType } from "@/domain/course/types";
 
@@ -49,5 +51,21 @@ describe("isEligibleForFreeLists", () => {
     ["PAID", false],
   ] as const)("%s → %s", (price: PriceType, expected) => {
     expect(isEligibleForFreeLists(price)).toBe(expected);
+  });
+});
+
+describe("assertVisibleOnPublicCatalog", () => {
+  it("allows free-labelled price types", () => {
+    expect(() => assertVisibleOnPublicCatalog("FREE_FULL")).not.toThrow();
+    expect(() => assertVisibleOnPublicCatalog("FREE_AUDIT")).not.toThrow();
+  });
+
+  it("rejects PAID and FREE_TRIAL", () => {
+    expect(() => assertVisibleOnPublicCatalog("PAID")).toThrow(
+      PublicCatalogVisibilityError,
+    );
+    expect(() => assertVisibleOnPublicCatalog("FREE_TRIAL")).toThrow(
+      PublicCatalogVisibilityError,
+    );
   });
 });

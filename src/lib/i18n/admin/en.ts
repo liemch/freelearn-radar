@@ -152,6 +152,9 @@ export const adminEn: AdminDictionary = {
     unableToSave: "Unable to save course",
     statusUpdateFailed: "Status update failed",
     unableToUpdateStatus: "Unable to update status",
+    hiddenFromCatalog: "Hidden from homepage",
+    publishBlockedHint:
+      "Paid and free-trial courses are not listed on the public catalog. Change the price type first.",
     seedRequired: "Seed providers/categories before creating courses.",
     databaseNotReady: "Database not ready. Run migrate + seed first.",
     breadcrumbNew: "New",

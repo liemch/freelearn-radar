@@ -149,6 +149,8 @@ export type AdminDictionary = {
     unableToSave: string;
     statusUpdateFailed: string;
     unableToUpdateStatus: string;
+    hiddenFromCatalog: string;
+    publishBlockedHint: string;
     seedRequired: string;
     databaseNotReady: string;
     breadcrumbNew: string;

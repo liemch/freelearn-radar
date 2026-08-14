@@ -57,3 +57,29 @@ export const FREE_LIST_EXCLUDED_PRICE_TYPES: readonly PriceType[] = [
 export function isEligibleForFreeLists(priceType: PriceType): boolean {
   return !FREE_LIST_EXCLUDED_PRICE_TYPES.includes(priceType);
 }
+
+export class PublicCatalogVisibilityError extends Error {
+  constructor(readonly priceType: PriceType) {
+    super(publicCatalogVisibilityMessage(priceType));
+    this.name = "PublicCatalogVisibilityError";
+  }
+}
+
+/** Human-readable guard used by admin publish flows (EN; API layer may localize). */
+export function publicCatalogVisibilityMessage(priceType: PriceType): string {
+  if (priceType === "PAID") {
+    return "Paid courses are not listed on the public free catalog. Change the price type to a free offer before publishing.";
+  }
+
+  if (priceType === "FREE_TRIAL") {
+    return "Free-trial courses are not listed on the public free catalog. Use a full-free or audit price type before publishing.";
+  }
+
+  return `Price type ${priceType} cannot be published to the public free catalog.`;
+}
+
+export function assertVisibleOnPublicCatalog(priceType: PriceType): void {
+  if (!isEligibleForFreeLists(priceType)) {
+    throw new PublicCatalogVisibilityError(priceType);
+  }
+}

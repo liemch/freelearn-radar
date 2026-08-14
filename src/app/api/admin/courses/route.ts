@@ -12,6 +12,7 @@ import {
   courseFormSchema,
   emptyToNull,
 } from "@/domain/course/course-form";
+import { assertVisibleOnPublicCatalog } from "@/domain/course/free-durability";
 import {
   forbiddenResponse,
   getSession,
@@ -52,6 +53,10 @@ export async function POST(request: Request) {
     const now = new Date();
     const status = body.status ?? "DRAFT";
 
+    if (status === "PUBLISHED") {
+      assertVisibleOnPublicCatalog(body.priceType);
+    }
+
     const course = await createCourse(db, {
       title: body.title,
       slug: body.slug,
@@ -89,6 +94,10 @@ export async function POST(request: Request) {
         { error: "Invalid course payload", details: error.issues },
         { status: 400 },
       );
+    }
+
+    if (error instanceof Error && error.name === "PublicCatalogVisibilityError") {
+      return NextResponse.json({ error: error.message }, { status: 400 });
     }
 
     logger.error("admin.courses.create", {

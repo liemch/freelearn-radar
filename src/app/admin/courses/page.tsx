@@ -20,6 +20,7 @@ import {
   getCourseStatusLabel,
   getPriceTypeLabel,
 } from "@/domain/course/labels";
+import { isEligibleForFreeLists } from "@/domain/course/free-durability";
 import { getSession } from "@/lib/auth/guards";
 import { getAdminDictionary } from "@/lib/i18n/admin";
 import { getAdminLocale } from "@/lib/i18n/admin-locale";
@@ -90,6 +91,7 @@ export default async function AdminCoursesPage({ searchParams }: PageProps) {
     archive: t.courses.archive,
     statusUpdateFailed: t.courses.statusUpdateFailed,
     unableToUpdateStatus: t.courses.unableToUpdateStatus,
+    publishBlockedHint: t.courses.publishBlockedHint,
   };
 
   return (
@@ -165,9 +167,17 @@ export default async function AdminCoursesPage({ searchParams }: PageProps) {
                       {getPriceTypeLabel(course.priceType).label}
                     </AdminTd>
                     <AdminTd className="whitespace-nowrap">
-                      <Badge variant={courseStatusVariant(course.status)}>
-                        {getCourseStatusLabel(course.status)}
-                      </Badge>
+                      <div className="flex flex-col gap-1">
+                        <Badge variant={courseStatusVariant(course.status)}>
+                          {getCourseStatusLabel(course.status)}
+                        </Badge>
+                        {course.status === "PUBLISHED" &&
+                        !isEligibleForFreeLists(course.priceType) ? (
+                          <Badge variant="warning" className="w-fit">
+                            {t.courses.hiddenFromCatalog}
+                          </Badge>
+                        ) : null}
+                      </div>
                     </AdminTd>
                     <AdminTd className="whitespace-nowrap">
                       <div className="flex flex-wrap items-center gap-2">
@@ -179,6 +189,7 @@ export default async function AdminCoursesPage({ searchParams }: PageProps) {
                         <CourseStatusActions
                           courseId={course.id}
                           status={course.status}
+                          priceType={course.priceType}
                           labels={statusLabels}
                         />
                       </div>

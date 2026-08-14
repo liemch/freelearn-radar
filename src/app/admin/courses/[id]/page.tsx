@@ -109,6 +109,7 @@ export default async function AdminEditCoursePage({
     archive: t.courses.archive,
     statusUpdateFailed: t.courses.statusUpdateFailed,
     unableToUpdateStatus: t.courses.unableToUpdateStatus,
+    publishBlockedHint: t.courses.publishBlockedHint,
   };
 
   return (
@@ -129,6 +130,7 @@ export default async function AdminEditCoursePage({
           <CourseStatusActions
             courseId={course.id}
             status={course.status}
+            priceType={course.priceType}
             labels={statusLabels}
           />
         }

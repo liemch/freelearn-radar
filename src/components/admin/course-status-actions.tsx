@@ -4,7 +4,8 @@ import { useRouter } from "next/navigation";
 import { useState } from "react";
 
 import { Button } from "@/components/ui/button";
-import type { CourseStatus } from "@/domain/course/types";
+import type { CourseStatus, PriceType } from "@/domain/course/types";
+import { isEligibleForFreeLists } from "@/domain/course/free-durability";
 
 type CourseStatusActionsLabels = {
   publish: string;
@@ -12,22 +13,26 @@ type CourseStatusActionsLabels = {
   archive: string;
   statusUpdateFailed: string;
   unableToUpdateStatus: string;
+  publishBlockedHint: string;
 };
 
 type CourseStatusActionsProps = {
   courseId: string;
   status: CourseStatus;
+  priceType: PriceType;
   labels: CourseStatusActionsLabels;
 };
 
 export function CourseStatusActions({
   courseId,
   status,
+  priceType,
   labels,
 }: CourseStatusActionsProps) {
   const router = useRouter();
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const canPublishPublicly = isEligibleForFreeLists(priceType);
 
   async function updateStatus(nextStatus: CourseStatus) {
     setIsSubmitting(true);
@@ -60,7 +65,12 @@ export function CourseStatusActions({
         {status !== "PUBLISHED" ? (
           <Button
             size="sm"
-            disabled={isSubmitting}
+            disabled={isSubmitting || !canPublishPublicly}
+            title={
+              canPublishPublicly
+                ? undefined
+                : labels.publishBlockedHint
+            }
             onClick={() => updateStatus("PUBLISHED")}
           >
             {labels.publish}

@@ -15,7 +15,10 @@ import {
   courseFormSchema,
   emptyToNull,
 } from "@/domain/course/course-form";
-import { deriveFreeDurability } from "@/domain/course/free-durability";
+import {
+  assertVisibleOnPublicCatalog,
+  deriveFreeDurability,
+} from "@/domain/course/free-durability";
 import { assertPriceTypeAllowed } from "@/domain/verification/provider-policy";
 import {
   forbiddenResponse,
@@ -67,6 +70,11 @@ export async function PATCH(request: Request, context: RouteContext) {
     }
 
     const status = body.status ?? existing.status;
+
+    if (status === "PUBLISHED") {
+      assertVisibleOnPublicCatalog(body.priceType);
+    }
+
     const publishedAt =
       status === "PUBLISHED"
         ? existing.publishedAt ?? new Date()
@@ -146,6 +154,10 @@ export async function PATCH(request: Request, context: RouteContext) {
       error instanceof Error &&
       error.message.includes("FREE_WITH_COUPON")
     ) {
+      return NextResponse.json({ error: error.message }, { status: 400 });
+    }
+
+    if (error instanceof Error && error.name === "PublicCatalogVisibilityError") {
       return NextResponse.json({ error: error.message }, { status: 400 });
     }
 

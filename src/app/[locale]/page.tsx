@@ -134,8 +134,8 @@ export default async function HomePage({ params }: HomePageProps) {
     isEligibleForFreeLists(course.priceType),
   );
   const ranked = rankCourses(freeEligible);
-  const best = ranked.slice(0, 6);
-  const freeThisWeek = ranked
+  const featured = ranked.slice(0, 6);
+  const promotionalFree = ranked
     .filter(
       (course) =>
         course.priceType === "TEMPORARILY_FREE" ||
@@ -180,27 +180,27 @@ export default async function HomePage({ params }: HomePageProps) {
             />
           ) : null}
 
-          {freeThisWeek.length > 0 ? (
+          {featured.length > 0 ? (
             <CourseSection
               locale={locale}
               title={dict.sections.freeThisWeek}
               subtitle={dict.sections.freeThisWeekSub}
-              courses={freeThisWeek}
-              viewAllHref={localePath(locale, "/search?price=TEMPORARILY_FREE")}
+              courses={featured}
+              viewAllHref={localePath(locale, "/search?sort=recommended")}
               viewAllLabel={dict.sections.viewAll}
               priorityCount={4}
             />
           ) : null}
 
-          {best.length > 0 ? (
+          {promotionalFree.length > 0 &&
+          promotionalFree.length < featured.length ? (
             <CourseSection
               locale={locale}
               title={dict.sections.bestFree}
               subtitle={dict.sections.bestFreeSub}
-              courses={best}
-              viewAllHref={localePath(locale, "/search?sort=recommended")}
+              courses={promotionalFree}
+              viewAllHref={localePath(locale, "/search?price=TEMPORARILY_FREE")}
               viewAllLabel={dict.sections.viewAll}
-              priorityCount={freeThisWeek.length === 0 ? 4 : 0}
             />
           ) : null}
 

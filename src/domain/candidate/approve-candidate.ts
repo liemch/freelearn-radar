@@ -27,7 +27,10 @@ import type {
 } from "@/domain/course/types";
 import { assertSafeHttpUrl } from "@/lib/url";
 import { writeAuditLog } from "@/domain/admin/audit-log";
-import { deriveFreeDurability } from "@/domain/course/free-durability";
+import {
+  assertVisibleOnPublicCatalog,
+  deriveFreeDurability,
+} from "@/domain/course/free-durability";
 import { createEvidence } from "@/domain/verification/evidence";
 import { resolvePriceType } from "@/domain/verification/free-status";
 import {
@@ -191,6 +194,10 @@ export async function approveCandidate(db: Db, input: ApproveCandidateInput) {
   // A reviewer is present at this moment and can answer the question; publishing
   // an audit course with an unresolved certificate would strand it (§66.4).
   assertCertificateResolved(resolvedPriceType, resolvedCertificateType);
+
+  // Approval publishes immediately — paid/trial courses must not reach the public
+  // free catalog (project plan §66.4). Override priceType in admin before approving.
+  assertVisibleOnPublicCatalog(resolvedPriceType);
 
   const freeDurability = deriveFreeDurability(provider.slug, resolvedPriceType);
 

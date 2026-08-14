@@ -7,6 +7,7 @@ import {
   findCourseById,
   updateCourse,
 } from "@/db/repositories/course-repository";
+import { assertVisibleOnPublicCatalog } from "@/domain/course/free-durability";
 import { assertCourseStatusTransition } from "@/domain/course/transitions";
 import {
   forbiddenResponse,
@@ -45,6 +46,10 @@ export async function POST(request: Request, context: RouteContext) {
     }
 
     assertCourseStatusTransition(existing.status, body.status);
+
+    if (body.status === "PUBLISHED") {
+      assertVisibleOnPublicCatalog(existing.priceType);
+    }
 
     const now = new Date();
     const course = await updateCourse(db, id, {
@@ -88,6 +93,10 @@ export async function POST(request: Request, context: RouteContext) {
       error.message.startsWith("Invalid course status transition")
     ) {
       return NextResponse.json({ error: error.message }, { status: 422 });
+    }
+
+    if (error instanceof Error && error.name === "PublicCatalogVisibilityError") {
+      return NextResponse.json({ error: error.message }, { status: 400 });
     }
 
     logger.error("admin.courses.status", {
