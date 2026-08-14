@@ -48,6 +48,7 @@ export const adminEn: AdminDictionary = {
     discoveryQueries: "Discovery queries",
     users: "Users",
     taxonomy: "Taxonomy",
+    search: "Search",
   },
   login: {
     heading: "Admin Sign In",
@@ -335,5 +336,29 @@ export const adminEn: AdminDictionary = {
     noClicks: "No clicks yet.",
     clicks: "Clicks",
     period: "Period",
+  },
+  search: {
+    heading: "Search quality",
+    description:
+      "M20.0 baseline instrumentation: live query log, lexical benchmark stub, and Gate B sampling.",
+    thresholdsVersion: "Thresholds config version",
+    gateBHint:
+      "Stop for Intent Diagnosis before M20.1 — fill",
+    metricTotal: "Searches (30d)",
+    metricZeroRate: "Zero-result rate",
+    metricUnmetRate: "Unmet-intent rate",
+    metricLatency: "Latency p95",
+    topQueries: "Top queries",
+    recentRuns: "Recent benchmark runs",
+    emptyBaseline: "No search_queries rows yet. Traffic will fill this after migrate.",
+    emptyRuns: "No benchmark runs yet.",
+    benchmarkTitle: "Lexical benchmark",
+    benchmarkDescription:
+      "Runs the v1 eval dataset (≥60 stubs) through current keyword search and stores a search_benchmark_runs row. NDCG stays null until labels exist.",
+    benchmarkRun: "Run lexical baseline",
+    benchmarkRunning: "Running...",
+    benchmarkFailed: "Benchmark failed",
+    benchmarkSummary:
+      "Ran {queries} queries · zero-result {zeroRate}% · p95 {p95} ms · run {runId}",
   },
 };

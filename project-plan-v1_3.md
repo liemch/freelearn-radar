@@ -2057,3 +2057,932 @@ M20.8 Cross-lang  →   M20.9
 M20.9 Analytics   →   M20.10
 M20.10 Hardening  →   M20.11
 ```
+---
+
+# 113. M20.12 — Monetization Foundation
+
+> Milestone này là **phần bổ sung** của v1.3. Toàn bộ nội dung §1–§112 phía trên
+> giữ nguyên. Monetization không được thay đổi Truth, Source Fetching, Provider
+> Policy, Search Eligibility, Search Ranking hoặc các gate đã định nghĩa trước đó.
+
+## 113.1 Mục tiêu
+
+Tạo nền tảng kiếm nguồn thu nhỏ từ outbound traffic của FreeLearn Radar mà không
+làm thay đổi định vị sản phẩm:
+
+```text
+DISCOVERY → RELEVANCE → TRUTH → USER DECISION → MONETIZATION
+```
+
+Nguyên tắc bắt buộc:
+
+```text
+Monetization follows relevance.
+Monetization never creates relevance.
+```
+
+North Star của v1.3 **không đổi**: `Outbound Course Clicks`.
+
+Revenue, affiliate CTR và affiliate conversion chỉ là **secondary business
+metrics**, không được dùng để thay thế search/product quality metrics.
+
+## 113.2 Scope
+
+Hỗ trợ hai nhóm affiliate:
+
+```text
+COURSE AFFILIATE
+  Coursera
+  Udemy
+  edX
+  provider khác trong tương lai
+
+COMMERCE AFFILIATE
+  Shopee
+  Lazada
+  merchant/network khác trong tương lai
+```
+
+Không hard-code logic business theo từng merchant trong UI.
+
+Tạo abstraction:
+
+```text
+AffiliateProvider
+  provider_key
+  provider_type        COURSE | COMMERCE
+  display_name
+  base/domain policy
+  enabled
+  disclosure_required
+  tracking_capability
+```
+
+Affiliate destination/deeplink phải được quản lý qua service/config/admin thay
+vì rải URL trực tiếp trong component.
+
+## 113.3 Commerce relevance policy
+
+Commerce affiliate chỉ được xuất hiện khi sản phẩm có quan hệ hợp lý với hành
+trình học.
+
+Nhóm cho phép ban đầu:
+
+```text
+BOOK
+LAPTOP_TABLET
+MONITOR
+KEYBOARD_MOUSE
+HEADSET_WEBCAM_MIC
+LAPTOP_STAND
+DESK_LIGHT
+STUDY_ACCESSORY
+LAB_NETWORKING_DEVICE
+OTHER_LEARNING_RELATED
+```
+
+Ví dụ mapping:
+
+```text
+Python / Programming
+  → sách Python
+  → keyboard / mouse
+  → laptop stand
+
+Data / BI
+  → sách SQL / Power BI
+  → monitor
+  → keyboard / mouse
+
+Networking / Cloud lab
+  → networking/lab accessory phù hợp
+```
+
+Không hiển thị sản phẩm không liên quan chỉ vì commission cao.
+
+## 113.4 Hard invariants
+
+```text
+Affiliate commission KHÔNG là ranking signal.
+Sponsored/affiliate placement KHÔNG override Truth.
+Affiliate link KHÔNG làm course paid trở thành free.
+Affiliate campaign KHÔNG thay provider trust.
+Affiliate revenue KHÔNG ảnh hưởng relevance score.
+Merchant payout/commission KHÔNG ảnh hưởng recommendation order.
+Không cloaking disclosure.
+Không auto-redirect user sang merchant.
+Không dùng deceptive CTA.
+Không tạo fake discount / fake urgency / fake scarcity.
+Không thu thập dữ liệu cá nhân nếu không cần cho tracking nội bộ.
+```
+
+Các invariant ranking hiện có của v1.3 tiếp tục giữ nguyên, bao gồm việc
+`paid promotion` không được dùng làm ranking signal.
+
+## 113.5 Data model — conceptual
+
+Tên bảng/field phải adapt theo schema thật sau audit. Không tạo entity trùng nếu
+repo đã có equivalent.
+
+```text
+affiliate_providers
+  id
+  provider_key
+  provider_type
+  display_name
+  enabled
+  disclosure_text_vi
+  disclosure_text_en
+  created_at
+  updated_at
+
+affiliate_campaigns
+  id
+  affiliate_provider_id
+  name
+  campaign_key
+  destination_template / destination_url
+  enabled
+  starts_at
+  ends_at
+  metadata_json
+  created_at
+  updated_at
+
+affiliate_placements
+  id
+  campaign_id
+  placement_key
+  topic_id nullable
+  category_id nullable
+  course_id nullable
+  locale nullable
+  priority
+  enabled
+  created_at
+  updated_at
+
+affiliate_clicks
+  id
+  provider_key
+  campaign_id nullable
+  placement_key
+  course_id nullable
+  topic_id nullable
+  locale
+  destination_host
+  clicked_at
+```
+
+Không lưu full IP trong `affiliate_clicks` chỉ để làm analytics. Nếu cần chống
+abuse/dedup thì dùng cơ chế privacy-preserving và retention bounded.
+
+## 113.6 Outbound link service
+
+Mọi affiliate outbound phải đi qua một boundary duy nhất:
+
+```text
+AffiliateLinkService
+  resolveDestination(...)
+  validateDestination(...)
+  buildTrackedLink(...)
+  recordOutboundClick(...)
+```
+
+Yêu cầu:
+
+```text
+allowlist destination host
+reject javascript:/data:/unknown scheme
+open-redirect protection
+server-side validation
+campaign disabled/expired → không render hoặc fallback non-affiliate hợp lệ
+tracking failure → vẫn cho user tới destination hợp lệ
+```
+
+Affiliate tracking không được trở thành single point of failure cho outbound
+course click.
+
+## 113.7 Admin UI
+
+Thêm khu vực:
+
+```text
+Admin
+  → Monetization
+      → Providers
+      → Campaigns
+      → Placements
+      → Click Analytics
+```
+
+Admin có thể:
+
+```text
+enable/disable provider
+enable/disable campaign
+quản lý destination/deeplink
+map placement theo topic/category/course
+preview placement EN/VI
+xem click theo provider/campaign/placement
+tắt toàn bộ monetization bằng kill switch
+```
+
+Mọi state-changing action phải đi qua RBAC server-side và audit log theo
+invariant hiện có.
+
+## 113.8 Feature flags
+
+```bash
+FEATURE_MONETIZATION=false
+FEATURE_COURSE_AFFILIATE=false
+FEATURE_COMMERCE_AFFILIATE=false
+```
+
+Mặc định `false` khi deploy.
+
+Kill switch phải có khả năng tắt monetization mà không ảnh hưởng core site,
+search, course detail, compare hoặc learning path.
+
+## 113.9 Disclosure
+
+Mọi affiliate placement phải có disclosure rõ ràng, không giấu trong footer.
+
+Ví dụ:
+
+```text
+VI: Liên kết tiếp thị
+EN: Affiliate link
+```
+
+Copy cuối cùng có thể điều chỉnh theo yêu cầu của affiliate network, nhưng phải:
+
+```text
+visible
+understandable
+gần CTA/placement liên quan
+không làm người dùng hiểu nhầm recommendation là editorial độc lập nếu có
+quan hệ thương mại
+```
+
+## 113.10 Analytics
+
+Đo tối thiểu:
+
+```text
+affiliate impressions
+affiliate clicks
+affiliate CTR
+clicks / provider
+clicks / placement
+clicks / topic
+clicks / course
+clicks / locale
+```
+
+Nếu affiliate network sau này cung cấp conversion/revenue API hoặc report:
+
+```text
+conversion
+revenue
+EPC / revenue per 1 000 sessions
+```
+
+phải được xem là business analytics riêng.
+
+Không feed các metric này ngược vào Search Ranking trong v1.3.
+
+## 113.11 Gate M20.12
+
+```text
+0 thay đổi vào Truth eligibility
+0 affiliate/revenue signal trong Search Ranking
+AffiliateProvider abstraction tồn tại
+destination allowlist + open redirect tests PASS
+FEATURE_MONETIZATION=false mặc định
+admin RBAC + audit log PASS
+tracking failure không block outbound
+EN + VI disclosure
+privacy/retention documented
+lint / typecheck / test / build PASS
+```
+
+---
+
+# 114. M20.13 — Contextual Affiliate Recommendations
+
+> Chỉ bắt đầu sau M20.12 và sau khi core v1.3 đã đạt các gate/release requirement
+> tương ứng. Không dùng milestone này để trì hoãn hoặc che finding của M20.0–M20.11.
+
+## 114.1 Mục tiêu
+
+Biến affiliate thành một phần **phụ trợ** cho hành trình học thay vì banner quảng
+cáo chung chung.
+
+Placement chỉ xuất hiện sau khi đã biết context:
+
+```text
+Course
+Topic
+Search intent
+Learning Path step
+```
+
+Sau đó mới chọn affiliate candidate phù hợp.
+
+## 114.2 Placement MVP
+
+Cho phép ban đầu:
+
+```text
+COURSE_DETAIL_RELATED_LEARNING
+LEARNING_PATH_RESOURCES
+TOPIC_LEARNING_RESOURCES
+```
+
+Không chèn commerce affiliate vào giữa search result ranking.
+
+Không biến card affiliate thành course card khiến user nhầm đây là khóa học.
+
+## 114.3 Course affiliate — Free → Next Step
+
+Course Detail hoặc Learning Path có thể gợi ý bước học chuyên sâu hơn:
+
+```text
+Free course
+  ↓
+Next learning step
+  ↓
+Eligible paid course/program có affiliate
+```
+
+Yêu cầu:
+
+```text
+phải liên quan topic/goal hiện tại
+ghi rõ provider
+ghi rõ nếu là paid
+có disclosure affiliate
+không gọi paid course là "recommended best"
+không thay thế free result bằng paid result
+```
+
+Free catalog/search surface vẫn ưu tiên nhiệm vụ tìm khóa học miễn phí.
+
+## 114.4 Commerce affiliate — Learning Gear
+
+Ví dụ Course Detail:
+
+```text
+Prompt Engineering with Python
+[Học miễn phí]
+
+────────────────────────
+
+Góc học tập
+  Sách Python cho người mới
+  Keyboard / mouse
+  Laptop stand
+
+  [Xem trên Shopee]
+  [Xem trên Lazada]
+
+  Liên kết tiếp thị
+```
+
+Recommendation candidate phải qua:
+
+```text
+context match
+→ allowed product category
+→ active campaign
+→ locale/market availability nếu có
+→ destination validation
+→ placement policy
+```
+
+Commission không được tham gia candidate ordering.
+
+## 114.5 Learning Path integration
+
+M20.8 Learning Path có thể có section phụ:
+
+```text
+LỘ TRÌNH DATA ANALYST
+
+1. Excel Fundamentals       FREE
+2. SQL Fundamentals         FREE
+3. Power BI                 FREE
+
+────────────────────────
+
+Tài nguyên có thể hữu ích
+  Sách SQL
+  Monitor
+  Keyboard / mouse
+
+Shopee | Lazada
+Liên kết tiếp thị
+```
+
+Section này:
+
+```text
+không tính là learning-path step
+không ảnh hưởng thứ tự step
+không làm path thiếu course trở thành "đủ"
+không ảnh hưởng gate 100% course trong path tồn tại và eligible
+```
+
+## 114.6 UX constraints
+
+```text
+Learning content là primary.
+Commerce là secondary.
+Không popup affiliate khi vừa vào site.
+Không interstitial trước outbound course.
+Không autoplay.
+Không countdown giả.
+Không sticky ad che nội dung trên mobile.
+Không quá 1 commerce section trên một course detail trong MVP.
+```
+
+Nếu không có affiliate candidate đủ relevance:
+
+```text
+→ không render section
+```
+
+Không dùng fallback sản phẩm không liên quan.
+
+## 114.7 Recommendation logic
+
+MVP ưu tiên deterministic mapping:
+
+```text
+topic/category/course tags
+→ affiliate product category
+→ active placements
+```
+
+Không cần AI để chọn sản phẩm trong M20.13.
+
+Nếu sau này dùng AI:
+
+```text
+AI chỉ hỗ trợ classification/mapping
+AI không tự tạo product
+AI không tự tạo destination URL
+AI không quyết định commission optimization
+```
+
+## 114.8 Measurement
+
+Đánh giá song song product + business:
+
+```text
+PRODUCT GUARDRAIL
+  outbound course CTR
+  course detail engagement
+  bounce rate
+  learning path usage
+
+BUSINESS
+  affiliate impression
+  affiliate CTR
+  conversion nếu có
+  revenue nếu có
+```
+
+STOP/rollback placement nếu monetization làm giảm đáng kể hành vi cốt lõi.
+
+Ngưỡng cụ thể phải được chốt sau khi có baseline traffic; không tự đặt số giả khi
+chưa có production data.
+
+## 114.9 Rollout
+
+```text
+1. deploy schema/admin + flags OFF
+2. configure provider/campaign
+3. internal preview
+4. bật COURSE affiliate trước
+5. quan sát
+6. bật COMMERCE affiliate cho một số topic
+7. quan sát
+8. mở rộng placement nếu product metrics không xấu đi
+```
+
+Không bật toàn bộ provider/placement cùng lúc.
+
+## 114.10 Gate M20.13
+
+```text
+affiliate candidate luôn có contextual relevance
+0 commerce placement chen vào search ranking
+0 paid course masquerade thành free course
+0 commission-based ordering
+disclosure EN + VI đúng
+invalid/expired campaign không render
+monetization OFF → UI trở về core experience sạch
+mobile UX PASS
+outbound course flow không bị block
+analytics phân biệt course outbound và affiliate outbound
+lint / typecheck / test / build PASS
+```
+
+---
+
+# 115. Cursor Execution Rules — Monetization Addendum
+
+```text
+1. §1–§112 là immutable baseline của file v1.3 này.
+2. Không refactor/rewrite nội dung cũ chỉ để implement M20.12/M20.13.
+3. Không thay North Star.
+4. Không đưa revenue/commission/affiliate CTR vào Search Ranking.
+5. Không thay Truth Engine hoặc free eligibility.
+6. Không hard-code merchant URL trong UI component.
+7. Reuse RBAC, audit log, analytics convention, i18n và outbound security hiện có.
+8. Adapt schema theo repo thật; không tạo duplicate entity/service.
+9. Feature flags mặc định OFF.
+10. Monetization subsystem lỗi → core FreeLearn Radar vẫn usable.
+11. Mỗi milestone chạy đủ lint / typecheck / test / build.
+12. Nếu implementation yêu cầu phá invariant cũ → STOP và báo conflict, không tự
+    sửa project plan cũ để hợp thức hóa code.
+```
+---
+
+# 116. M20.14 — Vietnamese-Only Product Direction
+
+> Đây là **phần bổ sung** của v1.3. Không rewrite các section trước đó trong file.
+> Kể từ milestone này, mọi yêu cầu EN/VI hoặc cross-language UI đã mô tả ở các
+> section trước được **supersede về mặt product direction** bởi quyết định:
+> **FreeLearn Radar là sản phẩm chỉ sử dụng giao diện Tiếng Việt.**
+
+## 116.1 Quyết định sản phẩm
+
+FreeLearn Radar tập trung hoàn toàn vào người dùng Tiếng Việt.
+
+```text
+PRIMARY PRODUCT LANGUAGE = vi
+PUBLIC UI LANGUAGE        = vi
+ADMIN UI LANGUAGE         = vi
+DEFAULT LOCALE            = vi
+SUPPORTED UI LOCALES      = vi only
+```
+
+Loại bỏ Tiếng Anh khỏi trải nghiệm sản phẩm.
+
+Không còn:
+
+```text
+EN / VI language switcher
+English public routes
+English Admin UI
+English navigation
+English filter labels
+English empty/error states
+English SEO landing pages
+English UI translation maintenance
+```
+
+## 116.2 Phạm vi "Vietnamese-only"
+
+Vietnamese-only áp dụng cho **giao diện và nội dung do FreeLearn Radar kiểm soát**:
+
+```text
+navigation
+buttons
+filters
+forms
+badges
+status labels
+helper text
+error messages
+empty states
+Admin
+email/alert templates do hệ thống tạo
+SEO metadata do hệ thống tạo
+disclosure affiliate
+learning-path UI
+search/finder UI
+```
+
+Tuy nhiên, **không dịch hoặc làm sai dữ liệu nguồn chính thức**.
+
+Ví dụ:
+
+```text
+Official course title: "CS50's Introduction to Programming with Python"
+→ có thể giữ nguyên official title.
+
+Provider: "Coursera"
+→ giữ nguyên brand/provider name.
+
+Official certificate/course metadata bằng tiếng Anh
+→ có thể hiển thị nguyên bản khi đó là dữ liệu nguồn.
+```
+
+Nếu có summary/description tiếng Việt do hệ thống tạo hoặc curate, phải phân biệt
+rõ với official source data.
+
+## 116.3 Routing
+
+Chuẩn hóa public routing về một locale duy nhất.
+
+Ưu tiên URL sạch, ví dụ:
+
+```text
+/search
+/topics/ai
+/courses/...
+```
+
+thay vì duy trì song song:
+
+```text
+/en/...
+/vi/...
+```
+
+Implementation phải dựa trên routing hiện tại của repo và migration an toàn.
+
+Nếu production hiện đã index `/en/...` hoặc `/vi/...`, phải có redirect/canonical
+strategy trước khi xóa route để tránh tạo hàng loạt 404.
+
+Không tự xóa route production mà chưa xử lý SEO migration.
+
+## 116.4 Locale switcher
+
+Loại bỏ hoàn toàn EN/VI switcher khỏi:
+
+```text
+Public Header
+Mobile Navigation
+Admin Header
+Admin Sidebar
+Account/User menu
+```
+
+Không để locale selector disabled hoặc hidden CSS; xóa dependency/UI logic không
+còn cần thiết khi an toàn.
+
+## 116.5 i18n architecture
+
+Không bắt buộc phá bỏ toàn bộ i18n framework nếu việc đó tạo regression hoặc
+refactor lớn không cần thiết.
+
+Mục tiêu:
+
+```text
+UI chỉ expose Tiếng Việt.
+Không maintain English copy mới.
+Không có runtime language switching.
+Không có English route công khai.
+```
+
+Nếu i18n abstraction hiện tại vẫn hữu ích để tổ chức copy Tiếng Việt, có thể giữ
+lại ở mức implementation.
+
+Không thực hiện rewrite lớn chỉ để xóa một thư viện i18n đang hoạt động ổn.
+
+## 116.6 Search và dữ liệu course
+
+**Vietnamese-only UI không có nghĩa chỉ tìm course tiếng Việt.**
+
+Catalog vẫn có thể chứa khóa học từ:
+
+```text
+Coursera
+Udemy
+edX
+Microsoft Learn
+Cisco
+IBM
+Google
+AWS
+và các provider quốc tế khác
+```
+
+Course bằng tiếng Anh vẫn được phép xuất hiện nếu phù hợp catalog/truth rules.
+
+Search input được tối ưu cho người dùng nhập Tiếng Việt.
+
+Ví dụ:
+
+```text
+"khóa học AI cho người mới"
+"Python cho người chưa biết lập trình"
+"học quản lý dự án miễn phí"
+```
+
+hệ thống vẫn có thể tìm course nguồn bằng tiếng Anh.
+
+## 116.7 Supersede Cross-Language UI requirement
+
+Các requirement cũ về:
+
+```text
+EN + VI public UI
+EN + VI admin strings
+locale switcher
+English UI route persistence
+English UI SEO pages
+```
+
+không còn là acceptance criteria kể từ M20.14.
+
+Tuy nhiên phần **semantic cross-language retrieval** vẫn có thể giữ giá trị kỹ
+thuật:
+
+```text
+Vietnamese query
+→ English-language course
+```
+
+Do đó không được hiểu việc bỏ UI tiếng Anh là phải xóa khả năng multilingual
+retrieval của search/embedding nếu nó giúp người Việt tìm course quốc tế.
+
+## 116.8 SEO migration
+
+Audit trước khi thay route:
+
+```text
+indexed /en URLs
+indexed /vi URLs
+canonical
+hreflang
+sitemap
+internal links
+structured data
+social metadata
+```
+
+Target sau migration:
+
+```text
+Vietnamese canonical only
+Vietnamese sitemap only
+no EN hreflang
+no English landing-page duplication
+all internal links use canonical Vietnamese route
+```
+
+Route cũ có traffic/index phải redirect phù hợp thay vì 404 nếu khả thi.
+
+## 116.9 Admin
+
+Admin chuyển hoàn toàn sang Tiếng Việt:
+
+```text
+Dashboard          → Tổng quan
+Courses            → Khóa học
+Candidates         → Chờ duyệt / Ứng viên (theo terminology hiện tại)
+Collection         → Thu thập
+Providers          → Nền tảng
+Discovery Queries  → Truy vấn khám phá
+Users              → Người dùng
+Analytics          → Thống kê
+Monetization       → Kiếm tiền / Tiếp thị liên kết
+```
+
+Không dịch máy móc thuật ngữ kỹ thuật nếu bản dịch làm khó hiểu. Chọn terminology
+Tiếng Việt nhất quán với UI hiện tại.
+
+## 116.10 Monetization
+
+M20.12/M20.13 được điều chỉnh:
+
+```text
+Affiliate disclosure:
+"Liên kết tiếp thị"
+
+Admin monetization:
+Tiếng Việt
+
+Contextual recommendation:
+Tiếng Việt
+```
+
+Không cần English affiliate disclosure trong UI FreeLearn Radar, trừ khi điều
+khoản pháp lý/network cụ thể bắt buộc một wording khác.
+
+## 116.11 Email / Alert
+
+Template do FreeLearn Radar gửi cho user:
+
+```text
+subject       → Tiếng Việt
+body          → Tiếng Việt
+CTA           → Tiếng Việt
+unsubscribe   → Tiếng Việt
+status        → Tiếng Việt
+```
+
+Provider/course title chính thức vẫn giữ nguyên khi cần.
+
+## 116.12 Analytics
+
+Không cần phân tách product analytics theo `VI vs EN UI` nữa.
+
+Có thể giữ:
+
+```text
+course language
+query language
+source/provider language
+```
+
+nếu hữu ích cho discovery quality.
+
+Không xóa historical locale analytics chỉ vì product chuyển sang Vietnamese-only.
+
+## 116.13 Cleanup
+
+Sau khi migration ổn định, audit dead code:
+
+```text
+English translation files
+language switcher components
+locale middleware branches
+EN-specific routes
+hreflang EN
+English sitemap entries
+English metadata generators
+tests chỉ phục vụ EN UI
+```
+
+Chỉ xóa khi chứng minh không còn runtime dependency.
+
+Không cleanup kiểu big-bang.
+
+## 116.14 Tests
+
+Bổ sung/regression test:
+
+```text
+default route hiển thị Tiếng Việt
+không còn EN/VI switcher
+internal navigation không sinh /en route
+Admin chỉ expose Tiếng Việt
+SEO canonical là Vietnamese route
+old EN/VI route redirect đúng nếu migration yêu cầu
+Vietnamese query vẫn tìm được English course phù hợp
+official English course title không bị dịch sai
+affiliate disclosure hiển thị Tiếng Việt
+email template hiển thị Tiếng Việt
+```
+
+## 116.15 Feature/architecture safety
+
+Quyết định Vietnamese-only:
+
+```text
+KHÔNG thay Truth Engine
+KHÔNG thay Provider Policy
+KHÔNG thay Observation/Event semantics
+KHÔNG thay Affiliate ranking invariant
+KHÔNG hạn chế catalog chỉ còn provider Việt Nam
+KHÔNG bắt buộc dịch title chính thức
+KHÔNG làm semantic search kém đi với course quốc tế
+```
+
+## 116.16 Gate M20.14
+
+```text
+Public UI: 100% Tiếng Việt
+Admin UI: 100% Tiếng Việt
+Không còn language switcher
+Không còn public English navigation path mới
+SEO migration không tạo known mass-404
+canonical/sitemap đúng Vietnamese-only direction
+course title/provider official data được bảo toàn
+Vietnamese search → international course regression PASS
+affiliate disclosure Tiếng Việt
+email/alert UI Tiếng Việt
+lint PASS
+typecheck PASS
+test PASS
+build PASS
+```
+
+---
+
+# 117. Cursor Execution Rules — Vietnamese-Only Addendum
+
+```text
+1. §1–§115 giữ nguyên trong tài liệu; không rewrite lịch sử plan.
+2. M20.14 supersede các acceptance criteria cũ yêu cầu EN + VI ở UI.
+3. UI sản phẩm từ đây chỉ support Tiếng Việt.
+4. Không hiểu Vietnamese-only UI thành Vietnamese-only catalog.
+5. Giữ official course title/provider name khi đó là dữ liệu nguồn.
+6. Vietnamese query vẫn phải tìm được English/international course.
+7. Không xóa /en hoặc /vi production routes trước khi audit SEO/indexing.
+8. Nếu route cũ đã public/indexed, implement redirect/canonical migration an toàn.
+9. Không big-bang rewrite i18n architecture nếu không cần.
+10. Xóa language switcher khỏi Public và Admin.
+11. Mọi UI string mới chỉ cần Tiếng Việt.
+12. Monetization disclosure sử dụng Tiếng Việt.
+13. Email/alert user-facing sử dụng Tiếng Việt.
+14. Không thay Truth/Search Ranking/Provider Policy vì thay đổi ngôn ngữ.
+15. Chạy lint/typecheck/test/build sau migration.
+```

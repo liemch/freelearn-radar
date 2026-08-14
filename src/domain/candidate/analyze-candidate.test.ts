@@ -2,11 +2,16 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 
 const findCandidateById = vi.fn();
 const updateCandidate = vi.fn();
+const writeAuditLog = vi.fn();
 
 vi.mock("@/db/repositories/candidate-repository", () => ({
   findCandidateById: (...args: unknown[]) => findCandidateById(...args),
   updateCandidate: (...args: unknown[]) => updateCandidate(...args),
   listCandidatesByStatus: vi.fn(),
+}));
+
+vi.mock("@/domain/admin/audit-log", () => ({
+  writeAuditLog: (...args: unknown[]) => writeAuditLog(...args),
 }));
 
 describe("analyzeCandidate", () => {
@@ -60,6 +65,18 @@ describe("analyzeCandidate", () => {
     );
 
     expect(result.discoveryStatus).toBe("READY_FOR_REVIEW");
+    expect(writeAuditLog).toHaveBeenCalledWith(
+      {},
+      expect.objectContaining({
+        actorType: "AI",
+        action: "CANDIDATE_ANALYZED",
+        entityId: "c1",
+        before: { discoveryStatus: "FETCHED" },
+        after: expect.objectContaining({
+          discoveryStatus: "READY_FOR_REVIEW",
+        }),
+      }),
+    );
   });
 
   it("routes low-confidence analysis to ANALYZED for extra review", async () => {

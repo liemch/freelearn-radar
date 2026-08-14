@@ -8,6 +8,7 @@ import {
   ListFilter,
   Menu,
   Radar,
+  Search,
   Server,
   Tags,
   Users,
@@ -29,7 +30,8 @@ export type AdminNavIcon =
   | "queries"
   | "taxonomy"
   | "users"
-  | "analytics";
+  | "analytics"
+  | "search";
 
 export type AdminNavItem = {
   href: string;
@@ -55,6 +57,7 @@ const ICONS: Record<AdminNavIcon, typeof LayoutDashboard> = {
   taxonomy: Tags,
   users: Users,
   analytics: BarChart3,
+  search: Search,
 };
 
 /**

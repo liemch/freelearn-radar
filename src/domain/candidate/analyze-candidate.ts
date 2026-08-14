@@ -29,6 +29,34 @@ const RETRYABLE_STATUSES = new Set([
   "ERROR",
 ]);
 
+async function updateAfterAnalysis(
+  db: Db,
+  candidateId: string,
+  previousStatus: string,
+  input: Parameters<typeof updateCandidate>[2],
+  audit: {
+    actorType: "AI" | "WORKER";
+    action: string;
+    after?: Record<string, unknown>;
+    reason?: string;
+  },
+) {
+  const updated = await updateCandidate(db, candidateId, input);
+  await writeAuditLog(db, {
+    actorType: audit.actorType,
+    action: audit.action,
+    entityType: "candidate",
+    entityId: candidateId,
+    before: { discoveryStatus: previousStatus },
+    after: {
+      discoveryStatus: updated.discoveryStatus,
+      ...audit.after,
+    },
+    reason: audit.reason,
+  });
+  return updated;
+}
+
 export async function analyzeCandidate(
   db: Db,
   ai: AIProvider,
@@ -62,11 +90,21 @@ export async function analyzeCandidate(
   });
 
   if (!prefilter.accept) {
-    return updateCandidate(db, candidateId, {
-      discoveryStatus: "INVALID",
-      errorMessage: `Prefilter rejected: ${prefilter.reason}`,
-      analyzedAt: new Date(),
-    });
+    return updateAfterAnalysis(
+      db,
+      candidateId,
+      candidate.discoveryStatus,
+      {
+        discoveryStatus: "INVALID",
+        errorMessage: `Prefilter rejected: ${prefilter.reason}`,
+        analyzedAt: new Date(),
+      },
+      {
+        actorType: "WORKER",
+        action: "CANDIDATE_PREFILTER_REJECTED",
+        reason: prefilter.reason,
+      },
+    );
   }
 
   const contentHash = simpleContentHash([
@@ -122,46 +160,73 @@ export async function analyzeCandidate(
       rawTitle: analysis.title || candidate.rawTitle,
     };
 
-    // The AI is the actor here: its verdict drives the candidate's status and,
-    // after approval, the published course's price and certificate (§79.3).
-    await writeAuditLog(db, {
-      actorType: "AI",
-      action: "CANDIDATE_ANALYZED",
-      entityType: "candidate",
-      entityId: candidateId,
-      before: { discoveryStatus: candidate.discoveryStatus },
-      after: {
-        isCourse: analysis.is_course,
-        priceType: analysis.price_type,
-        certificateType: analysis.certificate_type,
-        confidence: analysis.confidence,
-        needsExtraReview,
-      },
-    });
-
     if (!analysis.is_course) {
       const decision = evaluateAutoReject({
         ...candidate,
         ...analyzedFields,
       });
       if (decision.reject) {
-        await updateCandidate(db, candidateId, analyzedFields);
+        await updateAfterAnalysis(
+          db,
+          candidateId,
+          candidate.discoveryStatus,
+          analyzedFields,
+          {
+            actorType: "AI",
+            action: "CANDIDATE_ANALYZED",
+            after: {
+              isCourse: analysis.is_course,
+              priceType: analysis.price_type,
+              certificateType: analysis.certificate_type,
+              confidence: analysis.confidence,
+            },
+          },
+        );
         return applyAutoReject(db, candidateId, decision.rule);
       }
-      return updateCandidate(db, candidateId, {
-        ...analyzedFields,
-        discoveryStatus: "INVALID",
-        errorMessage: "AI marked content as not a course",
-      });
+      return updateAfterAnalysis(
+        db,
+        candidateId,
+        candidate.discoveryStatus,
+        {
+          ...analyzedFields,
+          discoveryStatus: "INVALID",
+          errorMessage: "AI marked content as not a course",
+        },
+        {
+          actorType: "AI",
+          action: "CANDIDATE_ANALYZED",
+          after: {
+            isCourse: analysis.is_course,
+            confidence: analysis.confidence,
+          },
+        },
+      );
     }
 
-    return updateCandidate(db, candidateId, {
-      ...analyzedFields,
-      discoveryStatus: needsExtraReview ? "ANALYZED" : "READY_FOR_REVIEW",
-      errorMessage: needsExtraReview
-        ? "Low AI confidence — extra human review recommended"
-        : null,
-    });
+    return updateAfterAnalysis(
+      db,
+      candidateId,
+      candidate.discoveryStatus,
+      {
+        ...analyzedFields,
+        discoveryStatus: needsExtraReview ? "ANALYZED" : "READY_FOR_REVIEW",
+        errorMessage: needsExtraReview
+          ? "Low AI confidence — extra human review recommended"
+          : null,
+      },
+      {
+        actorType: "AI",
+        action: "CANDIDATE_ANALYZED",
+        after: {
+          isCourse: analysis.is_course,
+          priceType: analysis.price_type,
+          certificateType: analysis.certificate_type,
+          confidence: analysis.confidence,
+          needsExtraReview,
+        },
+      },
+    );
   } catch (error) {
     logger.error("candidate.analyze", {
       candidateId,
@@ -169,12 +234,22 @@ export async function analyzeCandidate(
       error: error instanceof Error ? error.message : "Unknown error",
     });
 
-    return updateCandidate(db, candidateId, {
-      discoveryStatus: "ERROR",
-      errorMessage:
-        error instanceof Error ? error.message.slice(0, 500) : "AI analysis failed",
-      analyzedAt: new Date(),
-    });
+    return updateAfterAnalysis(
+      db,
+      candidateId,
+      candidate.discoveryStatus,
+      {
+        discoveryStatus: "ERROR",
+        errorMessage:
+          error instanceof Error ? error.message.slice(0, 500) : "AI analysis failed",
+        analyzedAt: new Date(),
+      },
+      {
+        actorType: "AI",
+        action: "CANDIDATE_ANALYSIS_FAILED",
+        reason: error instanceof Error ? error.message.slice(0, 500) : "AI analysis failed",
+      },
+    );
   }
 }
 

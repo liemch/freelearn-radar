@@ -3,6 +3,7 @@ import { z } from "zod";
 
 import { getDb } from "@/db";
 import { findUserByEmail } from "@/db/repositories/user-repository";
+import { writeAuditLog } from "@/domain/admin/audit-log";
 import { verifyPassword } from "@/lib/auth/password";
 import { setSessionCookie, unauthorizedResponse } from "@/lib/auth/guards";
 import { logger } from "@/lib/logger";
@@ -52,6 +53,15 @@ export async function POST(request: Request) {
       userId: user.id,
       email: user.email,
       role: user.role,
+    });
+
+    await writeAuditLog(db, {
+      actorType: "USER",
+      actorId: user.id,
+      action: "ADMIN_LOGIN",
+      entityType: "user",
+      entityId: user.id,
+      after: { role: user.role },
     });
 
     logger.info("admin.auth.login", {

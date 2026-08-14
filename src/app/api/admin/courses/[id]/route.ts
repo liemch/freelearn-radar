@@ -19,7 +19,10 @@ import {
   assertVisibleOnPublicCatalog,
   deriveFreeDurability,
 } from "@/domain/course/free-durability";
-import { assertPriceTypeAllowed } from "@/domain/verification/provider-policy";
+import {
+  assertCertificateResolved,
+  assertPriceTypeAllowed,
+} from "@/domain/verification/provider-policy";
 import {
   forbiddenResponse,
   getSession,
@@ -73,6 +76,7 @@ export async function PATCH(request: Request, context: RouteContext) {
 
     if (status === "PUBLISHED") {
       assertVisibleOnPublicCatalog(body.priceType);
+      assertCertificateResolved(body.priceType, body.certificateType);
     }
 
     const publishedAt =
@@ -152,7 +156,8 @@ export async function PATCH(request: Request, context: RouteContext) {
 
     if (
       error instanceof Error &&
-      error.message.includes("FREE_WITH_COUPON")
+      (error.message.includes("FREE_WITH_COUPON") ||
+        error.message.includes("FREE_AUDIT"))
     ) {
       return NextResponse.json({ error: error.message }, { status: 400 });
     }

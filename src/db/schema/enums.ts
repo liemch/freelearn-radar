@@ -121,3 +121,31 @@ export const extractionMethodEnum = pgEnum("extraction_method", [
   "MANUAL",
   "POLICY",
 ]);
+
+export const searchRetrievalModeEnum = pgEnum("search_retrieval_mode", [
+  "LEXICAL",
+  "SEMANTIC",
+  "HYBRID",
+]);
+
+export const searchQueryLanguageEnum = pgEnum("search_query_language", [
+  "EN",
+  "VI",
+  "VI_NO_DIACRITIC",
+  "UNKNOWN",
+]);
+
+export const searchEvalLocaleEnum = pgEnum("search_eval_locale", [
+  "EN",
+  "VI",
+  "VI_NO_DIACRITIC",
+]);
+
+export const searchEvalGroupEnum = pgEnum("search_eval_group", [
+  "EXACT",
+  "KEYWORD",
+  "NL",
+  "CONSTRAINT",
+  "CROSS_LANG",
+  "NEGATIVE",
+]);

@@ -11,6 +11,7 @@ import { PageShell } from "@/components/layout/page-shell";
 import { listCategories } from "@/db/repositories/category-repository";
 import { queryCatalog } from "@/db/repositories/course-repository";
 import { listProviders } from "@/db/repositories/provider-repository";
+import { recordSearchQuery } from "@/db/repositories/search-query-repository";
 import { trackProductEvent } from "@/domain/analytics/product-events";
 import {
   buildCatalogQuery,
@@ -81,6 +82,7 @@ export default async function SearchPage({
   }
 
   const filters = buildCatalogQuery(urlParams);
+  const searchStartedAt = Date.now();
 
   const [catalog, providers, categories] = await Promise.all([
     withDb(
@@ -98,12 +100,39 @@ export default async function SearchPage({
     withDb("search.categories", (db) => listCategories(db), []),
   ]);
 
+  const latencyMs = Date.now() - searchStartedAt;
+
   trackProductEvent({
     event: "search",
     path: "/search",
     query: filters.q,
     resultCount: catalog.total,
+    meta: { latencyMs },
   });
+
+  await withDb(
+    "search.record_query",
+    (db) =>
+      recordSearchQuery(db, {
+        rawQuery: filters.q,
+        locale,
+        resultCount: catalog.total,
+        latencyMs,
+        filtersJson: {
+          providerSlug: filters.providerSlug ?? null,
+          level: filters.level ?? null,
+          language: filters.language ?? null,
+          certificateType: filters.certificateType ?? null,
+          priceType: filters.priceType ?? null,
+          durationMaxMinutes: filters.durationMaxMinutes ?? null,
+          sort: filters.sort ?? null,
+          page: filters.page ?? 1,
+        },
+        retrievalMode: "LEXICAL",
+        rankingConfigVersion: "lexical-v0",
+      }),
+    null,
+  );
 
   const hasNarrowingFilters = Boolean(
     filters.q ||

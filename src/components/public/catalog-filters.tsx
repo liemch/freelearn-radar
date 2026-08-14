@@ -3,6 +3,7 @@
 import { ChevronDown, X } from "lucide-react";
 import { useState } from "react";
 
+import { SoftGetForm } from "@/components/navigation/soft-get-form";
 import { LocalizedLink } from "@/components/public/localized-link";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -201,9 +202,8 @@ export function CatalogFiltersForm({
             One row on a wide screen, wrapping to two or three on narrower ones.
             Keyword gets the extra width because it is the field people reach for.
           */}
-          <form
+          <SoftGetForm
             action={localizedAction}
-            method="get"
             // Seven fields plus the submit button: the xl template needs eight
             // tracks, or the button wraps onto a row of its own.
             className="mt-3 grid items-end gap-2.5 sm:mt-0 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-[1.5fr_repeat(6,1fr)_auto]"
@@ -319,7 +319,7 @@ export function CatalogFiltersForm({
                 {labels.apply}
               </Button>
             </div>
-          </form>
+          </SoftGetForm>
 
           {showCategoryLinks && categories.length > 0 ? (
             <nav

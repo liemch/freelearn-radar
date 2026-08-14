@@ -2,6 +2,7 @@
 
 import { Search } from "lucide-react";
 
+import { SoftGetForm } from "@/components/navigation/soft-get-form";
 import { LocalizedLink } from "@/components/public/localized-link";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -41,9 +42,8 @@ export function HomeHero({ hero, topics }: HomeHeroProps) {
             rather than a hairline border and grows a focus ring as one unit —
             the whole control reads as the target, not just the text input.
           */}
-          <form
+          <SoftGetForm
             action={searchAction}
-            method="get"
             className="flex flex-col gap-2 rounded-xl bg-card p-2 shadow-sm ring-1 ring-border transition focus-within:ring-2 focus-within:ring-primary/50 sm:flex-row sm:items-center sm:gap-2 sm:p-2"
             role="search"
           >
@@ -68,7 +68,7 @@ export function HomeHero({ hero, topics }: HomeHeroProps) {
             >
               {hero.searchButton}
             </Button>
-          </form>
+          </SoftGetForm>
 
           <div className="flex flex-wrap items-center gap-x-1.5 gap-y-1.5 text-sm">
             <span className="mr-0.5 text-sm text-muted-foreground">

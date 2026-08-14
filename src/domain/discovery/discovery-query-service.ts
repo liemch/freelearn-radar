@@ -5,6 +5,7 @@ import {
   discoveryQueries,
   type DiscoveryQuery,
 } from "@/db/schema";
+import { writeAuditLog } from "@/domain/admin/audit-log";
 import { getServerEnv } from "@/lib/env";
 
 export async function listDueDiscoveryQueries(
@@ -62,6 +63,14 @@ export async function markDiscoveryQuerySuccess(
       successCount: sql`${discoveryQueries.successCount} + 1`,
     })
     .where(eq(discoveryQueries.id, id));
+
+  await writeAuditLog(db, {
+    actorType: "CRON",
+    action: "DISCOVERY_QUERY_SUCCEEDED",
+    entityType: "discovery_query",
+    entityId: id,
+    after: { nextRunInHours: 24 },
+  });
 }
 
 export async function markDiscoveryQueryFailure(
@@ -76,6 +85,14 @@ export async function markDiscoveryQueryFailure(
       failureCount: sql`${discoveryQueries.failureCount} + 1`,
     })
     .where(eq(discoveryQueries.id, id));
+
+  await writeAuditLog(db, {
+    actorType: "CRON",
+    action: "DISCOVERY_QUERY_FAILED",
+    entityType: "discovery_query",
+    entityId: id,
+    after: { nextRunInHours: 6 },
+  });
 }
 
 export { listEnabledDiscoveryQueries } from "@/db/repositories/discovery-query-repository";

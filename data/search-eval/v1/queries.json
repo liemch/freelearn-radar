@@ -1,0 +1,454 @@
+{
+  "version": "v1",
+  "catalogSnapshotId": null,
+  "catalogSnapshotAt": null,
+  "description": "M20.0 scaffolding dataset (>=60 stubs per plan §86.4). Labels empty until human Intent Diagnosis / grading.",
+  "queries": [
+    {
+      "id": "ex-01",
+      "locale": "EN",
+      "group": "EXACT",
+      "query": "CS50",
+      "expectedLabels": {}
+    },
+    {
+      "id": "ex-02",
+      "locale": "EN",
+      "group": "EXACT",
+      "query": "Google Data Analytics",
+      "expectedLabels": {}
+    },
+    {
+      "id": "ex-03",
+      "locale": "EN",
+      "group": "EXACT",
+      "query": "AWS Cloud Practitioner",
+      "expectedLabels": {}
+    },
+    {
+      "id": "ex-04",
+      "locale": "EN",
+      "group": "EXACT",
+      "query": "Prompt Engineering",
+      "expectedLabels": {}
+    },
+    {
+      "id": "ex-05",
+      "locale": "EN",
+      "group": "EXACT",
+      "query": "Machine Learning Crash Course",
+      "expectedLabels": {}
+    },
+    {
+      "id": "ex-06",
+      "locale": "VI",
+      "group": "EXACT",
+      "query": "CS50",
+      "expectedLabels": {}
+    },
+    {
+      "id": "kw-en-01",
+      "locale": "EN",
+      "group": "KEYWORD",
+      "query": "python beginner",
+      "expectedLabels": {}
+    },
+    {
+      "id": "kw-en-02",
+      "locale": "EN",
+      "group": "KEYWORD",
+      "query": "azure fundamentals",
+      "expectedLabels": {}
+    },
+    {
+      "id": "kw-en-03",
+      "locale": "EN",
+      "group": "KEYWORD",
+      "query": "excel free course",
+      "expectedLabels": {}
+    },
+    {
+      "id": "kw-en-04",
+      "locale": "EN",
+      "group": "KEYWORD",
+      "query": "sql for data analysis",
+      "expectedLabels": {}
+    },
+    {
+      "id": "kw-en-05",
+      "locale": "EN",
+      "group": "KEYWORD",
+      "query": "javascript basics",
+      "expectedLabels": {}
+    },
+    {
+      "id": "kw-en-06",
+      "locale": "EN",
+      "group": "KEYWORD",
+      "query": "react for beginners",
+      "expectedLabels": {}
+    },
+    {
+      "id": "kw-en-07",
+      "locale": "EN",
+      "group": "KEYWORD",
+      "query": "power bi introduction",
+      "expectedLabels": {}
+    },
+    {
+      "id": "kw-en-08",
+      "locale": "EN",
+      "group": "KEYWORD",
+      "query": "cybersecurity basics",
+      "expectedLabels": {}
+    },
+    {
+      "id": "kw-en-09",
+      "locale": "EN",
+      "group": "KEYWORD",
+      "query": "digital marketing free",
+      "expectedLabels": {}
+    },
+    {
+      "id": "kw-en-10",
+      "locale": "EN",
+      "group": "KEYWORD",
+      "query": "project management fundamentals",
+      "expectedLabels": {}
+    },
+    {
+      "id": "kw-vi-01",
+      "locale": "VI",
+      "group": "KEYWORD",
+      "query": "khóa học python cho người mới",
+      "expectedLabels": {}
+    },
+    {
+      "id": "kw-vi-02",
+      "locale": "VI",
+      "group": "KEYWORD",
+      "query": "học excel miễn phí",
+      "expectedLabels": {}
+    },
+    {
+      "id": "kw-vi-03",
+      "locale": "VI",
+      "group": "KEYWORD",
+      "query": "khóa học sql cơ bản",
+      "expectedLabels": {}
+    },
+    {
+      "id": "kw-vi-04",
+      "locale": "VI",
+      "group": "KEYWORD",
+      "query": "marketing số cho người mới",
+      "expectedLabels": {}
+    },
+    {
+      "id": "kw-vi-05",
+      "locale": "VI",
+      "group": "KEYWORD",
+      "query": "khóa học trí tuệ nhân tạo",
+      "expectedLabels": {}
+    },
+    {
+      "id": "kw-vi-06",
+      "locale": "VI",
+      "group": "KEYWORD",
+      "query": "học javascript miễn phí",
+      "expectedLabels": {}
+    },
+    {
+      "id": "kw-vi-07",
+      "locale": "VI",
+      "group": "KEYWORD",
+      "query": "khóa học quản lý dự án",
+      "expectedLabels": {}
+    },
+    {
+      "id": "kw-vi-08",
+      "locale": "VI",
+      "group": "KEYWORD",
+      "query": "phân tích dữ liệu cơ bản",
+      "expectedLabels": {}
+    },
+    {
+      "id": "kw-vnd-01",
+      "locale": "VI_NO_DIACRITIC",
+      "group": "KEYWORD",
+      "query": "khoa hoc python mien phi",
+      "expectedLabels": {}
+    },
+    {
+      "id": "kw-vnd-02",
+      "locale": "VI_NO_DIACRITIC",
+      "group": "KEYWORD",
+      "query": "power bi co ban",
+      "expectedLabels": {}
+    },
+    {
+      "id": "kw-vnd-03",
+      "locale": "VI_NO_DIACRITIC",
+      "group": "KEYWORD",
+      "query": "hoc excel mien phi",
+      "expectedLabels": {}
+    },
+    {
+      "id": "kw-vnd-04",
+      "locale": "VI_NO_DIACRITIC",
+      "group": "KEYWORD",
+      "query": "khoa hoc sql cho nguoi moi",
+      "expectedLabels": {}
+    },
+    {
+      "id": "kw-vnd-05",
+      "locale": "VI_NO_DIACRITIC",
+      "group": "KEYWORD",
+      "query": "javascript co ban",
+      "expectedLabels": {}
+    },
+    {
+      "id": "kw-vnd-06",
+      "locale": "VI_NO_DIACRITIC",
+      "group": "KEYWORD",
+      "query": "tri tue nhan tao mien phi",
+      "expectedLabels": {}
+    },
+    {
+      "id": "kw-vnd-07",
+      "locale": "VI_NO_DIACRITIC",
+      "group": "KEYWORD",
+      "query": "quan ly du an co ban",
+      "expectedLabels": {}
+    },
+    {
+      "id": "kw-vnd-08",
+      "locale": "VI_NO_DIACRITIC",
+      "group": "KEYWORD",
+      "query": "digital marketing mien phi",
+      "expectedLabels": {}
+    },
+    {
+      "id": "nl-en-01",
+      "locale": "EN",
+      "group": "NL",
+      "query": "free beginner AI course without coding",
+      "expectedLabels": {}
+    },
+    {
+      "id": "nl-en-02",
+      "locale": "EN",
+      "group": "NL",
+      "query": "best free course to learn python from scratch",
+      "expectedLabels": {}
+    },
+    {
+      "id": "nl-en-03",
+      "locale": "EN",
+      "group": "NL",
+      "query": "how to learn data analysis online for free",
+      "expectedLabels": {}
+    },
+    {
+      "id": "nl-en-04",
+      "locale": "EN",
+      "group": "NL",
+      "query": "free certificate course in cloud computing",
+      "expectedLabels": {}
+    },
+    {
+      "id": "nl-en-05",
+      "locale": "EN",
+      "group": "NL",
+      "query": "short free course on prompt engineering",
+      "expectedLabels": {}
+    },
+    {
+      "id": "nl-en-06",
+      "locale": "EN",
+      "group": "NL",
+      "query": "introduction to cybersecurity for absolute beginners",
+      "expectedLabels": {}
+    },
+    {
+      "id": "nl-vi-01",
+      "locale": "VI",
+      "group": "NL",
+      "query": "khóa học AI cho PM không cần biết lập trình",
+      "expectedLabels": {}
+    },
+    {
+      "id": "nl-vi-02",
+      "locale": "VI",
+      "group": "NL",
+      "query": "học phân tích dữ liệu miễn phí từ đầu",
+      "expectedLabels": {}
+    },
+    {
+      "id": "nl-vi-03",
+      "locale": "VI",
+      "group": "NL",
+      "query": "khóa học ngắn về excel cho văn phòng",
+      "expectedLabels": {}
+    },
+    {
+      "id": "nl-vi-04",
+      "locale": "VI",
+      "group": "NL",
+      "query": "muốn học python miễn phí có chứng chỉ",
+      "expectedLabels": {}
+    },
+    {
+      "id": "nl-vi-05",
+      "locale": "VI",
+      "group": "NL",
+      "query": "khóa học marketing online cho người mới bắt đầu",
+      "expectedLabels": {}
+    },
+    {
+      "id": "nl-vi-06",
+      "locale": "VI",
+      "group": "NL",
+      "query": "học quản trị dự án mà không cần kinh nghiệm",
+      "expectedLabels": {}
+    },
+    {
+      "id": "ct-01",
+      "locale": "EN",
+      "group": "CONSTRAINT",
+      "query": "python beginner under 3 hours with certificate",
+      "expectedLabels": {}
+    },
+    {
+      "id": "ct-02",
+      "locale": "EN",
+      "group": "CONSTRAINT",
+      "query": "free AI course with certificate under 5 hours",
+      "expectedLabels": {}
+    },
+    {
+      "id": "ct-03",
+      "locale": "VI",
+      "group": "CONSTRAINT",
+      "query": "python cơ bản dưới 3 giờ có chứng chỉ",
+      "expectedLabels": {}
+    },
+    {
+      "id": "ct-04",
+      "locale": "EN",
+      "group": "CONSTRAINT",
+      "query": "sql beginner free certificate",
+      "expectedLabels": {}
+    },
+    {
+      "id": "ct-05",
+      "locale": "EN",
+      "group": "CONSTRAINT",
+      "query": "excel course under 2 hours",
+      "expectedLabels": {}
+    },
+    {
+      "id": "ct-06",
+      "locale": "VI_NO_DIACRITIC",
+      "group": "CONSTRAINT",
+      "query": "hoc power bi mien phi co chung chi",
+      "expectedLabels": {}
+    },
+    {
+      "id": "xl-01",
+      "locale": "VI",
+      "group": "CROSS_LANG",
+      "query": "quản lý dự án",
+      "expectedLabels": {},
+      "notes": "Project Management"
+    },
+    {
+      "id": "xl-02",
+      "locale": "VI",
+      "group": "CROSS_LANG",
+      "query": "trí tuệ nhân tạo cho người mới",
+      "expectedLabels": {},
+      "notes": "AI for Beginners"
+    },
+    {
+      "id": "xl-03",
+      "locale": "VI",
+      "group": "CROSS_LANG",
+      "query": "phân tích dữ liệu",
+      "expectedLabels": {},
+      "notes": "Data Analytics"
+    },
+    {
+      "id": "xl-04",
+      "locale": "VI_NO_DIACRITIC",
+      "group": "CROSS_LANG",
+      "query": "hoc may tinh dam may",
+      "expectedLabels": {},
+      "notes": "cloud computing"
+    },
+    {
+      "id": "xl-05",
+      "locale": "VI",
+      "group": "CROSS_LANG",
+      "query": "an ninh mạng cơ bản",
+      "expectedLabels": {},
+      "notes": "cybersecurity"
+    },
+    {
+      "id": "xl-06",
+      "locale": "EN",
+      "group": "CROSS_LANG",
+      "query": "khoa hoc python",
+      "expectedLabels": {},
+      "notes": "cross from EN locale"
+    },
+    {
+      "id": "neg-01",
+      "locale": "VI",
+      "group": "NEGATIVE",
+      "query": "khóa học kế toán thuế Việt Nam nâng cao",
+      "expectedLabels": {},
+      "notes": "Expect empty or near-empty if catalog has no match"
+    },
+    {
+      "id": "neg-02",
+      "locale": "VI",
+      "group": "NEGATIVE",
+      "query": "luyện thi đại học môn văn",
+      "expectedLabels": {},
+      "notes": "Expect empty or near-empty if catalog has no match"
+    },
+    {
+      "id": "neg-03",
+      "locale": "EN",
+      "group": "NEGATIVE",
+      "query": "advanced Vietnamese tax accounting",
+      "expectedLabels": {},
+      "notes": "Expect empty or near-empty if catalog has no match"
+    },
+    {
+      "id": "neg-04",
+      "locale": "EN",
+      "group": "NEGATIVE",
+      "query": "veterinary surgery certification free",
+      "expectedLabels": {},
+      "notes": "Expect empty or near-empty if catalog has no match"
+    },
+    {
+      "id": "neg-05",
+      "locale": "VI_NO_DIACRITIC",
+      "group": "NEGATIVE",
+      "query": "khoa hoc nau an mien trung",
+      "expectedLabels": {},
+      "notes": "Expect empty or near-empty if catalog has no match"
+    },
+    {
+      "id": "neg-06",
+      "locale": "EN",
+      "group": "NEGATIVE",
+      "query": "pilot license ground school free",
+      "expectedLabels": {},
+      "notes": "Expect empty or near-empty if catalog has no match"
+    }
+  ]
+}

@@ -8,6 +8,7 @@ import {
   topicTags,
   type TopicTag,
 } from "@/db/schema";
+import { writeAuditLog } from "@/domain/admin/audit-log";
 import { FREE_LIST_EXCLUDED_PRICE_TYPES } from "@/domain/course/free-durability";
 import { courseAnalysisSchema } from "@/services/ai/ai-provider";
 import { slugify } from "@/lib/slug";
@@ -144,6 +145,18 @@ export async function syncCourseTopicTags(
 
   const affected = [...new Set([...previousTagIds, ...tags.map((t) => t.id)])];
   await refreshCourseCounts(db, affected);
+
+  await writeAuditLog(db, {
+    actorType: "AI",
+    action: "COURSE_TOPIC_TAGS_SYNCED",
+    entityType: "course",
+    entityId: courseId,
+    before: { tagIds: previousTagIds },
+    after: {
+      tagIds: tags.map((tag) => tag.id),
+      slugs: tags.map((tag) => tag.slug),
+    },
+  });
 }
 
 /** Tags with enough courses to index publicly (and still active). */

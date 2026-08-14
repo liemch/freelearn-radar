@@ -16,3 +16,6 @@ export * from "@/db/schema/course-observations";
 export * from "@/db/schema/course-price-events";
 export * from "@/db/schema/course-watches";
 export * from "@/db/schema/api-usage-log";
+export * from "@/db/schema/search-queries";
+export * from "@/db/schema/search-evaluations";
+export * from "@/db/schema/search-benchmark-runs";

@@ -47,6 +47,7 @@ export type AdminDictionary = {
     discoveryQueries: string;
     users: string;
     taxonomy: string;
+    search: string;
   };
   login: {
     heading: string;
@@ -326,5 +327,26 @@ export type AdminDictionary = {
     noClicks: string;
     clicks: string;
     period: string;
+  };
+  search: {
+    heading: string;
+    description: string;
+    thresholdsVersion: string;
+    gateBHint: string;
+    metricTotal: string;
+    metricZeroRate: string;
+    metricUnmetRate: string;
+    metricLatency: string;
+    topQueries: string;
+    recentRuns: string;
+    emptyBaseline: string;
+    emptyRuns: string;
+    benchmarkTitle: string;
+    benchmarkDescription: string;
+    benchmarkRun: string;
+    benchmarkRunning: string;
+    benchmarkFailed: string;
+    /** Placeholders: {queries}, {zeroRate}, {p95}, {runId} */
+    benchmarkSummary: string;
   };
 };

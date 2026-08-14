@@ -4,6 +4,7 @@ import type { Db } from "@/db";
 import type { Course, CourseObservation, Provider } from "@/db/schema";
 import { insertObservation } from "@/db/repositories/observation-repository";
 import { updateCourse } from "@/db/repositories/course-repository";
+import { writeAuditLog } from "@/domain/admin/audit-log";
 import type { CertificateType, PriceType } from "@/domain/course/types";
 import { classifyCertificateFromText } from "@/domain/verification/certificate-status";
 import { classifyFreeStatusFromText } from "@/domain/verification/free-status";
@@ -277,6 +278,25 @@ export async function observeCourse(
   await updateCourse(db, course.id, {
     lastObservedAt: observation.observedAt,
     nextObservationAt: computeNextObservationAt(tier, now),
+  });
+
+  await writeAuditLog(db, {
+    actorType: "WORKER",
+    actorId: workerVersion,
+    action: "COURSE_OBSERVED",
+    entityType: "course",
+    entityId: course.id,
+    before: {
+      lastObservedAt: course.lastObservedAt,
+      nextObservationAt: course.nextObservationAt,
+    },
+    after: {
+      observationId: observation.id,
+      fetchStatus: observation.fetchStatus,
+      observedAt: observation.observedAt,
+      observedRegion: observation.observedRegion,
+      nextObservationAt: computeNextObservationAt(tier, now),
+    },
   });
 
   return observation;

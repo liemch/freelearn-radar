@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import NextTopLoader from "nextjs-toploader";
 
 import "./globals.css";
 
@@ -33,7 +34,16 @@ export default function RootLayout({
           rel="stylesheet"
         />
       </head>
-      <body className="min-h-screen font-sans antialiased">{children}</body>
+      <body className="min-h-screen font-sans antialiased">
+        <NextTopLoader
+          color="var(--primary)"
+          height={2}
+          showSpinner={false}
+          shadow={false}
+          crawlSpeed={180}
+        />
+        {children}
+      </body>
     </html>
   );
 }

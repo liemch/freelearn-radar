@@ -6,6 +6,7 @@ const findCourseByCanonicalUrl = vi.fn();
 const listDueDiscoveryQueries = vi.fn();
 const markDiscoveryQuerySuccess = vi.fn();
 const markDiscoveryQueryFailure = vi.fn();
+const writeAuditLog = vi.fn();
 
 vi.mock("@/db/repositories/candidate-repository", () => ({
   createCandidate: (...args: unknown[]) => createCandidate(...args),
@@ -26,6 +27,10 @@ vi.mock("@/domain/discovery/discovery-query-service", () => ({
     markDiscoveryQuerySuccess(...args),
   markDiscoveryQueryFailure: (...args: unknown[]) =>
     markDiscoveryQueryFailure(...args),
+}));
+
+vi.mock("@/domain/admin/audit-log", () => ({
+  writeAuditLog: (...args: unknown[]) => writeAuditLog(...args),
 }));
 
 vi.mock("@/lib/env", () => ({
@@ -117,6 +122,14 @@ describe("ingestSearchResult", () => {
       expect.objectContaining({
         canonicalUrl: "https://coursera.org/learn/python",
         discoveryStatus: "DISCOVERED",
+      }),
+    );
+    expect(writeAuditLog).toHaveBeenCalledWith(
+      {},
+      expect.objectContaining({
+        actorType: "CRON",
+        action: "CANDIDATE_DISCOVERED",
+        entityId: "new-1",
       }),
     );
   });

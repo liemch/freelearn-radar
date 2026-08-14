@@ -24,7 +24,10 @@
     "db:studio": "drizzle-kit studio",
     "db:bootstrap:generate": "tsx scripts/generate-neon-bootstrap.ts",
     "monitor:once": "tsx scripts/monitor-once.ts",
-    "replay:events": "tsx scripts/replay-events.ts"
+    "replay:events": "tsx scripts/replay-events.ts",
+    "search:baseline": "tsx scripts/search-baseline.ts",
+    "search:benchmark": "tsx scripts/search-benchmark.ts",
+    "search:intent-sample": "tsx scripts/search-intent-sample.ts"
   },
   "dependencies": {
     "@neondatabase/serverless": "^0.10.4",
@@ -36,6 +39,7 @@
     "jose": "^6.0.12",
     "lucide-react": "^0.539.0",
     "next": "^15.4.6",
+    "nextjs-toploader": "^3.9.17",
     "postgres": "^3.4.7",
     "react": "^19.1.1",
     "react-dom": "^19.1.1",

@@ -3,6 +3,7 @@ import { and, eq } from "drizzle-orm";
 import type { Db } from "@/db";
 import { courseWatches, courses, type CoursePriceEvent } from "@/db/schema";
 import { deriveUnsubscribeToken } from "@/domain/alerts/watch-token";
+import { writeAuditLog } from "@/domain/admin/audit-log";
 import { getEmailProvider } from "@/services/email/email-provider";
 import { getServerEnv } from "@/lib/env";
 import { logger } from "@/lib/logger";
@@ -133,6 +134,17 @@ export async function notifyWatchesForEvents(
             notifiedAt: new Date(),
           })
           .where(eq(courseWatches.id, watch.id));
+
+        await writeAuditLog(db, {
+          actorType: "WORKER",
+          actorId: env.MONITOR_WORKER_VERSION,
+          action: "COURSE_WATCH_NOTIFIED",
+          entityType: "course_watch",
+          entityId: watch.id,
+          before: { status: watch.status, notifiedAt: watch.notifiedAt },
+          after: { status: "NOTIFIED" },
+          reason: `notification for price event ${event.id}`,
+        });
 
         summary.sent += 1;
         remainingBudget -= 1;

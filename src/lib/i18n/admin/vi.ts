@@ -48,6 +48,7 @@ export const adminVi: AdminDictionary = {
     discoveryQueries: "Truy vấn thu thập",
     users: "Người dùng",
     taxonomy: "Phân loại",
+    search: "Tìm kiếm",
   },
   login: {
     heading: "Đăng nhập quản trị",
@@ -338,5 +339,30 @@ export const adminVi: AdminDictionary = {
     noClicks: "Chưa có lượt click.",
     clicks: "Lượt click",
     period: "Khoảng thời gian",
+  },
+  search: {
+    heading: "Chất lượng tìm kiếm",
+    description:
+      "Nền tảng M20.0: nhật ký truy vấn, benchmark lexical tạm, và lấy mẫu Gate B.",
+    thresholdsVersion: "Phiên bản ngưỡng",
+    gateBHint:
+      "Dừng để Intent Diagnosis trước M20.1 — điền",
+    metricTotal: "Lượt tìm (30 ngày)",
+    metricZeroRate: "Tỷ lệ không kết quả",
+    metricUnmetRate: "Tỷ lệ unmet intent",
+    metricLatency: "Độ trễ p95",
+    topQueries: "Truy vấn hàng đầu",
+    recentRuns: "Lần chạy benchmark gần đây",
+    emptyBaseline:
+      "Chưa có bản ghi search_queries. Sau khi migrate, traffic sẽ đổ vào đây.",
+    emptyRuns: "Chưa có lần chạy benchmark.",
+    benchmarkTitle: "Benchmark lexical",
+    benchmarkDescription:
+      "Chạy dataset v1 (≥60 stub) qua keyword search hiện tại và ghi search_benchmark_runs. NDCG vẫn null cho đến khi có nhãn.",
+    benchmarkRun: "Chạy baseline lexical",
+    benchmarkRunning: "Đang chạy...",
+    benchmarkFailed: "Benchmark thất bại",
+    benchmarkSummary:
+      "Đã chạy {queries} truy vấn · không kết quả {zeroRate}% · p95 {p95} ms · run {runId}",
   },
 };

@@ -4,6 +4,8 @@ import {
   updateCandidate,
   findCandidateById,
 } from "@/db/repositories/candidate-repository";
+import type { CourseCandidate } from "@/db/schema";
+import { writeAuditLog } from "@/domain/admin/audit-log";
 import { logger } from "@/lib/logger";
 import {
   fetchCourseSource,
@@ -26,6 +28,29 @@ const REFRESHABLE_STATUSES = new Set([
   "READY_FOR_REVIEW",
   "ERROR",
 ]);
+
+async function updateAfterFetch(
+  db: Db,
+  candidate: CourseCandidate,
+  input: Parameters<typeof updateCandidate>[2],
+  reason: string,
+) {
+  const updated = await updateCandidate(db, candidate.id, input);
+  await writeAuditLog(db, {
+    actorType: "WORKER",
+    action: "CANDIDATE_SOURCE_FETCHED",
+    entityType: "candidate",
+    entityId: candidate.id,
+    before: { discoveryStatus: candidate.discoveryStatus },
+    after: {
+      discoveryStatus: updated.discoveryStatus,
+      sourceFetchedAt: updated.sourceFetchedAt,
+      sourceFinalUrl: updated.sourceFinalUrl,
+    },
+    reason,
+  });
+  return updated;
+}
 
 function serializeSourceResult(result: CourseSourceResult): Record<string, unknown> {
   return {
@@ -104,14 +129,14 @@ export async function fetchCandidateSource(
 
   if (result.status === "skipped") {
     // SEARCH_RESULT_ONLY / NO_FETCH — leave DISCOVERED for AI on search snippets
-    return updateCandidate(db, candidateId, {
+    return updateAfterFetch(db, candidate, {
       sourceEvidenceJson: serializeSourceResult(result),
       sourceFetchedAt: result.fetchedAt,
       errorMessage:
         result.policy.fetch === "NO_FETCH"
           ? "Source fetch skipped by provider policy"
           : null,
-    });
+    }, `source fetch ${result.status}: ${result.policy.fetch}`);
   }
 
   if (result.status === "error") {
@@ -124,21 +149,21 @@ export async function fetchCandidateSource(
       reason === "http_403" ||
       reason.startsWith("http_5")
     ) {
-      return updateCandidate(db, candidateId, {
+      return updateAfterFetch(db, candidate, {
         sourceEvidenceJson: serializeSourceResult(result),
         sourceFetchedAt: result.fetchedAt,
         sourceFinalUrl: result.finalUrl,
         errorMessage: `Source fetch failed (${reason}); continuing with search snippets`,
-      });
+      }, `source fetch soft failure: ${reason}`);
     }
 
-    return updateCandidate(db, candidateId, {
+    return updateAfterFetch(db, candidate, {
       discoveryStatus: mapFetchFailureStatus(reason),
       sourceEvidenceJson: serializeSourceResult(result),
       sourceFetchedAt: result.fetchedAt,
       sourceFinalUrl: result.finalUrl,
       errorMessage: `Source fetch failed: ${reason}`,
-    });
+    }, `source fetch failure: ${reason}`);
   }
 
   const nextTitle = result.title?.trim() || candidate.rawTitle;
@@ -151,7 +176,7 @@ export async function fetchCandidateSource(
       .join("\n\n")
       .slice(0, 20_000);
 
-  return updateCandidate(db, candidateId, {
+  return updateAfterFetch(db, candidate, {
     discoveryStatus: "FETCHED",
     rawTitle: nextTitle,
     rawDescription: nextDescription ? nextDescription.slice(0, 2000) : null,
@@ -163,7 +188,7 @@ export async function fetchCandidateSource(
     errorMessage: result.warnings.length
       ? `Source fetch warnings: ${result.warnings.join(", ")}`
       : null,
-  });
+  }, "source fetch completed");
 }
 
 export async function fetchPendingCandidates(
@@ -184,13 +209,13 @@ export async function fetchPendingCandidates(
         error: error instanceof Error ? error.message : "Unknown error",
       });
       results.push(
-        await updateCandidate(db, candidate.id, {
+        await updateAfterFetch(db, candidate, {
           discoveryStatus: "ERROR",
           errorMessage:
             error instanceof Error
               ? `Source fetch exception: ${error.message}`
               : "Source fetch exception",
-        }),
+        }, "source fetch exception"),
       );
     }
   }

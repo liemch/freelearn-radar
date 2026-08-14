@@ -2,9 +2,11 @@ import type { Db } from "@/db";
 import {
   createCandidate,
   findCandidateByCanonicalUrl,
+  findCandidateById,
   updateCandidate,
 } from "@/db/repositories/candidate-repository";
 import type { CourseCandidate } from "@/db/schema";
+import { writeAuditLog } from "@/domain/admin/audit-log";
 import { detectDuplicate } from "@/domain/discovery/duplicate-detector";
 import { classifyUrlShape } from "@/domain/discovery/url-shape-classifier";
 import { prefilterCandidate } from "@/domain/quality/candidate-prefilter";
@@ -81,6 +83,20 @@ export async function ingestSearchResult(
     discoveryStatus: "DISCOVERED",
   });
 
+  await writeAuditLog(db, {
+    actorType: "CRON",
+    action: "CANDIDATE_DISCOVERED",
+    entityType: "candidate",
+    entityId: candidate.id,
+    after: {
+      sourceType: candidate.sourceType,
+      discoveryStatus: candidate.discoveryStatus,
+      provider: candidate.provider,
+      searchQuery: candidate.searchQuery,
+      canonicalUrl: candidate.canonicalUrl,
+    },
+  });
+
   return { status: "CREATED", candidate };
 }
 
@@ -89,10 +105,23 @@ export async function markCandidateDuplicate(
   candidateId: string,
   errorMessage: string,
 ): Promise<CourseCandidate> {
-  return updateCandidate(db, candidateId, {
+  const before = await findCandidateById(db, candidateId);
+  const updated = await updateCandidate(db, candidateId, {
     discoveryStatus: "DUPLICATE",
     errorMessage,
   });
+
+  await writeAuditLog(db, {
+    actorType: "WORKER",
+    action: "CANDIDATE_DUPLICATE",
+    entityType: "candidate",
+    entityId: candidateId,
+    before: before ? { discoveryStatus: before.discoveryStatus } : null,
+    after: { discoveryStatus: updated.discoveryStatus },
+    reason: errorMessage.slice(0, 500),
+  });
+
+  return updated;
 }
 
 export async function getOrCreateManualCandidate(
@@ -105,10 +134,24 @@ export async function getOrCreateManualCandidate(
     return existing;
   }
 
-  return createCandidate(db, {
+  const candidate = await createCandidate(db, {
     sourceType: "MANUAL",
     sourceUrl: url,
     canonicalUrl,
     discoveryStatus: "DISCOVERED",
   });
+
+  await writeAuditLog(db, {
+    actorType: "USER",
+    action: "CANDIDATE_CREATED_MANUALLY",
+    entityType: "candidate",
+    entityId: candidate.id,
+    after: {
+      sourceType: candidate.sourceType,
+      discoveryStatus: candidate.discoveryStatus,
+      canonicalUrl: candidate.canonicalUrl,
+    },
+  });
+
+  return candidate;
 }

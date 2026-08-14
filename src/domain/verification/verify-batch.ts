@@ -17,6 +17,7 @@ import {
   computeRecheckPriority,
   type RecheckPriority,
 } from "@/domain/verification/priority";
+import { assertCertificateResolved } from "@/domain/verification/provider-policy";
 import {
   produceVerificationResult,
   type CourseVerificationSnapshot,
@@ -178,6 +179,10 @@ export async function persistVerification(
   courseId: string,
   result: VerificationResult,
 ): Promise<void> {
+  if (result.updateCourse) {
+    assertCertificateResolved(result.priceType, result.certificateType);
+  }
+
   await createVerification(db, {
     courseId,
     status: result.status,

@@ -48,6 +48,7 @@ export function AdminShell({ session, locale, children }: AdminShellProps) {
       ? [{ href: "/admin/users", label: t.nav.users, icon: "users" as const }]
       : []),
     { href: "/admin/analytics", label: t.nav.analytics, icon: "analytics" },
+    { href: "/admin/search", label: t.nav.search, icon: "search" },
   ];
 
   const navLabels: AdminNavLabels = {
