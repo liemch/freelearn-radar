@@ -38,26 +38,118 @@ const SEED_CATEGORIES = [
   { name: "Soft Skills", slug: "soft-skills" },
 ] as const;
 
+/**
+ * Path-scoped discovery queries. Keep `site:host/path` tight so Tavily returns
+ * course pages instead of blogs/forums (M19 URL-shape filter still applies).
+ * New rows are inserted on seed; existing query text is left untouched.
+ */
 const SEED_DISCOVERY_QUERIES = [
+  // Coursera
   {
     provider: "coursera",
     category: "ai",
-    query: 'site:coursera.org/learn "free" artificial intelligence course',
+    query: 'site:coursera.org/learn "free" "artificial intelligence" course',
   },
+  {
+    provider: "coursera",
+    category: "ai",
+    query: 'site:coursera.org/learn "machine learning" free course',
+  },
+  {
+    provider: "coursera",
+    category: "programming",
+    query: 'site:coursera.org/learn "free" python course',
+  },
+  {
+    provider: "coursera",
+    category: "data-science",
+    query: 'site:coursera.org/learn "free" "data science" course',
+  },
+  {
+    provider: "coursera",
+    category: "cloud",
+    query: 'site:coursera.org/learn "free" cloud OR aws OR azure course',
+  },
+  {
+    provider: "coursera",
+    category: "business",
+    query: 'site:coursera.org/learn "free" business OR "project management" course',
+  },
+  {
+    provider: "coursera",
+    category: "cybersecurity",
+    query: 'site:coursera.org/learn "free" cybersecurity OR "cyber security" course',
+  },
+  {
+    provider: "coursera",
+    category: "ai",
+    query: 'site:coursera.org/learn "audit for free" OR "enroll for free"',
+  },
+
+  // Udemy (often temporary free / coupon)
   {
     provider: "udemy",
     category: "programming",
     query: 'site:udemy.com/course "free" python course',
   },
   {
+    provider: "udemy",
+    category: "programming",
+    query: 'site:udemy.com/course "free" javascript OR "web development" course',
+  },
+  {
+    provider: "udemy",
+    category: "data-science",
+    query: 'site:udemy.com/course "free" "data science" OR "machine learning" course',
+  },
+  {
+    provider: "udemy",
+    category: "design",
+    query: 'site:udemy.com/course "free" design OR figma OR uiux course',
+  },
+  {
+    provider: "udemy",
+    category: "marketing",
+    query: 'site:udemy.com/course "free" marketing OR seo OR "digital marketing" course',
+  },
+  {
+    provider: "udemy",
+    category: "devops",
+    query: 'site:udemy.com/course "free" devops OR docker OR kubernetes course',
+  },
+
+  // edX
+  {
     provider: "edx",
     category: "cybersecurity",
     query: "site:edx.org/learn cybersecurity free course",
   },
   {
+    provider: "edx",
+    category: "ai",
+    query: 'site:edx.org/learn "artificial intelligence" OR "machine learning" free',
+  },
+  {
+    provider: "edx",
+    category: "data-science",
+    query: 'site:edx.org/learn "data science" free course',
+  },
+  {
+    provider: "edx",
+    category: "programming",
+    query: "site:edx.org/learn python OR programming free course",
+  },
+  {
+    provider: "edx",
+    category: "business",
+    query: "site:edx.org/learn business OR leadership free course",
+  },
+
+  // Microsoft Learn (mostly free)
+  {
     provider: "microsoft-learn",
     category: "cloud",
-    query: "site:learn.microsoft.com/training AI learning path",
+    query: "site:learn.microsoft.com/training/paths azure fundamentals",
   },
   {
     provider: "microsoft-learn",
@@ -65,9 +157,76 @@ const SEED_DISCOVERY_QUERIES = [
     query: 'site:learn.microsoft.com/training/paths "artificial intelligence"',
   },
   {
+    provider: "microsoft-learn",
+    category: "ai",
+    query: "site:learn.microsoft.com/training/paths copilot OR openai",
+  },
+  {
+    provider: "microsoft-learn",
+    category: "devops",
+    query: "site:learn.microsoft.com/training/paths devops OR github",
+  },
+  {
+    provider: "microsoft-learn",
+    category: "cybersecurity",
+    query: "site:learn.microsoft.com/training/paths security OR cybersecurity",
+  },
+  {
+    provider: "microsoft-learn",
+    category: "programming",
+    query: "site:learn.microsoft.com/training/paths python OR csharp OR javascript",
+  },
+
+  // freeCodeCamp
+  {
+    provider: "freecodecamp",
+    category: "programming",
+    query: "site:freecodecamp.org/learn responsive web design OR javascript",
+  },
+  {
     provider: "freecodecamp",
     category: "data-science",
-    query: "site:freecodecamp.org/learn data analysis",
+    query:
+      'site:freecodecamp.org/learn data analysis OR "machine learning" OR python',
+  },
+  {
+    provider: "freecodecamp",
+    category: "cybersecurity",
+    query: "site:freecodecamp.org/learn information security OR cybersecurity",
+  },
+
+  // AWS Skill Builder / training
+  {
+    provider: "aws",
+    category: "cloud",
+    query: "site:skillbuilder.aws free digital course OR learning plan",
+  },
+  {
+    provider: "aws",
+    category: "cloud",
+    query: 'site:aws.amazon.com/training "free digital training"',
+  },
+  {
+    provider: "aws",
+    category: "ai",
+    query: "site:skillbuilder.aws machine learning OR generative ai free",
+  },
+
+  // Google Developers / Skillshop-style
+  {
+    provider: "google",
+    category: "ai",
+    query: "site:developers.google.com/learn machine learning OR generative ai",
+  },
+  {
+    provider: "google",
+    category: "cloud",
+    query: "site:developers.google.com/learn google cloud OR gcp",
+  },
+  {
+    provider: "google",
+    category: "programming",
+    query: "site:developers.google.com/learn android OR flutter OR web",
   },
 ] as const;
 
