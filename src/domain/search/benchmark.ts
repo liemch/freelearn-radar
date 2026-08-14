@@ -16,7 +16,7 @@ import {
 
 export type LexicalBenchmarkSummary = {
   datasetVersion: string;
-  retrievalMode: "LEXICAL";
+  retrievalMode: "LEXICAL" | "SEMANTIC" | "HYBRID";
   rankingConfigVersion: string;
   queryCount: number;
   labeledQueryCount: number;
@@ -82,6 +82,7 @@ export async function runLexicalBenchmark(
     dataset?: SearchEvalDataset;
     datasetVersion?: string;
     pageSize?: number;
+    retrievalMode?: "LEXICAL" | "SEMANTIC" | "HYBRID";
   } = {},
 ): Promise<{ summary: LexicalBenchmarkSummary; run: SearchBenchmarkRun }> {
   const dataset =
@@ -90,6 +91,7 @@ export async function runLexicalBenchmark(
       defaultSearchEvalPath(options.datasetVersion ?? "v1"),
     );
   const pageSize = options.pageSize ?? 10;
+  const mode = options.retrievalMode ?? "LEXICAL";
   const latencies: number[] = [];
   let zeroResultCount = 0;
   let resultCountSum = 0;
@@ -101,17 +103,33 @@ export async function runLexicalBenchmark(
 
   for (const item of dataset.queries) {
     const started = Date.now();
-    const catalog = await queryCatalog(db, {
-      q: item.query,
-      page: 1,
-      pageSize,
-    });
+    let retrievedIds: string[] = [];
+    let total = 0;
+
+    if (mode === "LEXICAL") {
+      const catalog = await queryCatalog(db, {
+        q: item.query,
+        page: 1,
+        pageSize,
+      });
+      retrievedIds = catalog.items.map((c) => c.id);
+      total = catalog.total;
+    } else {
+      const { searchHybrid } = await import("@/domain/search/hybrid");
+      const hybrid = await searchHybrid(
+        db,
+        { q: item.query, page: 1, pageSize },
+        { pageSize },
+      );
+      retrievedIds = hybrid.courseIds;
+      total = hybrid.courseIds.length;
+    }
+
     const latency = Date.now() - started;
     latencies.push(latency);
-    resultCountSum += catalog.total;
-    if (catalog.total === 0) zeroResultCount += 1;
+    resultCountSum += total;
+    if (total === 0) zeroResultCount += 1;
 
-    const retrievedIds = catalog.items.map((c) => c.id);
     const labels = item.expectedLabels ?? {};
     if (Object.keys(labels).length > 0) {
       labeledQueryCount += 1;
@@ -124,6 +142,12 @@ export async function runLexicalBenchmark(
     if (item.group === "EXACT") {
       exactGroupTotal += 1;
       const q = item.query.toLowerCase();
+      // Exact-title check needs catalog titles — fall back to lexical for the hit test.
+      const catalog = await queryCatalog(db, {
+        q: item.query,
+        page: 1,
+        pageSize,
+      });
       const hit = catalog.items.some((c) =>
         c.title.toLowerCase().includes(q),
       );
@@ -131,11 +155,16 @@ export async function runLexicalBenchmark(
     }
   }
 
+  const rankingConfigVersion =
+    mode === "LEXICAL"
+      ? LEXICAL_RANKING_CONFIG_VERSION
+      : (await import("@/config/search-ranking")).SEARCH_RANKING_CONFIG_VERSION;
+
   const queryCount = dataset.queries.length;
   const summary: LexicalBenchmarkSummary = {
     datasetVersion: dataset.version,
-    retrievalMode: "LEXICAL",
-    rankingConfigVersion: LEXICAL_RANKING_CONFIG_VERSION,
+    retrievalMode: mode === "LEXICAL" ? "LEXICAL" : mode,
+    rankingConfigVersion,
     queryCount,
     labeledQueryCount,
     zeroResultCount,
@@ -160,9 +189,10 @@ export async function runLexicalBenchmark(
 
   const values: NewSearchBenchmarkRun = {
     datasetVersion: summary.datasetVersion,
-    retrievalMode: "LEXICAL",
+    retrievalMode: mode,
     rankingConfigVersion: summary.rankingConfigVersion,
-    embeddingModel: null,
+    embeddingModel:
+      mode === "LEXICAL" ? null : process.env.EMBEDDING_MODEL ?? null,
     ndcgAt10:
       summary.ndcgAt10 === null ? null : summary.ndcgAt10.toFixed(4),
     precisionAt5:

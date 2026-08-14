@@ -84,19 +84,78 @@ export default async function SearchPage({
 
   const filters = buildCatalogQuery(urlParams);
   const searchStartedAt = Date.now();
+  let retrievalMode: "LEXICAL" | "SEMANTIC" | "HYBRID" = "LEXICAL";
+  let degraded = false;
+  let unmetIntent: boolean | undefined;
+  let lexicalWouldBeZero: boolean | null = null;
+  let topScore: number | null = null;
+  let rankingConfigVersion = LEXICAL_RANKING_CONFIG_VERSION;
 
-  const [catalog, providers, categories] = await Promise.all([
-    withDb(
-      "search.catalog",
-      (db) => queryCatalog(db, filters),
-      {
-        items: [],
-        total: 0,
-        page: 1,
-        pageSize: filters.pageSize ?? 12,
-        totalPages: 1,
-      },
-    ),
+  let catalog = await withDb(
+    "search.catalog",
+    (db) => queryCatalog(db, filters),
+    {
+      items: [],
+      total: 0,
+      page: 1,
+      pageSize: filters.pageSize ?? 12,
+      totalPages: 1,
+    },
+  );
+
+  // Hybrid/semantic only when flags are ON; otherwise keep lexical path.
+  try {
+    const env = getServerEnv();
+    const hybridOn = env.FEATURE_HYBRID_SEARCH === "true";
+    const semanticOn =
+      env.FEATURE_SEMANTIC_SEARCH === "true" || hybridOn;
+    if (semanticOn && filters.q?.trim()) {
+      const hybrid = await withDb(
+        "search.hybrid",
+        async (db) => {
+          const { searchHybrid } = await import("@/domain/search/hybrid");
+          return searchHybrid(db, filters);
+        },
+        null,
+      );
+      if (hybrid) {
+        retrievalMode = hybrid.retrievalMode;
+        degraded = hybrid.degraded;
+        unmetIntent = hybrid.unmetIntent;
+        lexicalWouldBeZero = hybrid.lexicalWouldBeZero;
+        topScore = hybrid.topScore;
+        rankingConfigVersion = (
+          await import("@/config/search-ranking")
+        ).SEARCH_RANKING_CONFIG_VERSION;
+        if (hybrid.courseIds.length > 0) {
+          const idSet = new Set(hybrid.courseIds);
+          const reordered = [
+            ...catalog.items.filter((c) => idSet.has(c.id)),
+            ...catalog.items.filter((c) => !idSet.has(c.id)),
+          ];
+          // Prefer hybrid order when lexical also returned hits.
+          catalog = {
+            ...catalog,
+            items:
+              reordered.length > 0
+                ? reordered.slice(0, catalog.pageSize)
+                : catalog.items,
+          };
+        } else if (hybrid.unmetIntent) {
+          catalog = {
+            ...catalog,
+            items: [],
+            total: 0,
+            totalPages: 1,
+          };
+        }
+      }
+    }
+  } catch {
+    // Flag/env/hybrid failures must not break search — stay lexical.
+  }
+
+  const [providers, categories] = await Promise.all([
     withDb("search.providers", (db) => listProviders(db), []),
     withDb("search.categories", (db) => listCategories(db), []),
   ]);
@@ -108,7 +167,7 @@ export default async function SearchPage({
     path: "/search",
     query: filters.q,
     resultCount: catalog.total,
-    meta: { latencyMs },
+    meta: { latencyMs, retrievalMode, degraded },
   });
 
   await withDb(
@@ -129,8 +188,12 @@ export default async function SearchPage({
           sort: filters.sort ?? null,
           page: filters.page ?? 1,
         },
-        retrievalMode: "LEXICAL",
-        rankingConfigVersion: LEXICAL_RANKING_CONFIG_VERSION,
+        retrievalMode,
+        degraded,
+        unmetIntent,
+        lexicalWouldBeZero,
+        topScore,
+        rankingConfigVersion,
       }),
     null,
   );

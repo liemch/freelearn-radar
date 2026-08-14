@@ -48,6 +48,7 @@ export type AdminDictionary = {
     users: string;
     taxonomy: string;
     search: string;
+    embeddings: string;
   };
   login: {
     heading: string;
@@ -360,5 +361,20 @@ export type AdminDictionary = {
     benchmarkFailed: string;
     /** Placeholders: {queries}, {zeroRate}, {p95}, {runId} */
     benchmarkSummary: string;
+  };
+  embeddings: {
+    heading: string;
+    description: string;
+    model: string;
+    flagHint: string;
+    queueHeading: string;
+    pending: string;
+    ok: string;
+    failed: string;
+    stale: string;
+    enqueue: string;
+    run: string;
+    running: string;
+    failedAction: string;
   };
 };

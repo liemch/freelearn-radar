@@ -49,6 +49,7 @@ export const adminVi: AdminDictionary = {
     users: "Người dùng",
     taxonomy: "Phân loại",
     search: "Tìm kiếm",
+    embeddings: "Vector khóa học",
   },
   login: {
     heading: "Đăng nhập quản trị",
@@ -374,5 +375,21 @@ export const adminVi: AdminDictionary = {
     benchmarkFailed: "Benchmark thất bại",
     benchmarkSummary:
       "Đã chạy {queries} truy vấn · không kết quả {zeroRate}% · p95 {p95} ms · run {runId}",
+  },
+  embeddings: {
+    heading: "Embeddings khóa học",
+    description:
+      "Hàng đợi M20.2: đưa khóa published vào hàng, chạy backfill có giới hạn, xem PENDING/OK/FAILED/STALE.",
+    model: "Model đang dùng",
+    flagHint: "Đường đọc vẫn lexical cho đến khi bật",
+    queueHeading: "Hàng đợi",
+    pending: "Chờ",
+    ok: "OK",
+    failed: "Lỗi",
+    stale: "Cũ",
+    enqueue: "Đưa khóa published vào hàng",
+    run: "Chạy batch",
+    running: "Đang chạy...",
+    failedAction: "Thao tác embedding thất bại",
   },
 };

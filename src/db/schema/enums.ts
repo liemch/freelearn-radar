@@ -149,3 +149,10 @@ export const searchEvalGroupEnum = pgEnum("search_eval_group", [
   "CROSS_LANG",
   "NEGATIVE",
 ]);
+
+export const embeddingStatusEnum = pgEnum("embedding_status", [
+  "PENDING",
+  "OK",
+  "FAILED",
+  "STALE",
+]);

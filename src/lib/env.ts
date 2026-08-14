@@ -74,6 +74,41 @@ const baseEnvSchema = z.object({
   // shipped feature that has been switched off.
   FEATURE_AUTO_STATUS: optionalString,
   FEATURE_TOPIC_PAGES: optionalString,
+  // M20 search / embedding (plan §104) — flags default OFF
+  EMBEDDING_PROVIDER: z.string().default("nvidia"),
+  EMBEDDING_MODEL: z.string().default("nvidia/nv-embedqa-e5-v5"),
+  EMBEDDING_VERSION: z.string().default("v1"),
+  EMBEDDING_DIMENSION: z.coerce.number().int().positive().default(1024),
+  EMBEDDING_BATCH_SIZE: z.coerce.number().int().positive().max(100).default(20),
+  EMBEDDING_CONCURRENCY: z.coerce.number().int().positive().max(8).default(2),
+  EMBEDDING_DAILY_BUDGET_TOKENS: z.coerce
+    .number()
+    .int()
+    .positive()
+    .default(500_000),
+  EMBEDDING_QUERY_TIMEOUT_MS: z.coerce
+    .number()
+    .int()
+    .positive()
+    .default(400),
+  EMBED_AI_DERIVED_FIELDS: z.string().default("false"),
+  VECTOR_QUERY_TIMEOUT_MS: z.coerce.number().int().positive().default(250),
+  VECTOR_TOP_K: z.coerce.number().int().positive().max(200).default(50),
+  QUERY_EMBEDDING_CACHE_TTL_DAYS: z.coerce
+    .number()
+    .int()
+    .positive()
+    .default(30),
+  NL_INTENT_DAILY_CALLS: z.coerce.number().int().positive().default(2000),
+  NL_INTENT_PER_IP_HOURLY: z.coerce.number().int().positive().default(20),
+  NL_INTENT_MAX_QUERY_CHARS: z.coerce.number().int().positive().default(512),
+  FEATURE_SEMANTIC_SEARCH: optionalString,
+  FEATURE_HYBRID_SEARCH: optionalString,
+  FEATURE_NL_COURSE_FINDER: optionalString,
+  FEATURE_SIMILAR_COURSES: optionalString,
+  FEATURE_COURSE_COMPARE: optionalString,
+  FEATURE_LEARNING_PATHS: optionalString,
+  FEATURE_CROSS_LANGUAGE: optionalString,
   EMAIL_DRY_RUN: z.string().default("true"),
   RESEND_API_KEY: optionalString,
   EMAIL_FROM: optionalString,

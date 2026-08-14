@@ -17,6 +17,7 @@ import { Button } from "@/components/ui/button";
 import {
   getCourseDetailBySlug,
   listRelatedCoursesFor,
+  listSimilarCoursesFor,
 } from "@/db/repositories/course-repository";
 import { trackProductEvent } from "@/domain/analytics/product-events";
 import {
@@ -119,21 +120,28 @@ export default async function CourseDetailPage({ params }: CoursePageProps) {
     notFound();
   }
 
+  let similarCoursesOn = false;
+  try {
+    similarCoursesOn = getServerEnv().FEATURE_SIMILAR_COURSES === "true";
+  } catch {
+    similarCoursesOn = process.env.FEATURE_SIMILAR_COURSES === "true";
+  }
+
+  const relatedSource = {
+    id: course.id,
+    providerId: course.providerId,
+    level: course.level,
+    language: course.language,
+    priceType: course.priceType,
+    categoryIds: course.categories.map((category) => category.id),
+  };
+
   const related = await withDb(
     "course.related",
     (db) =>
-      listRelatedCoursesFor(
-        db,
-        {
-          id: course.id,
-          providerId: course.providerId,
-          level: course.level,
-          language: course.language,
-          priceType: course.priceType,
-          categoryIds: course.categories.map((category) => category.id),
-        },
-        4,
-      ),
+      similarCoursesOn
+        ? listSimilarCoursesFor(db, relatedSource, 6)
+        : listRelatedCoursesFor(db, relatedSource, 4),
     [],
   );
 

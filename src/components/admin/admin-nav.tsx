@@ -5,6 +5,7 @@ import {
   BookOpen,
   Inbox,
   LayoutDashboard,
+  Layers,
   ListFilter,
   Menu,
   Radar,
@@ -31,7 +32,8 @@ export type AdminNavIcon =
   | "taxonomy"
   | "users"
   | "analytics"
-  | "search";
+  | "search"
+  | "embeddings";
 
 export type AdminNavItem = {
   href: string;
@@ -58,6 +60,7 @@ const ICONS: Record<AdminNavIcon, typeof LayoutDashboard> = {
   users: Users,
   analytics: BarChart3,
   search: Search,
+  embeddings: Layers,
 };
 
 /**

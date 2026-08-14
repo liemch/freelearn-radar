@@ -1,12 +1,22 @@
 # Gate B — Intent Diagnosis Worksheet
 
-Status: **PROVISIONAL PASS — CATALOG_GAP ≥ 50%**
+Status: **OWNER OVERRIDE — M20.2+ authorized**
+
+Previous status: PROVISIONAL PASS — CATALOG_GAP ≥ 50% (2026-08-14)
 
 Prerequisite: Gate A PASS + M20.0 instrumentation shipped.
 
-Owner acceptance (2026-08-14): same pattern as Gate A §80.2 — provisional
-conclusion on thin-catalog evidence, without waiting for ≥150 production
-`search_queries` labels.
+## Override (2026-08-14)
+
+Owner explicitly authorized M20.2→M20.11 despite CATALOG_GAP ≥ 50%.
+
+```text
+Override rationale:
+  • All new FEATURE_* flags default OFF — read path stays lexical
+  • Embeddings / hybrid / NL / path code must not invent catalog coverage
+  • STOP 1 / STOP 2 may be PROVISIONAL (NDCG N/A on thin catalog)
+  • Coverage track continues in parallel
+```
 
 ## Goal
 
@@ -25,8 +35,6 @@ Against a ~1-course catalog, the large majority of realistic queries in the
 eval set (KEYWORD / NL / CONSTRAINT / CROSS_LANG / NEGATIVE) cannot be
 satisfied by any published course. That is **CATALOG_GAP**, not retrieval miss.
 
-Exact-title stubs (e.g. CS50) may also be gaps until those titles exist.
-
 ## Counts (provisional)
 
 ```text
@@ -41,31 +49,27 @@ Labeled by                    = owner provisional (Gate A thin-catalog reading)
 Date                          = 2026-08-14
 ```
 
-Re-run with `npm run search:intent-sample` after traffic accumulates; if
-CATALOG_GAP share falls below 50%, revisit M20.2+ deferral.
-
-## Decision rule (§86.3)
+## Decision rule (§86.3) — superseded by owner override
 
 ```text
-CATALOG_GAP ≥ 50% of non-JUNK
-  → defer M20.2+; keep M20.0 + optional cheap M20.1; fund coverage
+Default rule: CATALOG_GAP ≥ 50% → defer M20.2+
+Owner override: authorize M20.2+ behind flags OFF
 ```
 
 ## Written conclusion
 
 ```text
-Conclusion:           CATALOG_GAP ≥ 50% (provisional)
-CATALOG_GAP share:    ≥ 50% of non-JUNK
-Next allowed milestone: M20.1 Lexical Relevance Upgrade only
+Conclusion:           OWNER OVERRIDE — M20.2+ authorized
+CATALOG_GAP share:    ≥ 50% of non-JUNK (unchanged finding)
+Next allowed milestone: M20.2 Semantic Search Foundation
 Rationale:
-  Early production has ~1 verified free course. Embeddings cannot invent
-  catalog coverage. Cheap lexical upgrades (unaccent / trgm / weighted rank)
-  remain allowed; semantic/hybrid/NL/compare/path (M20.2+) stay deferred
-  until coverage improves and this worksheet is re-scored on real logs.
+  Owner accepts that semantic retrieval cannot invent coverage.
+  Implementation proceeds with FEATURE_SEMANTIC_SEARCH=false by default.
+  Re-score this worksheet from production search_queries when N is meaningful.
 ```
 
-## Coverage follow-up (out of M20.1 code scope)
+## Coverage follow-up (parallel)
 
-- Raise discovery throughput / provider coverage (v1.2 §68 loop)
+- Continue discovery throughput / free-by-policy providers
 - Re-label Gate B from production `search_queries` when N is meaningful
-- Only then reconsider M20.2+
+- STOP 1 may remain provisional until labeled NDCG is measurable

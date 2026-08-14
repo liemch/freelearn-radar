@@ -653,6 +653,54 @@ export async function listRelatedCoursesFor(
   );
 }
 
+/** Same candidate pool as related courses, but with the provider diversity cap. */
+export async function listSimilarCoursesFor(
+  db: Db,
+  source: {
+    id: string;
+    providerId: string;
+    level: string;
+    language: string | null;
+    priceType: string;
+    categoryIds: string[];
+  },
+  limit = 6,
+): Promise<CourseWithProvider[]> {
+  const poolLimit = Math.max(limit * 10, 30);
+  const rows = await db
+    .select({
+      course: courses,
+      provider: providers,
+      categoryId: courseCategories.categoryId,
+    })
+    .from(courses)
+    .innerJoin(providers, eq(courses.providerId, providers.id))
+    .leftJoin(courseCategories, eq(courseCategories.courseId, courses.id))
+    .where(and(eq(courses.status, "PUBLISHED"), sql`${courses.id} <> ${source.id}`))
+    .orderBy(desc(courses.qualityScore))
+    .limit(poolLimit * 3);
+
+  const byId = new Map<string, CourseWithProvider & { categoryIds: string[] }>();
+  for (const row of rows) {
+    const existing = byId.get(row.course.id);
+    if (existing) {
+      if (row.categoryId) existing.categoryIds.push(row.categoryId);
+    } else {
+      byId.set(row.course.id, {
+        ...row.course,
+        provider: row.provider,
+        categoryIds: row.categoryId ? [row.categoryId] : [],
+      });
+    }
+  }
+
+  const { selectSimilarCourses } = await import(
+    "@/domain/search/similar-courses"
+  );
+
+  return selectSimilarCourses(source, Array.from(byId.values()), limit);
+}
+
 export async function listCoursesByProviderSlug(
   db: Db,
   providerSlug: string,

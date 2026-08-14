@@ -49,6 +49,7 @@ export const adminEn: AdminDictionary = {
     users: "Users",
     taxonomy: "Taxonomy",
     search: "Search",
+    embeddings: "Embeddings",
   },
   login: {
     heading: "Admin Sign In",
@@ -370,5 +371,21 @@ export const adminEn: AdminDictionary = {
     benchmarkFailed: "Benchmark failed",
     benchmarkSummary:
       "Ran {queries} queries · zero-result {zeroRate}% · p95 {p95} ms · run {runId}",
+  },
+  embeddings: {
+    heading: "Course embeddings",
+    description:
+      "M20.2 queue: enqueue published courses, run bounded backfill, inspect PENDING/OK/FAILED/STALE.",
+    model: "Active model",
+    flagHint: "Read path stays lexical until",
+    queueHeading: "Queue",
+    pending: "Pending",
+    ok: "OK",
+    failed: "Failed",
+    stale: "Stale",
+    enqueue: "Enqueue published",
+    run: "Run batch",
+    running: "Running...",
+    failedAction: "Embedding action failed",
   },
 };

@@ -49,6 +49,7 @@ export function AdminShell({ session, locale, children }: AdminShellProps) {
       : []),
     { href: "/admin/analytics", label: t.nav.analytics, icon: "analytics" },
     { href: "/admin/search", label: t.nav.search, icon: "search" },
+    { href: "/admin/embeddings", label: t.nav.embeddings, icon: "embeddings" },
   ];
 
   const navLabels: AdminNavLabels = {

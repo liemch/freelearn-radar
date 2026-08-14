@@ -58,6 +58,13 @@ re-asserts that on every deploy, so re-enabling one means removing it from
 Note: rejection is terminal and discovery treats the URL as a duplicate
 afterwards, so a wrongly rejected candidate does not come back on its own.
 
+## Wave 3+ — Gate B override (2026-08-14)
+
+Owner authorized M20.2→M20.11 despite CATALOG_GAP. Coverage work continues in
+parallel; semantic/hybrid/NL flags stay OFF until STOP worksheets and catalog
+growth justify exposure. See `docs/GATE_B_INTENT_DIAGNOSIS.md` and
+`docs/M20_11_STAGED_ROLLOUT.md`.
+
 ## When to reopen Gate B / M20.2
 
 Re-run Intent Diagnosis when:

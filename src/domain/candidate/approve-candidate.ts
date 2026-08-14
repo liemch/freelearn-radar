@@ -340,6 +340,19 @@ export async function approveCandidate(db: Db, input: ApproveCandidateInput) {
       });
     }
 
+    // Best-effort embed enqueue — must not fail approval.
+    try {
+      const { enqueueCourseEmbedding } = await import(
+        "@/domain/embedding/embed-batch"
+      );
+      await enqueueCourseEmbedding(db, course.id);
+    } catch (error) {
+      logger.warn("embedding.enqueue_on_approve", {
+        courseId: course.id,
+        error: error instanceof Error ? error.message : "unknown",
+      });
+    }
+
     return course;
   } catch (error) {
     if (error instanceof DuplicateCourseError) {

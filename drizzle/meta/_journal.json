@@ -71,6 +71,13 @@
       "when": 1724227200000,
       "tag": "0009_provider_policy_catalog_free",
       "breakpoints": true
+    },
+    {
+      "idx": 10,
+      "version": "7",
+      "when": 1724313600000,
+      "tag": "0010_m20_2_semantic",
+      "breakpoints": true
     }
   ]
 }
