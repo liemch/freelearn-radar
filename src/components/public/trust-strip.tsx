@@ -52,11 +52,14 @@ export function TrustStrip({
   }
 
   if (lastVerifiedAt) {
+    // `verificationAgeLabel` returns a complete phrase ("Checked today"), so it
+    // is the emphasised line on its own; pairing it with a noun label read as
+    // two sentences colliding.
     items.push({
       Icon: CalendarCheck,
-      value: verificationAgeLabel(lastVerifiedAt, undefined, dict.verification),
-      label: dict.trust.lastChecked,
-      hint: dict.trust.verifiedCoursesHint,
+      value: "",
+      label: verificationAgeLabel(lastVerifiedAt, undefined, dict.verification),
+      hint: dict.trust.lastChecked,
     });
   }
 

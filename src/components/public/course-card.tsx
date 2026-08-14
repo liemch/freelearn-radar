@@ -66,7 +66,12 @@ export function CourseCard({ course, locale, priority }: CourseCardProps) {
           toneClass={visual.toneClass}
           priority={priority}
         />
-        {course.provider?.name ? (
+        {/*
+          Only over a real thumbnail, where nothing else identifies the source.
+          The fallback tile already carries the provider name, and stacking a
+          pill on top of it said the same thing twice.
+        */}
+        {visual.src && course.provider?.name ? (
           <span className="absolute left-3 top-3 rounded-md bg-background/92 px-2 py-1 text-[0.6875rem] font-semibold text-foreground shadow-sm backdrop-blur-sm">
             {course.provider.name}
           </span>

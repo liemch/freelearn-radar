@@ -8,6 +8,7 @@ import {
   type AdminAuditLog,
 } from "@/db/schema";
 import { listRecentAuditLogs } from "@/db/repositories/audit-log-repository";
+import { toDateOrNull } from "@/db/sql-values";
 
 /**
  * `unknown` is a first-class outcome, not a failure to compute.
@@ -106,7 +107,8 @@ export async function getOperationsSnapshot(
       })
       .from(discoveryQueries),
     db
-      .select({ lastVerifiedAt: sql<Date | null>`max(${courses.lastVerifiedAt})` })
+      // Raw aggregate: arrives as a string, not a Date. See toDateOrNull.
+      .select({ lastVerifiedAt: sql<unknown>`max(${courses.lastVerifiedAt})` })
       .from(courses)
       .where(eq(courses.status, "PUBLISHED")),
     db
@@ -134,7 +136,7 @@ export async function getOperationsSnapshot(
       }
     : { state: "unknown", observedAt: null };
 
-  const lastVerifiedAt = verificationRow[0]?.lastVerifiedAt ?? null;
+  const lastVerifiedAt = toDateOrNull(verificationRow[0]?.lastVerifiedAt);
   const verification: SubsystemHealth = {
     state: ageState(lastVerifiedAt, now, VERIFICATION_STALE_MS),
     observedAt: lastVerifiedAt,

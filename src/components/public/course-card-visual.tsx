@@ -51,20 +51,21 @@ export function CourseCardVisual({
           className="size-full object-cover transition duration-300 group-hover:scale-[1.02] motion-reduce:transition-none motion-reduce:group-hover:scale-100"
         />
       ) : (
+        // The tile deliberately does not repeat the course title: the card
+        // prints it directly underneath, and showing it twice read as a
+        // rendering fault. The provider name is what the tile adds.
         <div
           className={cn(
-            "course-tile flex size-full flex-col justify-end gap-1 p-4 text-white",
+            "course-tile flex size-full items-end p-4 text-white",
             toneClass,
           )}
         >
           {eyebrow ? (
-            <span className="text-[0.625rem] font-semibold uppercase tracking-[0.14em] text-white/70">
+            <span className="font-display text-lg leading-tight text-white/90">
               {eyebrow}
             </span>
           ) : null}
-          <span className="line-clamp-2 font-display text-base leading-snug text-balance sm:text-lg">
-            {title}
-          </span>
+          <span className="sr-only">{title}</span>
         </div>
       )}
     </div>

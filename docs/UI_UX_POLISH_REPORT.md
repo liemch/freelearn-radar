@@ -225,18 +225,31 @@ the monthly-collection section rendered its heading with nothing beneath it on a
 empty catalogue, directly under the empty state that already explained the
 situation.
 
-### Not verified visually
+### Verified with data
 
-**Populated grids, and all admin pages.** The `.env` database is a remote Neon
-instance that is unreachable from this machine — every query fell back — and I
-did not want to run write paths against production regardless. An attempt to
-stand up a local Postgres for seeded QA failed: Docker Hub returned 429 and the
-mirror pull did not complete.
+A local Postgres was later stood up and seeded, which closed this gap. Homepage
+with a populated catalogue — real trust figures, provider-toned tiles, no purple
+wall:
 
-So the states I could photograph are the empty ones. Populated card grids, the
-admin dashboard, and the collection console are verified by typecheck, build, and
-the test suite, not by eye. **They should be looked at on a deployment with real
-data before this is considered done.**
+![Homepage with data](ui-reference/qa/home-desktop-populated.png)
+
+That run found two defects invisible on an empty catalogue, both now fixed: the
+course title rendered **twice** per card (once on the fallback tile, once
+beneath it, which read as a rendering fault), and the trust strip's third item
+collided two phrases into "Checked today Last checked".
+
+All nine admin routes were exercised with a real session and return 200. The
+health panel was confirmed to derive states correctly rather than assume them:
+verification reported **Healthy** with a real timestamp, monitor reported
+**Unknown — no signal recorded yet**, because nothing writes `api_usage_log` in
+a fresh database. That is the behaviour §32 asks for.
+
+### Still not verified visually
+
+Admin pages were checked by markup rather than by eye: the session cookie is
+httpOnly, so headless Chrome could not be pointed at an authenticated page.
+Layout and density there rest on code review; **the admin console should still be
+looked at in a browser.**
 
 ---
 

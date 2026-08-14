@@ -11,6 +11,7 @@ import {
 } from "drizzle-orm";
 
 import type { Db } from "@/db";
+import { toDateOrNull } from "@/db/sql-values";
 import {
   categories,
   courseCategories,
@@ -467,7 +468,9 @@ export async function getCatalogTrustSignals(
   const rows = await db
     .select({
       publishedCount: sql<number>`count(*)::int`,
-      lastVerifiedAt: sql<Date | null>`max(${courses.lastVerifiedAt})`,
+      // Deliberately not typed as Date: a raw aggregate is not mapped by
+      // Drizzle and arrives as a string. See toDateOrNull.
+      lastVerifiedAt: sql<unknown>`max(${courses.lastVerifiedAt})`,
     })
     .from(courses)
     .where(
@@ -479,7 +482,7 @@ export async function getCatalogTrustSignals(
 
   return {
     publishedCount: rows[0]?.publishedCount ?? 0,
-    lastVerifiedAt: rows[0]?.lastVerifiedAt ?? null,
+    lastVerifiedAt: toDateOrNull(rows[0]?.lastVerifiedAt),
   };
 }
 
