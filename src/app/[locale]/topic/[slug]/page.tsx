@@ -4,6 +4,7 @@ import { notFound } from "next/navigation";
 import { Breadcrumb } from "@/components/public/breadcrumb";
 import { CourseGrid } from "@/components/public/course-grid";
 import { EmptyState } from "@/components/public/empty-state";
+import { AffiliateResources } from "@/components/public/affiliate-resources";
 import { LocaleHtmlLang } from "@/components/public/locale-html-lang";
 import { SiteFooter } from "@/components/public/site-footer";
 import { SiteHeader } from "@/components/public/site-header";
@@ -119,6 +120,22 @@ export default async function TopicTagPage({ params }: TopicPageProps) {
 
   const name = locale === "vi" ? tag.nameVi : tag.nameEn;
 
+  const affiliateCards = await withDb(
+    "topic.affiliate",
+    async (db) => {
+      const { resolveAffiliatePlacements, PLACEMENT_KEYS } = await import(
+        "@/domain/affiliate/resolve-placements"
+      );
+      return resolveAffiliatePlacements(db, {
+        placementKey: PLACEMENT_KEYS.TOPIC_LEARNING_RESOURCES,
+        locale,
+        topicSlug: tag.slug,
+        limit: 3,
+      });
+    },
+    [],
+  );
+
   return (
     <main className="min-h-screen bg-background">
       <LocaleHtmlLang locale={locale} />
@@ -159,6 +176,15 @@ export default async function TopicTagPage({ params }: TopicPageProps) {
               priorityCount={4}
             />
           )}
+
+          <AffiliateResources
+            heading={
+              locale === "vi"
+                ? "Tài nguyên học thêm (tiếp thị)"
+                : "Learning resources (affiliate)"
+            }
+            cards={affiliateCards}
+          />
         </div>
       </PageShell>
       <SiteFooter locale={locale} />

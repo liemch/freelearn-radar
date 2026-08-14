@@ -50,6 +50,7 @@ export const adminVi: AdminDictionary = {
     taxonomy: "Phân loại",
     search: "Tìm kiếm",
     embeddings: "Vector khóa học",
+    monetization: "Kiếm tiền",
   },
   login: {
     heading: "Đăng nhập quản trị",
@@ -391,5 +392,20 @@ export const adminVi: AdminDictionary = {
     run: "Chạy batch",
     running: "Đang chạy...",
     failedAction: "Thao tác embedding thất bại",
+  },
+  monetization: {
+    heading: "Kiếm tiền (affiliate)",
+    description:
+      "M20.12/13 nhà cung cấp affiliate, chiến dịch và click. Kill switch FEATURE_MONETIZATION — không bao giờ đưa vào ranking tìm kiếm.",
+    killSwitch: "Công tắc tắt",
+    invariantHint:
+      "Hoa hồng affiliate không phải tín hiệu ranking. Lỗi tracking không được chặn outbound khóa học.",
+    providersHeading: "Nhà cung cấp affiliate",
+    clicksHeading: "Click (30 ngày)",
+    emptyProviders:
+      "Chưa có affiliate_providers. Chạy db:seed sau migrate 0011.",
+    emptyClicks: "Chưa có click affiliate.",
+    enabled: "bật",
+    disabled: "tắt",
   },
 };

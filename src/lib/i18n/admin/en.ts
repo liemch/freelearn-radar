@@ -50,6 +50,7 @@ export const adminEn: AdminDictionary = {
     taxonomy: "Taxonomy",
     search: "Search",
     embeddings: "Embeddings",
+    monetization: "Monetization",
   },
   login: {
     heading: "Admin Sign In",
@@ -387,5 +388,19 @@ export const adminEn: AdminDictionary = {
     run: "Run batch",
     running: "Running...",
     failedAction: "Embedding action failed",
+  },
+  monetization: {
+    heading: "Monetization",
+    description:
+      "M20.12/13 affiliate providers, campaigns, and click analytics. Kill switch FEATURE_MONETIZATION — never feeds search ranking.",
+    killSwitch: "Kill switch",
+    invariantHint:
+      "Affiliate commission is never a ranking signal. Tracking failures must not block course outbound.",
+    providersHeading: "Affiliate providers",
+    clicksHeading: "Clicks (30d)",
+    emptyProviders: "No affiliate_providers rows yet. Run db:seed after migrate 0011.",
+    emptyClicks: "No affiliate clicks yet.",
+    enabled: "enabled",
+    disabled: "disabled",
   },
 };

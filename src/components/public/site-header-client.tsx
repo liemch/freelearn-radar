@@ -7,7 +7,7 @@ import { usePathname } from "next/navigation";
 import { LanguageSwitcher } from "@/components/public/language-switcher";
 import { LocalizedLink } from "@/components/public/localized-link";
 import { Button } from "@/components/ui/button";
-import type { Locale } from "@/lib/i18n/config";
+import { PUBLIC_LANGUAGE_SWITCHER, type Locale } from "@/lib/i18n/config";
 import { stripLocalePrefix } from "@/lib/i18n/path";
 import { cn } from "@/lib/utils";
 
@@ -96,13 +96,15 @@ export function SiteHeaderClient({
           })}
         </nav>
 
-        <Suspense fallback={null}>
-          <LanguageSwitcher
-            locale={locale}
-            label={languageLabel}
-            className="hidden md:flex"
-          />
-        </Suspense>
+        {PUBLIC_LANGUAGE_SWITCHER ? (
+          <Suspense fallback={null}>
+            <LanguageSwitcher
+              locale={locale}
+              label={languageLabel}
+              className="hidden md:flex"
+            />
+          </Suspense>
+        ) : null}
 
         <Button
           type="button"
@@ -148,13 +150,15 @@ export function SiteHeaderClient({
               );
             })}
           </ul>
-          <Suspense fallback={null}>
-            <LanguageSwitcher
-              locale={locale}
-              label={languageLabel}
-              className="mt-3 justify-start"
-            />
-          </Suspense>
+          {PUBLIC_LANGUAGE_SWITCHER ? (
+            <Suspense fallback={null}>
+              <LanguageSwitcher
+                locale={locale}
+                label={languageLabel}
+                className="mt-3 justify-start"
+              />
+            </Suspense>
+          ) : null}
         </nav>
       ) : null}
     </header>

@@ -3,6 +3,10 @@ import type { Metadata } from "next";
 
 import { CourseCardVisual } from "@/components/public/course-card-visual";
 import { CourseSection } from "@/components/public/course-section";
+import {
+  AffiliateDisclosure,
+  AffiliateResources,
+} from "@/components/public/affiliate-resources";
 import { FreeStatusBadge } from "@/components/public/free-status-badge";
 import { LocaleHtmlLang } from "@/components/public/locale-html-lang";
 import { LocalizedLink } from "@/components/public/localized-link";
@@ -144,6 +148,48 @@ export default async function CourseDetailPage({ params }: CoursePageProps) {
         : listRelatedCoursesFor(db, relatedSource, 4),
     [],
   );
+
+  const primaryCategorySlug = course.categories[0]?.slug ?? null;
+  const affiliateCards = await withDb(
+    "course.affiliate",
+    async (db) => {
+      const { resolveAffiliatePlacements, PLACEMENT_KEYS } = await import(
+        "@/domain/affiliate/resolve-placements"
+      );
+      return resolveAffiliatePlacements(db, {
+        placementKey: PLACEMENT_KEYS.COURSE_DETAIL_RELATED_LEARNING,
+        locale,
+        categorySlug: primaryCategorySlug,
+        topicSlug: primaryCategorySlug,
+        courseId: course.id,
+        courseSlug: course.slug,
+        limit: 3,
+      });
+    },
+    [],
+  );
+
+  const courseAffiliateOn =
+    process.env.FEATURE_MONETIZATION === "true" &&
+    process.env.FEATURE_COURSE_AFFILIATE === "true";
+  let disclosureNearCta: string | null = null;
+  try {
+    const env = getServerEnv();
+    if (
+      env.FEATURE_MONETIZATION === "true" &&
+      env.FEATURE_COURSE_AFFILIATE === "true"
+    ) {
+      const { disclosureLabel } = await import(
+        "@/domain/affiliate/affiliate-link-service"
+      );
+      disclosureNearCta = disclosureLabel(locale);
+    }
+  } catch {
+    if (courseAffiliateOn) {
+      disclosureNearCta =
+        locale === "vi" ? "Liên kết tiếp thị" : "Affiliate link";
+    }
+  }
 
   trackProductEvent({
     event: "course_view",
@@ -297,6 +343,9 @@ export default async function CourseDetailPage({ params }: CoursePageProps) {
                   {dict.courseDetail.viewCourseOn(course.provider.name)}
                 </a>
               </Button>
+              {disclosureNearCta ? (
+                <AffiliateDisclosure label={disclosureNearCta} />
+              ) : null}
               <ShareCourseButton
                 title={course.title}
                 url={shareUrl}
@@ -433,6 +482,15 @@ export default async function CourseDetailPage({ params }: CoursePageProps) {
                     : dict.courseDetail.relatedCourses
                 }
                 courses={related}
+              />
+
+              <AffiliateResources
+                heading={
+                  locale === "vi"
+                    ? "Gợi ý học thêm (tiếp thị)"
+                    : "Related learning resources (affiliate)"
+                }
+                cards={affiliateCards}
               />
             </div>
           </div>

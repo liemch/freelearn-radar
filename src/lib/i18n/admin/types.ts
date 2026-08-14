@@ -49,6 +49,7 @@ export type AdminDictionary = {
     taxonomy: string;
     search: string;
     embeddings: string;
+    monetization: string;
   };
   login: {
     heading: string;
@@ -376,5 +377,17 @@ export type AdminDictionary = {
     run: string;
     running: string;
     failedAction: string;
+  };
+  monetization: {
+    heading: string;
+    description: string;
+    killSwitch: string;
+    invariantHint: string;
+    providersHeading: string;
+    clicksHeading: string;
+    emptyProviders: string;
+    emptyClicks: string;
+    enabled: string;
+    disabled: string;
   };
 };

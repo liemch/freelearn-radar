@@ -11,6 +11,7 @@ import {
 import { AdminLogoutButton } from "@/components/admin/logout-button";
 import type { SessionPayload } from "@/lib/auth/session";
 import type { Locale } from "@/lib/i18n/config";
+import { PUBLIC_LANGUAGE_SWITCHER } from "@/lib/i18n/config";
 import { getAdminDictionary } from "@/lib/i18n/admin";
 
 type AdminShellProps = {
@@ -50,6 +51,11 @@ export function AdminShell({ session, locale, children }: AdminShellProps) {
     { href: "/admin/analytics", label: t.nav.analytics, icon: "analytics" },
     { href: "/admin/search", label: t.nav.search, icon: "search" },
     { href: "/admin/embeddings", label: t.nav.embeddings, icon: "embeddings" },
+    {
+      href: "/admin/monetization",
+      label: t.nav.monetization,
+      icon: "monetization",
+    },
   ];
 
   const navLabels: AdminNavLabels = {
@@ -91,7 +97,12 @@ export function AdminShell({ session, locale, children }: AdminShellProps) {
                   {session.email}
                 </span>
               </span>
-              <AdminLanguageSwitcher locale={locale} label={t.common.language} />
+              {PUBLIC_LANGUAGE_SWITCHER ? (
+                <AdminLanguageSwitcher
+                  locale={locale}
+                  label={t.common.language}
+                />
+              ) : null}
               <AdminLogoutButton
                 label={t.common.signOut}
                 signingOutLabel={t.common.signingOut}

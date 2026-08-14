@@ -20,3 +20,4 @@ export * from "@/db/schema/search-queries";
 export * from "@/db/schema/search-evaluations";
 export * from "@/db/schema/search-benchmark-runs";
 export * from "@/db/schema/course-embeddings";
+export * from "@/db/schema/affiliate";

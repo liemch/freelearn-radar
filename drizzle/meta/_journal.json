@@ -78,6 +78,13 @@
       "when": 1724313600000,
       "tag": "0010_m20_2_semantic",
       "breakpoints": true
+    },
+    {
+      "idx": 11,
+      "version": "7",
+      "when": 1724400000000,
+      "tag": "0011_m20_12_monetization",
+      "breakpoints": true
     }
   ]
 }

@@ -156,3 +156,21 @@ export const embeddingStatusEnum = pgEnum("embedding_status", [
   "FAILED",
   "STALE",
 ]);
+
+export const affiliateProviderTypeEnum = pgEnum("affiliate_provider_type", [
+  "COURSE",
+  "COMMERCE",
+]);
+
+export const commerceProductGroupEnum = pgEnum("commerce_product_group", [
+  "BOOK",
+  "LAPTOP_TABLET",
+  "MONITOR",
+  "KEYBOARD_MOUSE",
+  "HEADSET_WEBCAM_MIC",
+  "LAPTOP_STAND",
+  "DESK_LIGHT",
+  "STUDY_ACCESSORY",
+  "LAB_NETWORKING_DEVICE",
+  "OTHER_LEARNING_RELATED",
+]);

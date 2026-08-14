@@ -8,6 +8,7 @@ import { logger } from "@/lib/logger";
 export type ProductEventName =
   | "course_view"
   | "course_outbound_click"
+  | "affiliate_click"
   | "search"
   | "category_view"
   | "provider_view"

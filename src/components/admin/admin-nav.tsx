@@ -6,6 +6,7 @@ import {
   Inbox,
   LayoutDashboard,
   Layers,
+  CircleDollarSign,
   ListFilter,
   Menu,
   Radar,
@@ -33,7 +34,8 @@ export type AdminNavIcon =
   | "users"
   | "analytics"
   | "search"
-  | "embeddings";
+  | "embeddings"
+  | "monetization";
 
 export type AdminNavItem = {
   href: string;
@@ -61,6 +63,7 @@ const ICONS: Record<AdminNavIcon, typeof LayoutDashboard> = {
   analytics: BarChart3,
   search: Search,
   embeddings: Layers,
+  monetization: CircleDollarSign,
 };
 
 /**

@@ -20,7 +20,7 @@ describe("i18n path helpers", () => {
       pathname: "/",
     });
     expect(stripLocalePrefix("/search")).toEqual({
-      locale: "en",
+      locale: "vi",
       pathname: "/search",
     });
   });

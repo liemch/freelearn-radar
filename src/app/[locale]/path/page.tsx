@@ -8,8 +8,10 @@ import { SiteHeader } from "@/components/public/site-header";
 import { PageShell } from "@/components/layout/page-shell";
 import { Button } from "@/components/ui/button";
 import { buildLearningPath } from "@/domain/search/learning-path";
+import { withDb } from "@/lib/db-safe";
 import { getServerEnv } from "@/lib/env";
 import { resolveLocaleParam } from "@/lib/i18n/page";
+import { AffiliateResources } from "@/components/public/affiliate-resources";
 
 type PathPageProps = {
   params: Promise<{ locale: string }>;
@@ -60,6 +62,25 @@ export default async function LearningPathPage({
   const goal = goalParam?.trim() ?? "";
   const path = goal ? buildLearningPath(goal) : null;
   const vi = locale === "vi";
+
+  const firstTopic = path?.steps.find((s) => s.topicSlug)?.topicSlug ?? null;
+  const affiliateCards = path
+    ? await withDb(
+        "path.affiliate",
+        async (db) => {
+          const { resolveAffiliatePlacements, PLACEMENT_KEYS } = await import(
+            "@/domain/affiliate/resolve-placements"
+          );
+          return resolveAffiliatePlacements(db, {
+            placementKey: PLACEMENT_KEYS.LEARNING_PATH_RESOURCES,
+            locale,
+            topicSlug: firstTopic,
+            limit: 3,
+          });
+        },
+        [],
+      )
+    : [];
 
   return (
     <main className="min-h-screen bg-background">
@@ -141,6 +162,14 @@ export default async function LearningPathPage({
                   ? "Các bước chưa gắn khóa học cụ thể — hãy dùng liên kết tìm kiếm để xem khóa học miễn phí hiện có."
                   : "Steps do not pin specific courses yet — use the search links to see currently available free courses."}
               </p>
+              <AffiliateResources
+                heading={
+                  vi
+                    ? "Tài nguyên học thêm (tiếp thị)"
+                    : "Learning resources (affiliate)"
+                }
+                cards={affiliateCards}
+              />
             </section>
           ) : null}
         </div>
