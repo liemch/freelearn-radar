@@ -117,7 +117,7 @@ load_env_vars() {
   ENV_VARS[AI_ANALYSIS_LIMIT]="30"
   ENV_VARS[MAX_VERIFICATIONS_PER_RUN]="25"
   ENV_VARS[NVIDIA_BASE_URL]="https://integrate.api.nvidia.com/v1"
-  ENV_VARS[NVIDIA_MODEL]="meta/llama-3.1-70b-instruct"
+  ENV_VARS[NVIDIA_MODEL]="nvidia/nemotron-3-super-120b-a12b"
 
   if [[ -n "${TAVILY_API_KEY:-}" ]]; then
     ENV_VARS[TAVILY_API_KEY]="$TAVILY_API_KEY"

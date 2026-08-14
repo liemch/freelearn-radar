@@ -17,7 +17,7 @@ Documented in `.env.example`:
 | `TAVILY_API_KEY` | for discovery | for discovery | Soft-fail without it |
 | `NVIDIA_API_KEY` | for AI | for AI | Soft-fail without it |
 | `NVIDIA_BASE_URL` | optional | optional | Default NIM endpoint |
-| `NVIDIA_MODEL` | optional | optional | Default Llama 3.1 70B |
+| `NVIDIA_MODEL` | optional | optional | Default `nvidia/nemotron-3-super-120b-a12b` (Meta Llama NIM endpoints deprecate 2026-08-25) |
 | `DISCOVERY_QUERY_LIMIT` | optional | optional | Default 15 |
 | `DISCOVERY_RESULT_LIMIT` | optional | optional | Default 5 |
 | `AI_ANALYSIS_LIMIT` | optional | optional | Default 30 |

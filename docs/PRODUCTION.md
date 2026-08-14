@@ -17,7 +17,7 @@ APP_URL=                     # https://your-domain.example
 TAVILY_API_KEY=              # discovery search
 NVIDIA_API_KEY=
 NVIDIA_BASE_URL=https://integrate.api.nvidia.com/v1
-NVIDIA_MODEL=meta/llama-3.1-70b-instruct
+NVIDIA_MODEL=nvidia/nemotron-3-super-120b-a12b
 
 CRON_SECRET=                 # required for /api/cron/discover
 

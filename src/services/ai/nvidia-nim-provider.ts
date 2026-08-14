@@ -46,7 +46,7 @@ export class NvidiaNimProvider implements AIProvider {
     this.model =
       options?.model ||
       env?.NVIDIA_MODEL ||
-      "meta/llama-3.1-70b-instruct";
+      "nvidia/nemotron-3-super-120b-a12b";
     this.fetchImpl = options?.fetchImpl ?? fetch;
 
     if (!this.apiKey) {
