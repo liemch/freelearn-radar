@@ -136,6 +136,9 @@ export type AdminDictionary = {
     reanalyze: string;
     reanalyzing: string;
     reanalyzeHint: string;
+    refreshSource: string;
+    refreshingSource: string;
+    refreshSourceHint: string;
     source: string;
     score: string;
     detail: string;
@@ -155,6 +158,8 @@ export type AdminDictionary = {
     finalSourceUrl: string;
     fetchedAt: string;
     imageSource: string;
+    imagePreview: string;
+    noSourceImage: string;
     query: string;
     evidence: string;
     /** Placeholders: {price}, {certificate} */
@@ -238,6 +243,15 @@ export type AdminDictionary = {
     afterRunHint: string;
     /** Placeholders: {queriesProcessed}, {created}, {duplicates}, {invalid}, {errors} */
     summary: string;
+    aiCheckHeading: string;
+    aiCheckDescription: string;
+    aiCheckRun: string;
+    aiCheckRunning: string;
+    /** Placeholders: {model}, {latency} */
+    aiCheckSuccess: string;
+    /** Placeholders: {model}, {latency} */
+    aiCheckFailure: string;
+    aiCheckRequestFailed: string;
   };
   analytics: {
     heading: string;

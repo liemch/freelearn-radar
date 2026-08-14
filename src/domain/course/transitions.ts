@@ -1,6 +1,8 @@
 import type { CourseStatus, DiscoveryStatus } from "@/domain/course/types";
 
 const APPROVABLE_CANDIDATE_STATUSES: ReadonlySet<DiscoveryStatus> = new Set([
+  // Human reviewers may approve deterministic source evidence without AI.
+  "FETCHED",
   "READY_FOR_REVIEW",
   "ANALYZED",
 ]);

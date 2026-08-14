@@ -15,11 +15,30 @@ type ChatCompletionResponse = {
   choices?: Array<{
     message?: {
       content?: string | null;
+      reasoning_content?: string | null;
     };
+    finish_reason?: string | null;
   }>;
 };
 
 const DEFAULT_TIMEOUT_MS = 45_000;
+
+/**
+ * Enough for the analysis object; without a cap a reasoning model can emit
+ * tokens until the serverless function is killed.
+ */
+const MAX_OUTPUT_TOKENS = 1_600;
+
+/** Below this there is no point starting a second attempt. */
+const MIN_RETRY_BUDGET_MS = 8_000;
+
+/**
+ * Nemotron reasoning models think by default and NVIDIA documents
+ * temperature 1.0 / top_p 0.95 for them.
+ */
+function isReasoningModel(model: string): boolean {
+  return /nemotron/i.test(model);
+}
 
 export class NvidiaNimProvider implements AIProvider {
   private readonly apiKey: string;
@@ -62,12 +81,22 @@ export class NvidiaNimProvider implements AIProvider {
 
   async analyzeCourse(input: CourseAnalysisInput): Promise<CourseAnalysis> {
     let lastError: unknown;
+    // Both attempts share one budget, otherwise the retry alone can outlive
+    // the serverless function limit.
+    const deadline = Date.now() + this.timeoutMs;
 
     for (let attempt = 0; attempt < 2; attempt += 1) {
+      const remainingMs = deadline - Date.now();
+      if (attempt > 0 && remainingMs < MIN_RETRY_BUDGET_MS) {
+        break;
+      }
+
       try {
-        // Not every NIM model honours response_format; retry without it.
+        // Not every NIM model honours response_format or chat_template_kwargs;
+        // the second attempt drops both.
         const content = await this.complete(input, {
-          jsonMode: attempt === 0,
+          tuned: attempt === 0,
+          timeoutMs: attempt === 0 ? this.timeoutMs : remainingMs,
         });
         return parseCourseAnalysisJson(content);
       } catch (error) {
@@ -103,12 +132,13 @@ export class NvidiaNimProvider implements AIProvider {
 
   private async complete(
     input: CourseAnalysisInput,
-    options: { jsonMode: boolean },
+    options: { tuned: boolean; timeoutMs: number },
   ): Promise<string> {
     const prompt = buildCourseAnalysisPrompt(input);
+    const reasoning = isReasoningModel(this.model);
     // Without this the request can hang until the serverless function is killed.
     const controller = new AbortController();
-    const timer = setTimeout(() => controller.abort(), this.timeoutMs);
+    const timer = setTimeout(() => controller.abort(), options.timeoutMs);
 
     let response: Response;
     try {
@@ -120,9 +150,19 @@ export class NvidiaNimProvider implements AIProvider {
         },
         body: JSON.stringify({
           model: this.model,
-          temperature: 0.1,
-          ...(options.jsonMode
-            ? { response_format: { type: "json_object" } }
+          // Nemotron degrades badly outside its documented sampling settings.
+          temperature: reasoning ? 1 : 0.1,
+          ...(reasoning ? { top_p: 0.95 } : {}),
+          max_tokens: MAX_OUTPUT_TOKENS,
+          ...(options.tuned
+            ? {
+                response_format: { type: "json_object" },
+                // Reasoning is on by default and burns the whole time budget
+                // before the model emits any JSON.
+                ...(reasoning
+                  ? { chat_template_kwargs: { enable_thinking: false } }
+                  : {}),
+              }
             : {}),
           messages: [
             { role: "system", content: prompt.system },
@@ -134,7 +174,7 @@ export class NvidiaNimProvider implements AIProvider {
     } catch (error) {
       if (error instanceof Error && error.name === "AbortError") {
         throw new Error(
-          `NVIDIA request timed out after ${this.timeoutMs}ms (model ${this.model})`,
+          `NVIDIA request timed out after ${options.timeoutMs}ms (model ${this.model})`,
         );
       }
       throw error;
@@ -150,11 +190,16 @@ export class NvidiaNimProvider implements AIProvider {
     }
 
     const payload = (await response.json()) as ChatCompletionResponse;
-    const content = payload.choices?.[0]?.message?.content;
+    const choice = payload.choices?.[0];
+    const content = choice?.message?.content;
     if (!content) {
+      // A reasoning model that spent the whole cap thinking returns empty
+      // content with finish_reason "length" — say so instead of "empty".
       throw new AIParseError(
         "empty",
-        `no message content from model ${this.model}`,
+        choice?.finish_reason === "length"
+          ? `model ${this.model} hit the ${MAX_OUTPUT_TOKENS}-token cap before answering (reasoning not disabled?)`
+          : `no message content from model ${this.model}`,
       );
     }
 

@@ -139,6 +139,10 @@ export const adminEn: AdminDictionary = {
     reanalyze: "Re-analyze",
     reanalyzing: "Analyzing...",
     reanalyzeHint: "Calling the AI model. This usually takes 10-30 seconds.",
+    refreshSource: "Refresh source",
+    refreshingSource: "Refreshing source...",
+    refreshSourceHint:
+      "Fetching the original page again and updating metadata, evidence, and image.",
     source: "Source",
     score: "Score",
     detail: "Detail",
@@ -160,6 +164,8 @@ export const adminEn: AdminDictionary = {
     finalSourceUrl: "Final source URL",
     fetchedAt: "Fetched at",
     imageSource: "Image source",
+    imagePreview: "Source image preview",
+    noSourceImage: "No course image was found on the source page.",
     query: "Query",
     evidence: "Evidence",
     aiSuggestionNote:
@@ -246,6 +252,14 @@ export const adminEn: AdminDictionary = {
     afterRunHint: "After discovery, review candidates at",
     summary:
       "Queries {queriesProcessed}, created {created}, duplicates {duplicates}, invalid {invalid}, errors {errors}",
+    aiCheckHeading: "AI connection check",
+    aiCheckDescription:
+      "Sends one small sample course to the model and reports the exact response time and error. Use this before blaming a candidate.",
+    aiCheckRun: "Test AI",
+    aiCheckRunning: "Testing...",
+    aiCheckSuccess: "AI works. Model {model} replied in {latency}s.",
+    aiCheckFailure: "AI failed after {latency}s using model {model}:",
+    aiCheckRequestFailed: "Could not reach the diagnostic endpoint.",
   },
   analytics: {
     heading: "Analytics",

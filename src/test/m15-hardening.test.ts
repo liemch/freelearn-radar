@@ -12,6 +12,7 @@ describe("lifecycle transitions", () => {
   it("only allows approving reviewable candidates", () => {
     expect(canApproveCandidate("READY_FOR_REVIEW")).toBe(true);
     expect(canApproveCandidate("ANALYZED")).toBe(true);
+    expect(canApproveCandidate("FETCHED")).toBe(true);
     expect(canApproveCandidate("DISCOVERED")).toBe(false);
     expect(canApproveCandidate("REJECTED")).toBe(false);
   });

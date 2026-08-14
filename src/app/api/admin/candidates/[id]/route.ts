@@ -4,6 +4,7 @@ import { z } from "zod";
 import { getDb } from "@/db";
 import { writeAuditLog } from "@/domain/admin/audit-log";
 import { analyzeCandidate } from "@/domain/candidate/analyze-candidate";
+import { fetchCandidateSource } from "@/domain/candidate/fetch-candidate-source";
 import {
   approveCandidate,
   rejectCandidate,
@@ -75,6 +76,29 @@ export async function POST(request: Request, context: RouteContext) {
         entityId: id,
         after: {
           discoveryStatus: candidate.discoveryStatus,
+        },
+      });
+      return NextResponse.json({ candidate });
+    }
+
+    if (body.action === "refreshSource") {
+      const env = getServerEnv();
+      const candidate = await fetchCandidateSource(db, id, {
+        force: true,
+        timeoutMs: env.SOURCE_FETCH_TIMEOUT_MS,
+        maxRedirects: env.SOURCE_MAX_REDIRECTS,
+        maxBytes: env.SOURCE_MAX_RESPONSE_BYTES,
+      });
+      await writeAuditLog(db, {
+        actorType: "USER",
+        actorId,
+        action: "CANDIDATE_SOURCE_REFRESH",
+        entityType: "candidate",
+        entityId: id,
+        after: {
+          discoveryStatus: candidate.discoveryStatus,
+          sourceFetchedAt: candidate.sourceFetchedAt?.toISOString() ?? null,
+          sourceImageUrl: candidate.sourceImageUrl,
         },
       });
       return NextResponse.json({ candidate });

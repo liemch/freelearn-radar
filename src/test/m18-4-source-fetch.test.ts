@@ -201,6 +201,29 @@ describe("extractPageMetadata", () => {
     expect(extracted.textExcerpt.toLowerCase()).toContain("completely free");
   });
 
+  it("extracts JSON-LD image arrays and ImageObject URLs", () => {
+    const extracted = extractPageMetadata({
+      baseUrl: "https://example.com/course/ai",
+      html: `<script type="application/ld+json">
+        {
+          "@type":"Course",
+          "name":"AI",
+          "image":[
+            {"@type":"ImageObject","contentUrl":"/cover.webp"},
+            "https://cdn.example.com/second.jpg"
+          ],
+          "thumbnailUrl":"/thumb.jpg"
+        }
+      </script>`,
+    });
+
+    expect(extracted.images).toEqual([
+      "https://example.com/cover.webp",
+      "https://cdn.example.com/second.jpg",
+      "https://example.com/thumb.jpg",
+    ]);
+  });
+
   it("handles malformed HTML without throwing", () => {
     const extracted = extractPageMetadata({
       html: "<html><title>Broken<script type=\"application/ld+json\">{not-json}</script>",

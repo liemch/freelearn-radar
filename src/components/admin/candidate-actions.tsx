@@ -6,7 +6,7 @@ import { useState, useTransition } from "react";
 
 import { Button } from "@/components/ui/button";
 
-type CandidateAction = "approve" | "reject" | "reanalyze";
+type CandidateAction = "approve" | "reject" | "reanalyze" | "refreshSource";
 
 type CandidateActionsLabels = {
   approve: string;
@@ -16,6 +16,9 @@ type CandidateActionsLabels = {
   rejecting: string;
   reanalyzing: string;
   reanalyzeHint: string;
+  refreshSource: string;
+  refreshingSource: string;
+  refreshSourceHint: string;
   actionFailed: string;
   actionTimedOut: string;
 };
@@ -50,6 +53,7 @@ type CandidateActionsProps = {
   canApprove?: boolean;
   canReject?: boolean;
   canReanalyze?: boolean;
+  canRefreshSource?: boolean;
   labels: CandidateActionsLabels;
 };
 
@@ -58,6 +62,7 @@ export function CandidateActions({
   canApprove = true,
   canReject = true,
   canReanalyze = true,
+  canRefreshSource = true,
   labels,
 }: CandidateActionsProps) {
   const router = useRouter();
@@ -97,7 +102,7 @@ export function CandidateActions({
     }
   }
 
-  if (!canApprove && !canReject && !canReanalyze) {
+  if (!canApprove && !canReject && !canReanalyze && !canRefreshSource) {
     return null;
   }
 
@@ -139,10 +144,23 @@ export function CandidateActions({
               labels.reanalyzing,
             )
           : null}
+        {canRefreshSource
+          ? actionButton(
+              "refreshSource",
+              "secondary",
+              labels.refreshSource,
+              labels.refreshingSource,
+            )
+          : null}
       </div>
       {pending === "reanalyze" ? (
         <p className="text-xs text-muted-foreground" role="status">
           {labels.reanalyzeHint}
+        </p>
+      ) : null}
+      {pending === "refreshSource" ? (
+        <p className="text-xs text-muted-foreground" role="status">
+          {labels.refreshSourceHint}
         </p>
       ) : null}
       {error ? (

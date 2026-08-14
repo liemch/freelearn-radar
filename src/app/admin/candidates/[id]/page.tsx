@@ -2,6 +2,7 @@ import Link from "next/link";
 import { notFound, redirect } from "next/navigation";
 
 import { CandidateActions } from "@/components/admin/candidate-actions";
+import { CandidateSourceImage } from "@/components/admin/candidate-source-image";
 import { getDb } from "@/db";
 import { findCandidateById } from "@/db/repositories/candidate-repository";
 import {
@@ -87,6 +88,9 @@ export default async function AdminCandidateDetailPage({ params }: PageProps) {
     rejecting: t.candidates.rejecting,
     reanalyzing: t.candidates.reanalyzing,
     reanalyzeHint: t.candidates.reanalyzeHint,
+    refreshSource: t.candidates.refreshSource,
+    refreshingSource: t.candidates.refreshingSource,
+    refreshSourceHint: t.candidates.refreshSourceHint,
     actionFailed: t.candidates.actionFailed,
     actionTimedOut: t.candidates.actionTimedOut,
   };
@@ -111,6 +115,13 @@ export default async function AdminCandidateDetailPage({ params }: PageProps) {
             canApprove={canApproveCandidate(candidate.discoveryStatus)}
             canReject={canRejectCandidate(candidate.discoveryStatus)}
             canReanalyze={
+              candidate.discoveryStatus === "DISCOVERED" ||
+              candidate.discoveryStatus === "FETCHED" ||
+              candidate.discoveryStatus === "ANALYZED" ||
+              candidate.discoveryStatus === "READY_FOR_REVIEW" ||
+              candidate.discoveryStatus === "ERROR"
+            }
+            canRefreshSource={
               candidate.discoveryStatus === "DISCOVERED" ||
               candidate.discoveryStatus === "FETCHED" ||
               candidate.discoveryStatus === "ANALYZED" ||
@@ -208,7 +219,15 @@ export default async function AdminCandidateDetailPage({ params }: PageProps) {
               >
                 {candidate.sourceImageUrl}
               </a>
+              <CandidateSourceImage
+                src={candidate.sourceImageUrl}
+                alt={t.candidates.imagePreview}
+              />
             </div>
+          ) : candidate.sourceFetchedAt ? (
+            <p className="sm:col-span-2 text-sm text-muted-foreground">
+              {t.candidates.noSourceImage}
+            </p>
           ) : null}
           {candidate.errorMessage ? (
             <p className="sm:col-span-2 text-sm text-destructive">

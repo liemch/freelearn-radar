@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { redirect } from "next/navigation";
 
+import { AiDiagnosePanel } from "@/components/admin/ai-diagnose-panel";
 import { DiscoveryRunForm } from "@/components/admin/discovery-run-form";
 import { AdminLogoutButton } from "@/components/admin/logout-button";
 import { listDiscoveryQueryFacets } from "@/db/repositories/discovery-query-repository";
@@ -61,6 +62,17 @@ export default async function AdminDiscoveryPage() {
             ignoreScheduleHint: t.discovery.ignoreScheduleHint,
             nothingDue: t.discovery.nothingDue,
             summary: t.discovery.summary,
+          }}
+        />
+        <AiDiagnosePanel
+          labels={{
+            heading: t.discovery.aiCheckHeading,
+            description: t.discovery.aiCheckDescription,
+            run: t.discovery.aiCheckRun,
+            running: t.discovery.aiCheckRunning,
+            success: t.discovery.aiCheckSuccess,
+            failure: t.discovery.aiCheckFailure,
+            requestFailed: t.discovery.aiCheckRequestFailed,
           }}
         />
         <p className="text-sm text-muted-foreground">

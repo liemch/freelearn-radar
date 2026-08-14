@@ -83,6 +83,18 @@ describe("AI prompt safety", () => {
     expect(() => parseCourseAnalysisJson("")).toThrow(/empty/);
     expect(() => parseCourseAnalysisJson("not-json")).toThrow(/json/);
   });
+
+  it("ignores a reasoning block emitted before the JSON answer", () => {
+    const raw = `<think>The page says audit is free, so FREE_AUDIT. {"fake": 1}</think>\n${JSON.stringify(validAnalysis)}`;
+
+    expect(parseCourseAnalysisJson(raw).title).toBe("Python Basics");
+  });
+
+  it("treats an unterminated reasoning block as no answer", () => {
+    expect(() =>
+      parseCourseAnalysisJson("<think>still reasoning about the price"),
+    ).toThrow(/empty/);
+  });
 });
 
 describe("NvidiaNimProvider", () => {
@@ -202,6 +214,53 @@ describe("NvidiaNimProvider", () => {
         content: "x",
       }),
     ).rejects.toThrow(/timed out after 20ms/);
+  });
+
+  // Nemotron reasons by default, which burned the whole budget before any JSON.
+  it("disables reasoning and caps output tokens for nemotron models", async () => {
+    const fetchImpl = vi.fn().mockResolvedValue({
+      ok: true,
+      json: async () => ({
+        choices: [{ message: { content: JSON.stringify(validAnalysis) } }],
+      }),
+    });
+
+    const provider = new NvidiaNimProvider({
+      apiKey: "test-key",
+      model: "nvidia/nemotron-3-super-120b-a12b",
+      fetchImpl: fetchImpl as unknown as typeof fetch,
+    });
+
+    await provider.analyzeCourse({
+      url: "https://coursera.org/learn/python",
+      content: "x",
+    });
+
+    const body = JSON.parse(fetchImpl.mock.calls[0][1].body as string);
+    expect(body.chat_template_kwargs).toEqual({ enable_thinking: false });
+    expect(body.max_tokens).toBeGreaterThan(0);
+  });
+
+  it("reports a truncated reasoning response instead of a bare empty error", async () => {
+    const fetchImpl = vi.fn().mockResolvedValue({
+      ok: true,
+      json: async () => ({
+        choices: [{ message: { content: "" }, finish_reason: "length" }],
+      }),
+    });
+
+    const provider = new NvidiaNimProvider({
+      apiKey: "test-key",
+      model: "nvidia/nemotron-3-super-120b-a12b",
+      fetchImpl: fetchImpl as unknown as typeof fetch,
+    });
+
+    await expect(
+      provider.analyzeCourse({
+        url: "https://coursera.org/learn/python",
+        content: "x",
+      }),
+    ).rejects.toThrow(/token cap/);
   });
 
   it("rejects empty NVIDIA message content", async () => {

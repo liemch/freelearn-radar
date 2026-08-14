@@ -146,6 +146,19 @@ function absoluteUrl(value: string | undefined, baseUrl: string): string | null 
   }
 }
 
+function collectImageValues(value: unknown): string[] {
+  if (typeof value === "string") return [value];
+  if (Array.isArray(value)) return value.flatMap(collectImageValues);
+  if (!value || typeof value !== "object") return [];
+
+  const record = value as Record<string, unknown>;
+  return [
+    ...collectImageValues(record.url),
+    ...collectImageValues(record.contentUrl),
+    ...collectImageValues(record.thumbnailUrl),
+  ];
+}
+
 /**
  * Deterministic metadata extraction. No AI.
  * Priority: JSON-LD → OpenGraph → HTML meta → bounded page text.
@@ -269,12 +282,11 @@ export function extractPageMetadata(input: {
   if (ogImage) images.push(ogImage);
 
   for (const node of courseNodes) {
-    const image = node.image;
-    if (typeof image === "string") {
+    for (const image of [
+      ...collectImageValues(node.image),
+      ...collectImageValues(node.thumbnailUrl),
+    ]) {
       const abs = absoluteUrl(image, input.baseUrl);
-      if (abs) images.push(abs);
-    } else if (image && typeof image === "object" && "url" in image) {
-      const abs = absoluteUrl(String((image as { url: unknown }).url), input.baseUrl);
       if (abs) images.push(abs);
     }
   }

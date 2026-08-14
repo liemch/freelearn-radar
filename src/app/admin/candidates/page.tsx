@@ -119,6 +119,9 @@ export default async function AdminCandidatesPage({ searchParams }: PageProps) {
     rejecting: t.candidates.rejecting,
     reanalyzing: t.candidates.reanalyzing,
     reanalyzeHint: t.candidates.reanalyzeHint,
+    refreshSource: t.candidates.refreshSource,
+    refreshingSource: t.candidates.refreshingSource,
+    refreshSourceHint: t.candidates.refreshSourceHint,
     actionFailed: t.candidates.actionFailed,
     actionTimedOut: t.candidates.actionTimedOut,
   };
@@ -233,6 +236,7 @@ export default async function AdminCandidatesPage({ searchParams }: PageProps) {
                   candidate.discoveryStatus === "READY_FOR_REVIEW" ||
                   candidate.discoveryStatus === "ERROR"
                 }
+                canRefreshSource={false}
                 labels={actionLabels}
               />
             </div>

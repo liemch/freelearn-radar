@@ -15,7 +15,17 @@ export type FetchCandidateOptions = {
   maxRedirects?: number;
   maxBytes?: number;
   fetchImpl?: typeof fetch;
+  /** Admin refresh may fetch a non-terminal candidate again. */
+  force?: boolean;
 };
+
+const REFRESHABLE_STATUSES = new Set([
+  "DISCOVERED",
+  "FETCHED",
+  "ANALYZED",
+  "READY_FOR_REVIEW",
+  "ERROR",
+]);
 
 function serializeSourceResult(result: CourseSourceResult): Record<string, unknown> {
   return {
@@ -66,7 +76,10 @@ export async function fetchCandidateSource(
     throw new Error("Candidate not found");
   }
 
-  if (candidate.discoveryStatus !== "DISCOVERED") {
+  if (
+    candidate.discoveryStatus !== "DISCOVERED" &&
+    (!options.force || !REFRESHABLE_STATUSES.has(candidate.discoveryStatus))
+  ) {
     return candidate;
   }
 

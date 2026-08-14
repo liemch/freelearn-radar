@@ -142,6 +142,10 @@ export const adminVi: AdminDictionary = {
     reanalyze: "Phân tích lại",
     reanalyzing: "Đang phân tích...",
     reanalyzeHint: "Đang gọi mô hình AI, thường mất 10-30 giây.",
+    refreshSource: "Làm mới nguồn",
+    refreshingSource: "Đang quét lại nguồn...",
+    refreshSourceHint:
+      "Đang tải lại trang gốc và cập nhật metadata, bằng chứng cùng hình ảnh.",
     source: "Nguồn",
     score: "Điểm",
     detail: "Chi tiết",
@@ -163,6 +167,8 @@ export const adminVi: AdminDictionary = {
     finalSourceUrl: "URL nguồn cuối",
     fetchedAt: "Thời điểm lấy",
     imageSource: "Nguồn ảnh",
+    imagePreview: "Xem trước ảnh nguồn",
+    noSourceImage: "Không tìm thấy ảnh khóa học trên trang nguồn.",
     query: "Từ khóa",
     evidence: "Bằng chứng",
     aiSuggestionNote:
@@ -249,6 +255,14 @@ export const adminVi: AdminDictionary = {
     afterRunHint: "Sau khi thu thập, duyệt khóa tại",
     summary:
       "Truy vấn {queriesProcessed}, tạo mới {created}, trùng {duplicates}, không hợp lệ {invalid}, lỗi {errors}",
+    aiCheckHeading: "Kiểm tra kết nối AI",
+    aiCheckDescription:
+      "Gửi một khóa học mẫu nhỏ tới mô hình và báo đúng thời gian phản hồi cùng lỗi thật. Hãy chạy thử ở đây trước khi nghi ngờ dữ liệu khóa học.",
+    aiCheckRun: "Kiểm tra AI",
+    aiCheckRunning: "Đang kiểm tra...",
+    aiCheckSuccess: "AI hoạt động tốt. Mô hình {model} trả lời trong {latency} giây.",
+    aiCheckFailure: "AI lỗi sau {latency} giây với mô hình {model}:",
+    aiCheckRequestFailed: "Không gọi được endpoint kiểm tra.",
   },
   analytics: {
     heading: "Thống kê",

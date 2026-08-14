@@ -137,8 +137,18 @@ function stripCodeFences(raw: string): string {
     .trim();
 }
 
+/** Reasoning models can prepend a thinking block to the JSON answer. */
+function stripReasoningBlocks(raw: string): string {
+  return raw
+    .replace(/<think>[\s\S]*?<\/think>/gi, "")
+    .replace(/<thinking>[\s\S]*?<\/thinking>/gi, "")
+    // An unterminated block means the answer never arrived; keep nothing.
+    .replace(/<think(?:ing)?>[\s\S]*$/i, "")
+    .trim();
+}
+
 export function parseCourseAnalysisJson(raw: string): CourseAnalysis {
-  const text = stripCodeFences(raw ?? "");
+  const text = stripCodeFences(stripReasoningBlocks(raw ?? ""));
   if (!text) {
     throw new AIParseError("empty", "model returned empty content");
   }
