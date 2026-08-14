@@ -61,7 +61,8 @@ Architecture choice: **no monorepo** — monitor runs in the same Next.js app vi
 ### M19.3–M19.7 Time (in-repo worker)
 - `course_observations` append-only via `observeCourse` (reuses CourseSourceFetcher)
 - `detectPriceEvents` with double-confirm; never from BLOCKED/TIMEOUT/ERROR
-- `runMonitorBatch` + `/api/cron/monitor` every 6h + `scripts/monitor-once.ts`
+- `runMonitorBatch` + `/api/cron/monitor` daily at 02:00 UTC on Vercel Hobby
+  + `scripts/monitor-once.ts` for manual/external runs
 - `FEATURE_AUTO_STATUS` gates writing price/cert onto courses
 
 ### M19.8–M19.10 UX / Alerts (flagged OFF)
