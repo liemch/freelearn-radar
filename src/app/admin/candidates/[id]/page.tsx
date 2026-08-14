@@ -10,6 +10,10 @@ import {
   getPriceTypeLabel,
 } from "@/domain/course/labels";
 import {
+  canApproveCandidate,
+  canRejectCandidate,
+} from "@/domain/course/transitions";
+import {
   confidenceBand,
   confidenceLabel,
 } from "@/domain/quality/confidence";
@@ -99,9 +103,14 @@ export default async function AdminCandidateDetailPage({ params }: PageProps) {
           </div>
           <CandidateActions
             candidateId={candidate.id}
-            canApprove={
+            canApprove={canApproveCandidate(candidate.discoveryStatus)}
+            canReject={canRejectCandidate(candidate.discoveryStatus)}
+            canReanalyze={
+              candidate.discoveryStatus === "DISCOVERED" ||
+              candidate.discoveryStatus === "FETCHED" ||
+              candidate.discoveryStatus === "ANALYZED" ||
               candidate.discoveryStatus === "READY_FOR_REVIEW" ||
-              candidate.discoveryStatus === "ANALYZED"
+              candidate.discoveryStatus === "ERROR"
             }
             labels={actionLabels}
           />
