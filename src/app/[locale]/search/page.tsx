@@ -12,6 +12,7 @@ import { listCategories } from "@/db/repositories/category-repository";
 import { queryCatalog } from "@/db/repositories/course-repository";
 import { listProviders } from "@/db/repositories/provider-repository";
 import { recordSearchQuery } from "@/db/repositories/search-query-repository";
+import { LEXICAL_RANKING_CONFIG_VERSION } from "@/domain/search/lexical";
 import { trackProductEvent } from "@/domain/analytics/product-events";
 import {
   buildCatalogQuery,
@@ -129,7 +130,7 @@ export default async function SearchPage({
           page: filters.page ?? 1,
         },
         retrievalMode: "LEXICAL",
-        rankingConfigVersion: "lexical-v0",
+        rankingConfigVersion: LEXICAL_RANKING_CONFIG_VERSION,
       }),
     null,
   );

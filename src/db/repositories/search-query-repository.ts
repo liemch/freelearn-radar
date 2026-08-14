@@ -59,7 +59,7 @@ export async function recordSearchQuery(
             : String(input.topScore),
         unmetIntent,
         lexicalWouldBeZero,
-        rankingConfigVersion: input.rankingConfigVersion ?? "lexical-v0",
+        rankingConfigVersion: input.rankingConfigVersion ?? "lexical-v1",
         sessionHash: input.sessionHash ?? null,
       })
       .returning();

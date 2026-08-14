@@ -2,10 +2,8 @@ import {
   and,
   desc,
   eq,
-  ilike,
   isNotNull,
   notInArray,
-  or,
   sql,
   type SQL,
 } from "drizzle-orm";
@@ -29,8 +27,28 @@ import {
   isEligibleForFreeLists,
 } from "@/domain/course/free-durability";
 import type { CertificateType, CourseStatus } from "@/domain/course/types";
+import {
+  buildLexicalMatchCondition,
+  buildLexicalRankExpression,
+} from "@/domain/search/lexical-sql";
 
 export { isEligibleForFreeLists };
+
+/**
+ * When a text query is present, lexical relevance leads; catalog quality sorts
+ * remain as tiebreakers so pagination stays stable.
+ */
+export function catalogOrderBy(
+  filters: CatalogFilters,
+): SQL[] {
+  const sort = filters.sort ?? "recommended";
+  const base = sortExpression(sort);
+  if (!filters.q) return base;
+
+  const lexicalRank = buildLexicalRankExpression(filters.q);
+  if (!lexicalRank) return base;
+  return [sql`${lexicalRank} DESC`, ...base];
+}
 
 export type CourseWithProvider = Course & {
   provider: Provider;
@@ -93,23 +111,10 @@ export function buildCatalogConditions(
   }
 
   if (filters.q) {
-    // Escape LIKE wildcards so a query of "%" does not match the whole catalog.
-    const pattern = `%${filters.q.replace(/[\\%_]/g, (char) => `\\${char}`)}%`;
-    conditions.push(
-      or(
-        ilike(courses.title, pattern),
-        ilike(courses.description, pattern),
-        ilike(courses.shortDescription, pattern),
-        ilike(providers.name, pattern),
-        // Project plan §26 lists categories as a search field.
-        sql`exists (
-          select 1
-          from ${courseCategories} sc
-          join ${categories} scat on scat.id = sc.category_id
-          where sc.course_id = ${courses.id} and scat.name ilike ${pattern}
-        )`,
-      )!,
-    );
+    const lexical = buildLexicalMatchCondition(filters.q);
+    if (lexical) {
+      conditions.push(lexical);
+    }
   }
 
   if (filters.providerSlug) {
@@ -431,7 +436,7 @@ export async function queryCatalog(
   const [countRows, itemRows] = await Promise.all([
     whereClause ? countJoined.where(whereClause) : countJoined,
     (whereClause ? joined.where(whereClause) : joined)
-      .orderBy(...sortExpression(filters.sort))
+      .orderBy(...catalogOrderBy(filters))
       .limit(pageSize)
       .offset(offset),
   ]);
@@ -520,23 +525,27 @@ export async function searchCourses(
   query: string,
   limit = 20,
 ): Promise<Course[]> {
-  const pattern = `%${query.trim()}%`;
+  const lexical = buildLexicalMatchCondition(query);
+  const rank = buildLexicalRankExpression(query);
 
   return db
-    .select()
+    .select({ course: courses })
     .from(courses)
+    .innerJoin(providers, eq(courses.providerId, providers.id))
     .where(
       and(
         eq(courses.status, "PUBLISHED"),
-        or(
-          ilike(courses.title, pattern),
-          ilike(courses.description, pattern),
-          ilike(courses.shortDescription, pattern),
-        ),
+        notInArray(courses.priceType, [...FREE_LIST_EXCLUDED_PRICE_TYPES]),
+        lexical ?? sql`false`,
       ),
     )
-    .orderBy(desc(courses.publishedAt))
-    .limit(limit);
+    .orderBy(
+      ...(rank
+        ? [sql`${rank} DESC`, desc(courses.publishedAt)]
+        : [desc(courses.publishedAt)]),
+    )
+    .limit(limit)
+    .then((rows) => rows.map((row) => row.course));
 }
 
 export async function setCourseCategories(

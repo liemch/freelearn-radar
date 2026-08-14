@@ -7,7 +7,7 @@ import {
   type SearchBenchmarkRun,
 } from "@/db/schema";
 import { queryCatalog } from "@/db/repositories/course-repository";
-import { SEARCH_THRESHOLDS_VERSION } from "@/config/search-thresholds";
+import { LEXICAL_RANKING_CONFIG_VERSION } from "@/domain/search/lexical";
 import {
   defaultSearchEvalPath,
   loadSearchEvalDataset,
@@ -135,7 +135,7 @@ export async function runLexicalBenchmark(
   const summary: LexicalBenchmarkSummary = {
     datasetVersion: dataset.version,
     retrievalMode: "LEXICAL",
-    rankingConfigVersion: SEARCH_THRESHOLDS_VERSION,
+    rankingConfigVersion: LEXICAL_RANKING_CONFIG_VERSION,
     queryCount,
     labeledQueryCount,
     zeroResultCount,

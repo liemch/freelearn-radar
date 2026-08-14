@@ -57,6 +57,13 @@
       "when": 1724054400000,
       "tag": "0007_m20_foundation",
       "breakpoints": true
+    },
+    {
+      "idx": 8,
+      "version": "7",
+      "when": 1724140800000,
+      "tag": "0008_m20_1_lexical",
+      "breakpoints": true
     }
   ]
 }

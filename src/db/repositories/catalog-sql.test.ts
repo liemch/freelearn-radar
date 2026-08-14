@@ -7,6 +7,7 @@ import * as schema from "@/db/schema";
 import { courses, providers } from "@/db/schema";
 import {
   buildCatalogConditions,
+  catalogOrderBy,
   sortExpression,
 } from "@/db/repositories/course-repository";
 import { buildCatalogQuery } from "@/domain/course/catalog-query";
@@ -66,12 +67,15 @@ describe("catalog ordering", () => {
 });
 
 describe("catalog search", () => {
-  // P2-04 regression: project plan §26 lists categories as a search field.
-  it("searches category names as well as course and provider text", () => {
+  // M20.1: unaccent + categories + topic tags + trigram similarity.
+  it("uses immutable_unaccent and searches categories and topic tags", () => {
     const { sql, params } = catalogSql({ q: "cybersecurity" });
     const lower = sql.toLowerCase();
 
+    expect(lower).toContain("immutable_unaccent");
     expect(lower).toContain("course_categories");
+    expect(lower).toContain("course_topic_tags");
+    expect(lower).toContain("similarity");
     expect(lower).toContain("exists");
     expect(params).toContain("%cybersecurity%");
   });
@@ -79,6 +83,23 @@ describe("catalog search", () => {
   it("escapes LIKE wildcards so a bare % does not match everything", () => {
     const { params } = catalogSql({ q: "100%" });
     expect(params).toContain("%100\\%%");
+  });
+
+  it("orders by lexical rank before quality when q is present", () => {
+    const conditions = buildCatalogConditions({ q: "python" });
+    const { sql } = db
+      .select({ course: courses, provider: providers })
+      .from(courses)
+      .innerJoin(providers, eq(courses.providerId, providers.id))
+      .where(and(...conditions))
+      .orderBy(...catalogOrderBy({ q: "python", sort: "recommended" }))
+      .toSQL();
+
+    const orderBy = sql.slice(sql.indexOf("order by")).toLowerCase();
+    expect(orderBy).toContain("similarity");
+    expect(orderBy.indexOf("similarity")).toBeLessThan(
+      orderBy.indexOf("quality_score"),
+    );
   });
 
   it("keeps the published-only guard on every catalog query", () => {
