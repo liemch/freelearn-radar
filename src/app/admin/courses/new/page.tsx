@@ -1,6 +1,7 @@
 import { redirect } from "next/navigation";
 
 import { AdminPageHeader } from "@/components/admin/admin-page-header";
+import { AdminPanel } from "@/components/admin/admin-panel";
 import { CourseForm } from "@/components/admin/course-form";
 import { getDb } from "@/db";
 import { listCategories } from "@/db/repositories/category-repository";
@@ -68,19 +69,26 @@ export default async function AdminNewCoursePage() {
 
   return (
     <>
-      <AdminPageHeader title={t.courses.createCourse} />
+      <AdminPageHeader
+        title={t.courses.createCourse}
+        description={t.courses.description}
+      />
 
       {!databaseReady || providers.length === 0 ? (
-        <p className="rounded-xl border border-dashed border-border p-6 text-sm text-muted-foreground">
-          {t.courses.seedRequired}
-        </p>
+        <AdminPanel>
+          <p className="text-[0.8125rem] text-muted-foreground">
+            {t.courses.seedRequired}
+          </p>
+        </AdminPanel>
       ) : (
-        <CourseForm
-          mode="create"
-          providers={providers}
-          categories={categories}
-          labels={formLabels}
-        />
+        <AdminPanel>
+          <CourseForm
+            mode="create"
+            providers={providers}
+            categories={categories}
+            labels={formLabels}
+          />
+        </AdminPanel>
       )}
     </>
   );

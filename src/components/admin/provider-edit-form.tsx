@@ -70,7 +70,7 @@ export function ProviderEditForm({
   }
 
   return (
-    <div className="space-y-4 rounded-xl border border-border bg-card p-5 shadow-sm">
+    <div className="space-y-3 rounded-md border border-border bg-card p-3.5">
       <label className="flex items-center gap-2 text-sm">
         <input
           type="checkbox"

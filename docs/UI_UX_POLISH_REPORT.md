@@ -291,3 +291,85 @@ untranslated copies — pass.
    v1.2 remediation plan.
 5. **Card descriptions were dropped** for density, matching the reference. If
    scanning suffers with real content, a single clamped line is a small revert.
+
+---
+
+# Admin correction pass — operations console
+
+The first admin pass was rejected: cleaner than before, but still a stack of
+identical bordered forms rather than a console. This pass addresses that.
+**No public-site file was touched.**
+
+Gates after: lint clean (2 pre-existing warnings) · typecheck clean · 378 tests ·
+build passes.
+
+## What was actually wrong
+
+| Complaint | Cause | Fix |
+|---|---|---|
+| Content too narrow on large screens | Admin reused the public `max-w-6xl` (1152px) reading measure | Workspace capped at 1600px |
+| Sidebar consumed space for its content | 224px white column with 40px rows | 216px deep-brand rail, 28px rows, brand moved into it |
+| Too many cards of identical weight | One card style (`rounded-xl`, `p-6`, shadow) for everything | Three levels: workspace, `AdminPanel`, `AdminMetric`/rows |
+| "System Status" was a full-width panel | Health rendered as list items in a page-width card | Compact right-column panel, one line per service |
+| Run/AI split 60/40 with an empty AI card | The AI check was a half-page panel holding one button | Folded into Service Health as a row with a `Re-check` action |
+| Typography too editorial | Global `h1,h2 → Fraunces` is a public-site rule that leaked into admin | `.admin-ui` scopes headings back to the UI sans face |
+
+## Primitives
+
+`AdminPanel`, `AdminMetric` + `AdminMetricRow`, `AdminStatus`, `AdminTable`
+(`AdminTh`/`AdminTd`/`AdminTr`), `AdminEmptyState`, and a reworked
+`AdminPageHeader` with a `meta` slot. All twelve remaining admin pages were
+moved onto them, so density is now a property of the system rather than of each
+page.
+
+Deleted as newly dead: `AiDiagnosePanel` (absorbed into Service Health) and
+`HealthPanel` (duplicate of `ServiceHealthPanel`). The unused
+`dashboard.stats.staleVerification` key went too — the count it implied would
+have required re-encoding the per-price-type freshness policy in SQL, which is
+exactly the kind of duplication the v1.2 audit flagged.
+
+## Honesty constraints held
+
+Every figure is real: `queries.enabled` and `queries.dueNow` from
+`discovery_queries`, new-candidate and error counts from the latest
+`DISCOVERY_RUN` audit payload. A field the payload does not carry renders as `—`,
+never `0`.
+
+**Duration is absent from Latest Run.** The reference shows one; the audit row
+records when a run finished, not how long it took, and an invented elapsed time
+would be the most believable false number on the page.
+
+**Search provider reports Unknown, not Healthy.** Nothing records a Tavily
+outcome anywhere. **AI reports Unknown until an operator runs the check**, and
+the result is live state that is gone on the next load — it is not persisted, so
+it is not presented as a stored status.
+
+## Visual QA
+
+Captured against a seeded local Postgres with a real admin session (headless
+Chrome driven over CDP, since the session cookie is httpOnly).
+
+Collection at 1920px — the workspace uses the width; no giant centred column:
+
+![Admin collection 1920](ui-reference/qa/admin-collection-1920.png)
+
+Collection at 1440px — 65/35 split, health and run controls side by side:
+
+![Admin collection 1440](ui-reference/qa/admin-collection-1440.png)
+
+Also verified: 1024px (panels stack, rail intact) and 768px (rail becomes a
+drawer, metrics drop to two columns), plus the dashboard and the courses table.
+
+One defect was found and fixed this way: the AI row printed "AI enrichment" as
+both its label and its button, because a single key was wired to both.
+
+## Known limitations
+
+- Latest-run **duration** and **service latency history** need data the system
+  does not record. Adding them means writing run rows or extending
+  `api_usage_log`, which is out of scope here and already tracked in the v1.2
+  remediation plan.
+- Analytics keeps list rows rather than a table: no existing i18n key names the
+  label column.
+- Panel titles on Users, Providers, Taxonomy, and Discovery Queries repeat the
+  page title, because those pages have only one section-name key each.

@@ -1,3 +1,11 @@
+import { AdminEmptyState } from "@/components/admin/admin-empty-state";
+import { AdminPanel } from "@/components/admin/admin-panel";
+import {
+  AdminTable,
+  AdminTd,
+  AdminTh,
+  AdminTr,
+} from "@/components/admin/admin-table";
 import { Badge } from "@/components/ui/badge";
 import type { DiscoveryRunRecord } from "@/domain/admin/operations-snapshot";
 import type { AdminDictionary } from "@/lib/i18n/admin/types";
@@ -10,101 +18,81 @@ type RunHistoryTableProps = {
 
 /**
  * Discovery has no run table; this history is reconstructed from
- * `admin_audit_log` DISCOVERY_RUN entries. That is stated in the panel
- * description rather than hidden, because it explains the two real limits:
- * only completed runs appear, and a run that crashed before writing its audit
- * row is not here at all.
+ * `admin_audit_log` DISCOVERY_RUN entries, which the panel description states
+ * rather than implying a richer source. Two real limits follow: only completed
+ * runs appear, and a run that crashed before writing its audit row is absent.
  *
- * A dash means the field is absent from the recorded payload — deliberately not
- * rendered as zero, which would read as "nothing found" instead of "not known".
+ * A dash means the field is missing from the recorded payload — deliberately
+ * not rendered as zero, which would read as "found nothing".
  */
-function cell(value: number | null, fallback: string): string {
-  return value == null ? fallback : String(value);
+function cell(value: number | null): string {
+  return value == null ? "—" : String(value);
 }
 
 export function RunHistoryTable({ t, locale, runs }: RunHistoryTableProps) {
   return (
-    <section className="rounded-xl border border-border bg-card">
-      <div className="border-b border-border px-4 py-3">
-        <h2 className="text-sm font-semibold">{t.discovery.runHistory}</h2>
-        <p className="mt-0.5 text-xs text-muted-foreground">
-          {t.discovery.runHistoryDescription}
-        </p>
-      </div>
-
+    <AdminPanel
+      title={t.discovery.runHistory}
+      description={t.discovery.runHistoryDescription}
+      flush
+    >
       {runs.length === 0 ? (
-        <p className="px-4 py-6 text-sm text-muted-foreground">
-          {t.discovery.runHistoryEmpty}
-        </p>
+        <AdminEmptyState message={t.discovery.runHistoryEmpty} />
       ) : (
-        <div className="overflow-x-auto">
-          <table className="min-w-full text-left text-sm">
-            <caption className="sr-only">{t.discovery.runHistory}</caption>
-            <thead className="bg-muted/50 text-xs uppercase tracking-wide text-muted-foreground">
-              <tr>
-                <th scope="col" className="whitespace-nowrap px-4 py-2 font-medium">
-                  {t.discovery.runTime}
-                </th>
-                <th scope="col" className="whitespace-nowrap px-4 py-2 font-medium">
-                  {t.discovery.runScope}
-                </th>
-                <th scope="col" className="whitespace-nowrap px-4 py-2 text-right font-medium">
-                  {t.discovery.runQueries}
-                </th>
-                <th scope="col" className="whitespace-nowrap px-4 py-2 text-right font-medium">
-                  {t.discovery.runCreated}
-                </th>
-                <th scope="col" className="whitespace-nowrap px-4 py-2 text-right font-medium">
-                  {t.discovery.runDuplicates}
-                </th>
-                <th scope="col" className="whitespace-nowrap px-4 py-2 text-right font-medium">
-                  {t.discovery.runInvalid}
-                </th>
-                <th scope="col" className="whitespace-nowrap px-4 py-2 text-right font-medium">
-                  {t.discovery.runErrors}
-                </th>
-                <th scope="col" className="whitespace-nowrap px-4 py-2 font-medium">
-                  {t.discovery.runActor}
-                </th>
-              </tr>
-            </thead>
-            <tbody>
-              {runs.map((run) => (
-                <tr key={run.id} className="border-t border-border">
-                  <td className="whitespace-nowrap px-4 py-2 text-muted-foreground">
+        <AdminTable caption={t.discovery.runHistory}>
+          <thead>
+            <tr>
+              <AdminTh>{t.discovery.runTime}</AdminTh>
+              <AdminTh>{t.discovery.runScope}</AdminTh>
+              <AdminTh numeric>{t.discovery.runQueries}</AdminTh>
+              <AdminTh numeric>{t.discovery.runCreated}</AdminTh>
+              <AdminTh numeric>{t.discovery.runDuplicates}</AdminTh>
+              <AdminTh numeric>{t.discovery.runInvalid}</AdminTh>
+              <AdminTh numeric>{t.discovery.runErrors}</AdminTh>
+              <AdminTh>{t.discovery.runActor}</AdminTh>
+            </tr>
+          </thead>
+          <tbody>
+            {runs.map((run) => {
+              const failed = (run.errors ?? 0) > 0;
+
+              return (
+                <AdminTr key={run.id}>
+                  <AdminTd className="whitespace-nowrap text-muted-foreground">
                     {run.at.toLocaleString(locale === "vi" ? "vi-VN" : "en-GB")}
-                  </td>
-                  <td className="px-4 py-2">{run.scope}</td>
-                  <td className="px-4 py-2 text-right tabular-nums">
-                    {cell(run.queriesProcessed, t.discovery.notRecorded)}
-                  </td>
-                  <td className="px-4 py-2 text-right font-medium tabular-nums">
-                    {cell(run.created, "—")}
-                  </td>
-                  <td className="px-4 py-2 text-right tabular-nums text-muted-foreground">
-                    {cell(run.duplicates, "—")}
-                  </td>
-                  <td className="px-4 py-2 text-right tabular-nums text-muted-foreground">
-                    {cell(run.invalid, "—")}
-                  </td>
-                  <td className="px-4 py-2 text-right tabular-nums">
-                    {run.errors != null && run.errors > 0 ? (
-                      <span className="font-medium text-destructive-foreground">
-                        {run.errors}
-                      </span>
-                    ) : (
-                      cell(run.errors, "—")
-                    )}
-                  </td>
-                  <td className="whitespace-nowrap px-4 py-2">
+                  </AdminTd>
+                  <AdminTd className="max-w-[14rem] truncate">
+                    {run.scope}
+                  </AdminTd>
+                  <AdminTd numeric>{cell(run.queriesProcessed)}</AdminTd>
+                  <AdminTd numeric className="font-medium">
+                    {cell(run.created)}
+                  </AdminTd>
+                  <AdminTd numeric className="text-muted-foreground">
+                    {cell(run.duplicates)}
+                  </AdminTd>
+                  <AdminTd numeric className="text-muted-foreground">
+                    {cell(run.invalid)}
+                  </AdminTd>
+                  <AdminTd
+                    numeric
+                    className={
+                      failed
+                        ? "font-medium text-destructive-foreground"
+                        : "text-muted-foreground"
+                    }
+                  >
+                    {cell(run.errors)}
+                  </AdminTd>
+                  <AdminTd className="whitespace-nowrap">
                     <Badge variant="outline">{run.actorType}</Badge>
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
+                  </AdminTd>
+                </AdminTr>
+              );
+            })}
+          </tbody>
+        </AdminTable>
       )}
-    </section>
+    </AdminPanel>
   );
 }

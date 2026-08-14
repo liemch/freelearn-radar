@@ -1,9 +1,22 @@
-import { ArrowRight, CheckCircle2 } from "lucide-react";
+import { CheckCircle2 } from "lucide-react";
 import Link from "next/link";
 import { redirect } from "next/navigation";
 
+import { AdminEmptyState } from "@/components/admin/admin-empty-state";
+import { AdminMetric, AdminMetricRow } from "@/components/admin/admin-metric";
 import { AdminPageHeader } from "@/components/admin/admin-page-header";
-import { HealthPanel } from "@/components/admin/health-panel";
+import { AdminPanel } from "@/components/admin/admin-panel";
+import {
+  AdminTable,
+  AdminTd,
+  AdminTh,
+  AdminTr,
+} from "@/components/admin/admin-table";
+import { LatestRunPanel } from "@/components/admin/latest-run-panel";
+import {
+  ServiceHealthPanel,
+  type ServiceHealthRow,
+} from "@/components/admin/service-health-panel";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { countCandidatesByStatus } from "@/db/repositories/candidate-repository";
@@ -17,12 +30,34 @@ import { getDb } from "@/db";
 import {
   getOperationsSnapshot,
   listRecentActivity,
+  type HealthState,
+  type OperationsSnapshot,
+  type SubsystemHealth,
 } from "@/domain/admin/operations-snapshot";
 import { getSession } from "@/lib/auth/guards";
 import { getAdminDictionary } from "@/lib/i18n/admin";
+import type { AdminDictionary } from "@/lib/i18n/admin/types";
 import { getAdminLocale } from "@/lib/i18n/admin-locale";
 
 export const dynamic = "force-dynamic";
+
+function stateLabel(state: HealthState, t: AdminDictionary): string {
+  if (state === "healthy") return t.health.healthy;
+  if (state === "degraded") return t.health.degraded;
+  if (state === "failed") return t.health.failed;
+  return t.health.unknown;
+}
+
+function signalDetail(
+  health: SubsystemHealth,
+  t: AdminDictionary,
+  locale: string,
+): string {
+  if (!health.observedAt) return t.health.unknownHint;
+  return `${t.health.lastSignal}: ${health.observedAt.toLocaleString(
+    locale === "vi" ? "vi-VN" : "en-GB",
+  )}`;
+}
 
 export default async function AdminDashboardPage() {
   const session = await getSession();
@@ -37,7 +72,7 @@ export default async function AdminDashboardPage() {
 
   let workItems: Array<{ label: string; value: number; href: string }> = [];
   let stats: Array<{ label: string; value: number; href: string }> = [];
-  let snapshot: Awaited<ReturnType<typeof getOperationsSnapshot>> | null = null;
+  let snapshot: OperationsSnapshot | null = null;
   let activity: Awaited<ReturnType<typeof listRecentActivity>> = [];
   let databaseReady = true;
 
@@ -60,7 +95,7 @@ export default async function AdminDashboardPage() {
       listCategories(db),
       countCandidatesByStatus(db, "ERROR"),
       countPublishedCoursesByCertificate(db, "UNKNOWN"),
-      getOperationsSnapshot(db),
+      getOperationsSnapshot(db, { runHistoryLimit: 1 }),
       listRecentActivity(db, 8),
     ]);
 
@@ -113,6 +148,39 @@ export default async function AdminDashboardPage() {
 
   const outstanding = workItems.filter((item) => item.value > 0);
 
+  const serviceRows: ServiceHealthRow[] = snapshot
+    ? [
+        {
+          key: "collector",
+          label: t.health.collector,
+          state: snapshot.discovery.state,
+          stateLabel: stateLabel(snapshot.discovery.state, t),
+          detail: signalDetail(snapshot.discovery, t, locale),
+        },
+        {
+          key: "verification",
+          label: t.health.verification,
+          state: snapshot.verification.state,
+          stateLabel: stateLabel(snapshot.verification.state, t),
+          detail: signalDetail(snapshot.verification, t, locale),
+        },
+        {
+          key: "cron",
+          label: t.health.cronJob,
+          state: snapshot.monitor.state,
+          stateLabel: stateLabel(snapshot.monitor.state, t),
+          detail: signalDetail(snapshot.monitor, t, locale),
+        },
+        {
+          key: "search",
+          label: t.health.searchProvider,
+          state: "unknown",
+          stateLabel: t.health.unknown,
+          detail: t.health.noRecordedSignal,
+        },
+      ]
+    : [];
+
   return (
     <>
       <AdminPageHeader
@@ -126,11 +194,8 @@ export default async function AdminDashboardPage() {
       />
 
       {!databaseReady ? (
-        <section className="mb-6 rounded-xl border border-dashed border-border bg-card p-6">
-          <h2 className="text-base font-semibold">
-            {t.dashboard.databaseNotReady}
-          </h2>
-          <p className="mt-2 text-sm text-muted-foreground">
+        <AdminPanel title={t.dashboard.databaseNotReady} className="mb-4">
+          <p className="text-[0.8125rem] text-muted-foreground">
             {t.dashboard.databaseNotReadyDescription}{" "}
             <code className="rounded bg-muted px-1 py-0.5">
               npm run db:migrate:run
@@ -139,103 +204,116 @@ export default async function AdminDashboardPage() {
             <code className="rounded bg-muted px-1 py-0.5">npm run db:seed</code>
             .
           </p>
-        </section>
+        </AdminPanel>
       ) : null}
 
-      <div className="space-y-6">
+      <div className="space-y-4">
         {/*
-          Incidents first and visually separate from ordinary counts: a queue of
-          three candidates and a catalogue of forty published courses are
-          different kinds of number, and mixing them trains operators to skim
-          past both.
+          Incidents sit apart from ordinary counts. A queue of three candidates
+          and a catalogue of forty courses are different kinds of number, and
+          mixing them teaches operators to skim past both.
         */}
-        <section className="space-y-3">
-          <div>
-            <h2 className="text-sm font-semibold">
-              {t.dashboard.actionRequired}
-            </h2>
-            <p className="text-xs text-muted-foreground">
-              {t.dashboard.actionRequiredDescription}
-            </p>
-          </div>
+        <section className="space-y-2">
+          <h2 className="text-[0.8125rem] font-semibold">
+            {t.dashboard.actionRequired}
+          </h2>
 
           {outstanding.length === 0 ? (
-            <div className="flex items-center gap-2.5 rounded-xl border border-success/25 bg-success-surface px-4 py-3">
+            <div className="flex items-center gap-2 rounded-md border border-success/25 bg-success-surface px-3.5 py-2.5">
               <CheckCircle2
                 className="size-4 shrink-0 text-success"
                 aria-hidden="true"
               />
-              <div>
-                <p className="text-sm font-medium text-success-foreground">
-                  {t.dashboard.allClear}
-                </p>
-                <p className="text-xs text-muted-foreground">
+              <p className="text-[0.8125rem] font-medium text-success-foreground">
+                {t.dashboard.allClear}
+                <span className="ml-1.5 font-normal text-muted-foreground">
                   {t.dashboard.allClearDescription}
-                </p>
-              </div>
+                </span>
+              </p>
             </div>
           ) : (
-            <ul className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
+            <AdminMetricRow>
               {outstanding.map((item) => (
-                <li key={item.label}>
-                  <Link
-                    href={item.href}
-                    className="flex h-full items-center justify-between gap-3 rounded-xl border border-warning/30 bg-warning-surface px-4 py-3 transition hover:border-warning/60"
-                  >
-                    <span className="min-w-0">
-                      <span className="block text-2xl font-semibold leading-tight text-warning-foreground">
-                        {item.value}
-                      </span>
-                      <span className="block text-xs text-muted-foreground">
-                        {item.label}
-                      </span>
-                    </span>
-                    <ArrowRight
-                      className="size-4 shrink-0 text-warning-foreground"
-                      aria-hidden="true"
-                    />
-                  </Link>
-                </li>
+                <AdminMetric
+                  key={item.label}
+                  label={item.label}
+                  value={item.value}
+                  href={item.href}
+                  tone="attention"
+                />
               ))}
-            </ul>
+            </AdminMetricRow>
           )}
         </section>
 
-        <div className="grid gap-6 lg:grid-cols-[1.4fr_1fr]">
-          <section className="space-y-3">
-            <div>
-              <h2 className="text-sm font-semibold">
+        <div className="grid gap-4 xl:grid-cols-[minmax(0,1.9fr)_minmax(0,1fr)]">
+          <div className="space-y-4">
+            <section className="space-y-2">
+              <h2 className="text-[0.8125rem] font-semibold">
                 {t.dashboard.catalogOverview}
               </h2>
-              <p className="text-xs text-muted-foreground">
-                {t.dashboard.catalogOverviewDescription}
-              </p>
-            </div>
-            <ul className="grid grid-cols-2 gap-3 lg:grid-cols-4">
-              {stats.map((stat) => (
-                <li key={stat.label}>
-                  <Link
+              <AdminMetricRow>
+                {stats.map((stat) => (
+                  <AdminMetric
+                    key={stat.label}
+                    label={stat.label}
+                    value={stat.value}
                     href={stat.href}
-                    className="block h-full rounded-xl border border-border bg-card px-4 py-3 transition hover:border-primary/40"
-                  >
-                    <span className="block text-2xl font-semibold leading-tight">
-                      {stat.value}
-                    </span>
-                    <span className="mt-0.5 block text-xs text-muted-foreground">
-                      {stat.label}
-                    </span>
-                  </Link>
-                </li>
-              ))}
-            </ul>
+                  />
+                ))}
+              </AdminMetricRow>
+            </section>
 
-            <div className="pt-2">
-              <h2 className="text-sm font-semibold">
+            <AdminPanel
+              title={t.dashboard.recentActivity}
+              description={t.dashboard.recentActivityDescription}
+              flush
+            >
+              {activity.length === 0 ? (
+                <AdminEmptyState message={t.dashboard.noActivity} />
+              ) : (
+                <AdminTable caption={t.dashboard.recentActivity}>
+                  <thead>
+                    <tr>
+                      <AdminTh>{t.discovery.runTime}</AdminTh>
+                      <AdminTh>{t.common.actions}</AdminTh>
+                      <AdminTh>{t.common.status}</AdminTh>
+                      <AdminTh>{t.discovery.runActor}</AdminTh>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {activity.map((entry) => (
+                      <AdminTr key={entry.id}>
+                        <AdminTd className="whitespace-nowrap text-muted-foreground">
+                          {entry.createdAt.toLocaleString(
+                            locale === "vi" ? "vi-VN" : "en-GB",
+                          )}
+                        </AdminTd>
+                        <AdminTd className="font-medium">
+                          {entry.action}
+                        </AdminTd>
+                        <AdminTd className="text-muted-foreground">
+                          {entry.entityType}
+                        </AdminTd>
+                        <AdminTd className="whitespace-nowrap">
+                          <Badge variant="outline">{entry.actorType}</Badge>
+                        </AdminTd>
+                      </AdminTr>
+                    ))}
+                  </tbody>
+                </AdminTable>
+              )}
+            </AdminPanel>
+
+            <section className="space-y-2">
+              <h2 className="text-[0.8125rem] font-semibold">
                 {t.dashboard.quickActions}
               </h2>
-              <div className="mt-2 flex flex-wrap gap-2">
+              <div className="flex flex-wrap gap-2">
                 <Button asChild size="sm">
-                  <Link href="/admin/discovery">{t.discovery.runDiscovery}</Link>
+                  <Link href="/admin/discovery">
+                    {t.discovery.runDiscovery}
+                  </Link>
                 </Button>
                 <Button asChild variant="outline" size="sm">
                   <Link href="/admin/courses/new">{t.nav.newCourse}</Link>
@@ -250,62 +328,34 @@ export default async function AdminDashboardPage() {
                   <Link href="/admin/analytics">{t.nav.analytics}</Link>
                 </Button>
               </div>
-            </div>
-          </section>
-
-          <div className="space-y-6">
-            {snapshot ? (
-              <HealthPanel
-                t={t}
-                locale={locale}
-                items={[
-                  { label: t.health.discovery, health: snapshot.discovery },
-                  {
-                    label: t.health.verification,
-                    health: snapshot.verification,
-                  },
-                  { label: t.health.monitor, health: snapshot.monitor },
-                ]}
-              />
-            ) : null}
-
-            <section className="rounded-xl border border-border bg-card">
-              <div className="flex items-center justify-between gap-2 border-b border-border px-4 py-3">
-                <div className="min-w-0">
-                  <h2 className="text-sm font-semibold">
-                    {t.dashboard.recentActivity}
-                  </h2>
-                  <p className="mt-0.5 text-xs text-muted-foreground">
-                    {t.dashboard.recentActivityDescription}
-                  </p>
-                </div>
-              </div>
-
-              {activity.length === 0 ? (
-                <p className="px-4 py-6 text-sm text-muted-foreground">
-                  {t.dashboard.noActivity}
-                </p>
-              ) : (
-                <ul className="divide-y divide-border">
-                  {activity.map((entry) => (
-                    <li key={entry.id} className="px-4 py-2.5">
-                      <div className="flex items-start justify-between gap-2">
-                        <p className="min-w-0 text-sm font-medium">
-                          {entry.action}
-                        </p>
-                        <Badge variant="outline">{entry.actorType}</Badge>
-                      </div>
-                      <p className="mt-0.5 truncate text-xs text-muted-foreground">
-                        {entry.entityType} ·{" "}
-                        {entry.createdAt.toLocaleString(
-                          locale === "vi" ? "vi-VN" : "en-GB",
-                        )}
-                      </p>
-                    </li>
-                  ))}
-                </ul>
-              )}
             </section>
+          </div>
+
+          <div className="space-y-4">
+            {snapshot ? (
+              <>
+                <ServiceHealthPanel
+                  rows={serviceRows}
+                  labels={{
+                    heading: t.health.heading,
+                    description: t.health.description,
+                    healthy: t.health.healthy,
+                    failed: t.health.failed,
+                    unknown: t.health.unknown,
+                    aiLabel: t.health.aiEnrichment,
+              recheck: t.health.recheck,
+                    checking: t.health.checking,
+                    notChecked: t.health.notChecked,
+                    checkFailed: t.discovery.aiCheckRequestFailed,
+                  }}
+                />
+                <LatestRunPanel
+                  t={t}
+                  locale={locale}
+                  run={snapshot.latestRun}
+                />
+              </>
+            ) : null}
           </div>
         </div>
       </div>

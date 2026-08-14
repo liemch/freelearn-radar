@@ -1,7 +1,15 @@
 import Link from "next/link";
 import { redirect } from "next/navigation";
 
+import { AdminEmptyState } from "@/components/admin/admin-empty-state";
 import { AdminPageHeader } from "@/components/admin/admin-page-header";
+import { AdminPanel } from "@/components/admin/admin-panel";
+import {
+  AdminTable,
+  AdminTd,
+  AdminTh,
+  AdminTr,
+} from "@/components/admin/admin-table";
 import { CourseStatusActions } from "@/components/admin/course-status-actions";
 import { Badge, type BadgeProps } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -88,110 +96,99 @@ export default async function AdminCoursesPage({ searchParams }: PageProps) {
     <>
       <AdminPageHeader
         title={t.courses.management}
+        description={t.courses.description}
+        meta={
+          certificateType ? (
+            <span className="text-xs text-muted-foreground">
+              {t.courses.certificate}: {certificateType}{" "}
+              <Link
+                href="/admin/courses"
+                className="text-primary hover:underline"
+              >
+                ({t.common.all})
+              </Link>
+            </span>
+          ) : undefined
+        }
         actions={
-          <Button asChild>
+          <Button asChild size="sm">
             <Link href="/admin/courses/new">{t.courses.newCourse}</Link>
           </Button>
         }
       />
 
-      <div className="space-y-6">
-        {certificateType ? (
-          <p className="text-sm text-muted-foreground">
-            {t.courses.certificate}: {certificateType}{" "}
-            <Link href="/admin/courses" className="text-primary hover:underline">
-              ({t.common.all})
-            </Link>
-          </p>
-        ) : null}
-
+      <div className="space-y-4">
         {!databaseReady ? (
-          <p className="rounded-xl border border-dashed border-border p-6 text-sm text-muted-foreground">
-            {t.courses.databaseNotReady}
-          </p>
+          <AdminPanel>
+            <p className="text-[0.8125rem] text-muted-foreground">
+              {t.courses.databaseNotReady}
+            </p>
+          </AdminPanel>
         ) : null}
 
-        <div className="overflow-x-auto rounded-xl border border-border">
-          <table className="min-w-full text-left text-sm">
-            <caption className="sr-only">{t.courses.management}</caption>
-            <thead className="bg-muted/50">
-              <tr>
-                <th scope="col" className="px-4 py-3 font-medium">
-                  {t.courses.title}
-                </th>
-                <th scope="col" className="px-4 py-3 font-medium">
-                  {t.courses.provider}
-                </th>
-                <th
-                  scope="col"
-                  className="whitespace-nowrap px-4 py-3 font-medium"
-                >
-                  {t.courses.price}
-                </th>
-                <th
-                  scope="col"
-                  className="whitespace-nowrap px-4 py-3 font-medium"
-                >
-                  {t.common.status}
-                </th>
-                <th
-                  scope="col"
-                  className="whitespace-nowrap px-4 py-3 font-medium"
-                >
-                  {t.common.actions}
-                </th>
-              </tr>
-            </thead>
-            <tbody>
-              {courses.map((course) => (
-                <tr key={course.id} className="border-t border-border">
-                  <td className="px-4 py-3">
-                    <Link
-                      href={`/admin/courses/${course.id}`}
-                      className="font-medium hover:text-primary"
-                    >
-                      {course.title}
-                    </Link>
-                    <p className="text-xs text-muted-foreground">{course.slug}</p>
-                  </td>
-                  <td className="px-4 py-3">{course.provider.name}</td>
-                  <td className="whitespace-nowrap px-4 py-3">
-                    {getPriceTypeLabel(course.priceType).label}
-                  </td>
-                  <td className="whitespace-nowrap px-4 py-3">
-                    <Badge variant={courseStatusVariant(course.status)}>
-                      {getCourseStatusLabel(course.status)}
-                    </Badge>
-                  </td>
-                  <td className="whitespace-nowrap px-4 py-3">
-                    <div className="flex flex-wrap gap-2">
-                      <Button asChild size="sm" variant="outline">
-                        <Link href={`/admin/courses/${course.id}`}>
-                          {t.common.edit}
-                        </Link>
-                      </Button>
-                      <CourseStatusActions
-                        courseId={course.id}
-                        status={course.status}
-                        labels={statusLabels}
-                      />
-                    </div>
-                  </td>
-                </tr>
-              ))}
-              {courses.length === 0 ? (
+        <AdminPanel
+          title={t.courses.heading}
+          actions={<Badge variant="outline">{courses.length}</Badge>}
+          flush
+        >
+          {courses.length === 0 ? (
+            <AdminEmptyState message={t.courses.emptyCreate} />
+          ) : (
+            <AdminTable caption={t.courses.management}>
+              <thead>
                 <tr>
-                  <td
-                    colSpan={5}
-                    className="px-4 py-8 text-center text-muted-foreground"
-                  >
-                    {t.courses.emptyCreate}
-                  </td>
+                  <AdminTh>{t.courses.title}</AdminTh>
+                  <AdminTh>{t.courses.provider}</AdminTh>
+                  <AdminTh>{t.courses.price}</AdminTh>
+                  <AdminTh>{t.common.status}</AdminTh>
+                  <AdminTh>{t.common.actions}</AdminTh>
                 </tr>
-              ) : null}
-            </tbody>
-          </table>
-        </div>
+              </thead>
+              <tbody>
+                {courses.map((course) => (
+                  <AdminTr key={course.id}>
+                    <AdminTd>
+                      <Link
+                        href={`/admin/courses/${course.id}`}
+                        className="font-medium hover:text-primary"
+                      >
+                        {course.title}
+                      </Link>
+                      <p className="text-[0.6875rem] text-muted-foreground">
+                        {course.slug}
+                      </p>
+                    </AdminTd>
+                    <AdminTd className="text-muted-foreground">
+                      {course.provider.name}
+                    </AdminTd>
+                    <AdminTd className="whitespace-nowrap">
+                      {getPriceTypeLabel(course.priceType).label}
+                    </AdminTd>
+                    <AdminTd className="whitespace-nowrap">
+                      <Badge variant={courseStatusVariant(course.status)}>
+                        {getCourseStatusLabel(course.status)}
+                      </Badge>
+                    </AdminTd>
+                    <AdminTd className="whitespace-nowrap">
+                      <div className="flex flex-wrap items-center gap-2">
+                        <Button asChild size="sm" variant="outline">
+                          <Link href={`/admin/courses/${course.id}`}>
+                            {t.common.edit}
+                          </Link>
+                        </Button>
+                        <CourseStatusActions
+                          courseId={course.id}
+                          status={course.status}
+                          labels={statusLabels}
+                        />
+                      </div>
+                    </AdminTd>
+                  </AdminTr>
+                ))}
+              </tbody>
+            </AdminTable>
+          )}
+        </AdminPanel>
       </div>
     </>
   );

@@ -1,9 +1,10 @@
 import Link from "next/link";
 import { redirect } from "next/navigation";
 
+import { AdminEmptyState } from "@/components/admin/admin-empty-state";
 import { AdminPageHeader } from "@/components/admin/admin-page-header";
+import { AdminPanel } from "@/components/admin/admin-panel";
 import { CandidateActions } from "@/components/admin/candidate-actions";
-import { EmptyState } from "@/components/public/empty-state";
 import { Badge, type BadgeProps } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { getDb } from "@/db";
@@ -178,19 +179,22 @@ export default async function AdminCandidatesPage({ searchParams }: PageProps) {
     },
   ];
 
+  const activeView = views.find((item) => item.key === view) ?? views[0];
+
   return (
     <>
       <AdminPageHeader
         title={t.candidates.review}
+        description={t.candidates.description}
         actions={
-          <Button asChild variant="outline">
+          <Button asChild size="sm" variant="outline">
             <Link href="/admin/discovery">{t.nav.discovery}</Link>
           </Button>
         }
       />
 
       <div className="space-y-4">
-        <div className="flex flex-wrap gap-2">
+        <div className="flex flex-wrap gap-1.5">
           {views.map((item) => (
             <Button
               key={item.key}
@@ -203,67 +207,82 @@ export default async function AdminCandidatesPage({ searchParams }: PageProps) {
           ))}
         </div>
 
-        {candidates.map((candidate) => (
-          <article
-            key={candidate.id}
-            className="rounded-xl border border-border bg-card p-5 shadow-sm"
-          >
-            <div className="flex flex-wrap items-start justify-between gap-4">
-              <div className="space-y-1">
-                <Link
-                  href={`/admin/candidates/${candidate.id}`}
-                  className="text-lg font-semibold hover:text-primary"
+        <AdminPanel
+          title={activeView.label}
+          actions={<Badge variant="outline">{candidates.length}</Badge>}
+          flush
+        >
+          {candidates.length === 0 ? (
+            <AdminEmptyState
+              message={t.candidates.emptyTitle}
+              hint={t.candidates.emptyDescription}
+              action={
+                <Button asChild size="sm" variant="outline">
+                  <Link href="/admin/discovery">
+                    {t.candidates.openDiscovery}
+                  </Link>
+                </Button>
+              }
+            />
+          ) : (
+            <ul className="divide-y divide-border/60">
+              {candidates.map((candidate) => (
+                <li
+                  key={candidate.id}
+                  className="flex flex-wrap items-start justify-between gap-3 px-3.5 py-3 transition hover:bg-muted/40"
                 >
-                  {candidate.rawTitle || candidate.canonicalUrl}
-                </Link>
-                <p className="flex flex-wrap items-center gap-2 text-sm text-muted-foreground">
-                  {candidate.provider || t.candidates.unknownProvider}
-                  <Badge
-                    variant={discoveryStatusVariant(candidate.discoveryStatus)}
-                  >
-                    {getDiscoveryStatusLabel(candidate.discoveryStatus)}
-                  </Badge>
-                </p>
-                <a
-                  href={candidate.canonicalUrl}
-                  target="_blank"
-                  rel="noreferrer"
-                  className="text-xs text-primary break-all"
-                >
-                  {candidate.canonicalUrl}
-                </a>
-                {candidate.rawDescription ? (
-                  <p className="mt-2 max-w-3xl text-sm text-muted-foreground">
-                    {candidate.rawDescription.slice(0, 240)}
-                  </p>
-                ) : null}
-              </div>
-              <CandidateActions
-                candidateId={candidate.id}
-                canApprove={canApproveCandidate(candidate.discoveryStatus)}
-                canReject={canRejectCandidate(candidate.discoveryStatus)}
-                canReanalyze={
-                  candidate.discoveryStatus === "DISCOVERED" ||
-                  candidate.discoveryStatus === "FETCHED" ||
-                  candidate.discoveryStatus === "ANALYZED" ||
-                  candidate.discoveryStatus === "READY_FOR_REVIEW" ||
-                  candidate.discoveryStatus === "ERROR"
-                }
-                canRefreshSource={false}
-                labels={actionLabels}
-              />
-            </div>
-          </article>
-        ))}
-
-        {candidates.length === 0 ? (
-          <EmptyState
-            title={t.candidates.emptyTitle}
-            description={t.candidates.emptyDescription}
-            actionHref="/admin/discovery"
-            actionLabel={t.candidates.openDiscovery}
-          />
-        ) : null}
+                  <div className="min-w-0 space-y-1">
+                    <div className="flex flex-wrap items-center gap-2">
+                      <Link
+                        href={`/admin/candidates/${candidate.id}`}
+                        className="text-[0.8125rem] font-semibold hover:text-primary"
+                      >
+                        {candidate.rawTitle || candidate.canonicalUrl}
+                      </Link>
+                      <Badge
+                        variant={discoveryStatusVariant(
+                          candidate.discoveryStatus,
+                        )}
+                      >
+                        {getDiscoveryStatusLabel(candidate.discoveryStatus)}
+                      </Badge>
+                    </div>
+                    <p className="text-xs text-muted-foreground">
+                      {candidate.provider || t.candidates.unknownProvider}
+                    </p>
+                    <a
+                      href={candidate.canonicalUrl}
+                      target="_blank"
+                      rel="noreferrer"
+                      className="block break-all text-[0.6875rem] text-primary"
+                    >
+                      {candidate.canonicalUrl}
+                    </a>
+                    {candidate.rawDescription ? (
+                      <p className="max-w-3xl text-xs text-muted-foreground">
+                        {candidate.rawDescription.slice(0, 240)}
+                      </p>
+                    ) : null}
+                  </div>
+                  <CandidateActions
+                    candidateId={candidate.id}
+                    canApprove={canApproveCandidate(candidate.discoveryStatus)}
+                    canReject={canRejectCandidate(candidate.discoveryStatus)}
+                    canReanalyze={
+                      candidate.discoveryStatus === "DISCOVERED" ||
+                      candidate.discoveryStatus === "FETCHED" ||
+                      candidate.discoveryStatus === "ANALYZED" ||
+                      candidate.discoveryStatus === "READY_FOR_REVIEW" ||
+                      candidate.discoveryStatus === "ERROR"
+                    }
+                    canRefreshSource={false}
+                    labels={actionLabels}
+                  />
+                </li>
+              ))}
+            </ul>
+          )}
+        </AdminPanel>
       </div>
     </>
   );

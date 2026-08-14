@@ -1,8 +1,10 @@
 import { notFound, redirect } from "next/navigation";
 
 import { AdminPageHeader } from "@/components/admin/admin-page-header";
+import { AdminPanel } from "@/components/admin/admin-panel";
 import { CourseForm } from "@/components/admin/course-form";
 import { CourseStatusActions } from "@/components/admin/course-status-actions";
+import { Badge, type BadgeProps } from "@/components/ui/badge";
 import { getDb } from "@/db";
 import { listCategories } from "@/db/repositories/category-repository";
 import {
@@ -10,11 +12,27 @@ import {
   getCourseCategoryIds,
 } from "@/db/repositories/course-repository";
 import { listProviders } from "@/db/repositories/provider-repository";
+import { getCourseStatusLabel } from "@/domain/course/labels";
+import type { CourseStatus } from "@/domain/course/types";
 import { getSession } from "@/lib/auth/guards";
 import { getAdminDictionary } from "@/lib/i18n/admin";
 import { getAdminLocale } from "@/lib/i18n/admin-locale";
 
 export const dynamic = "force-dynamic";
+
+function courseStatusVariant(status: CourseStatus): BadgeProps["variant"] {
+  switch (status) {
+    case "PUBLISHED":
+      return "success";
+    case "EXPIRED":
+    case "UNAVAILABLE":
+      return "warning";
+    case "ARCHIVED":
+      return "outline";
+    default:
+      return "neutral";
+  }
+}
 
 type EditCoursePageProps = {
   params: Promise<{ id: string }>;
@@ -97,6 +115,16 @@ export default async function AdminEditCoursePage({
     <>
       <AdminPageHeader
         title={course.title}
+        meta={
+          <>
+            <Badge variant={courseStatusVariant(course.status)}>
+              {getCourseStatusLabel(course.status)}
+            </Badge>
+            <span className="font-mono text-[0.6875rem] text-muted-foreground">
+              {course.slug}
+            </span>
+          </>
+        }
         actions={
           <CourseStatusActions
             courseId={course.id}
@@ -106,38 +134,40 @@ export default async function AdminEditCoursePage({
         }
       />
 
-      <CourseForm
-        mode="edit"
-        courseId={course.id}
-        providers={providers}
-        categories={categories}
-        labels={formLabels}
-        initialValues={{
-          title: course.title,
-          slug: course.slug,
-          shortDescription: course.shortDescription ?? "",
-          description: course.description ?? "",
-          providerId: course.providerId,
-          categoryIds,
-          canonicalUrl: course.canonicalUrl,
-          outboundUrl: course.outboundUrl,
-          affiliateUrl: course.affiliateUrl ?? "",
-          instructor: course.instructor ?? "",
-          language: course.language ?? "",
-          level: course.level,
-          durationMinutes:
-            course.durationMinutes != null
-              ? String(course.durationMinutes)
-              : "",
-          priceType: course.priceType,
-          certificateType: course.certificateType,
-          qualityScore:
-            course.qualityScore != null ? String(course.qualityScore) : "",
-          editorScore:
-            course.editorScore != null ? String(course.editorScore) : "",
-          status: course.status,
-        }}
-      />
+      <AdminPanel>
+        <CourseForm
+          mode="edit"
+          courseId={course.id}
+          providers={providers}
+          categories={categories}
+          labels={formLabels}
+          initialValues={{
+            title: course.title,
+            slug: course.slug,
+            shortDescription: course.shortDescription ?? "",
+            description: course.description ?? "",
+            providerId: course.providerId,
+            categoryIds,
+            canonicalUrl: course.canonicalUrl,
+            outboundUrl: course.outboundUrl,
+            affiliateUrl: course.affiliateUrl ?? "",
+            instructor: course.instructor ?? "",
+            language: course.language ?? "",
+            level: course.level,
+            durationMinutes:
+              course.durationMinutes != null
+                ? String(course.durationMinutes)
+                : "",
+            priceType: course.priceType,
+            certificateType: course.certificateType,
+            qualityScore:
+              course.qualityScore != null ? String(course.qualityScore) : "",
+            editorScore:
+              course.editorScore != null ? String(course.editorScore) : "",
+            status: course.status,
+          }}
+        />
+      </AdminPanel>
     </>
   );
 }

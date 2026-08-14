@@ -53,7 +53,7 @@ export function UrlShapeTryBox({ labels }: UrlShapeTryBoxProps) {
   }
 
   return (
-    <div className="space-y-3 rounded-xl border border-border bg-card p-5 shadow-sm">
+    <div className="space-y-3 rounded-md border border-border bg-card p-3.5">
       <div>
         <h2 className="text-lg font-semibold">{labels.tryUrl}</h2>
         <p className="text-sm text-muted-foreground">{labels.tryUrlHint}</p>

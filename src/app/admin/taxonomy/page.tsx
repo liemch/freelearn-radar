@@ -1,6 +1,15 @@
 import { redirect } from "next/navigation";
 
+import { AdminEmptyState } from "@/components/admin/admin-empty-state";
 import { AdminPageHeader } from "@/components/admin/admin-page-header";
+import { AdminPanel } from "@/components/admin/admin-panel";
+import {
+  AdminTable,
+  AdminTd,
+  AdminTh,
+  AdminTr,
+} from "@/components/admin/admin-table";
+import { Badge } from "@/components/ui/badge";
 import { getDb } from "@/db";
 import { listAllTopicTags } from "@/domain/taxonomy/topic-tags";
 import { getSession } from "@/lib/auth/guards";
@@ -29,69 +38,48 @@ export default async function AdminTaxonomyPage() {
 
   return (
     <>
-      <AdminPageHeader title={t.taxonomy.heading} />
+      <AdminPageHeader
+        title={t.taxonomy.heading}
+        description={t.taxonomy.description}
+      />
 
-      <div className="space-y-4">
-        <p className="text-sm text-muted-foreground">{t.taxonomy.description}</p>
-        <p className="text-xs text-muted-foreground">{t.taxonomy.readOnlyNote}</p>
-
-        <div className="overflow-x-auto rounded-xl border border-border">
-          <table className="min-w-full text-left text-sm">
-            <caption className="sr-only">{t.taxonomy.heading}</caption>
-            <thead className="border-b border-border bg-muted/40">
+      <AdminPanel
+        title={t.taxonomy.heading}
+        description={t.taxonomy.readOnlyNote}
+        actions={<Badge variant="outline">{tags.length}</Badge>}
+        flush
+      >
+        {tags.length === 0 ? (
+          <AdminEmptyState message={t.taxonomy.empty} />
+        ) : (
+          <AdminTable caption={t.taxonomy.heading}>
+            <thead>
               <tr>
-                <th
-                  scope="col"
-                  className="whitespace-nowrap px-4 py-3 font-medium"
-                >
-                  {t.taxonomy.slug}
-                </th>
-                <th scope="col" className="px-4 py-3 font-medium">
-                  {t.taxonomy.nameEn}
-                </th>
-                <th scope="col" className="px-4 py-3 font-medium">
-                  {t.taxonomy.nameVi}
-                </th>
-                <th
-                  scope="col"
-                  className="whitespace-nowrap px-4 py-3 font-medium"
-                >
-                  {t.taxonomy.courseCount}
-                </th>
-                <th
-                  scope="col"
-                  className="whitespace-nowrap px-4 py-3 font-medium"
-                >
-                  {t.taxonomy.active}
-                </th>
+                <AdminTh>{t.taxonomy.slug}</AdminTh>
+                <AdminTh>{t.taxonomy.nameEn}</AdminTh>
+                <AdminTh>{t.taxonomy.nameVi}</AdminTh>
+                <AdminTh numeric>{t.taxonomy.courseCount}</AdminTh>
+                <AdminTh>{t.taxonomy.active}</AdminTh>
               </tr>
             </thead>
             <tbody>
               {tags.map((tag) => (
-                <tr key={tag.id} className="border-b border-border/60">
-                  <td className="whitespace-nowrap px-4 py-3 font-mono text-xs">
+                <AdminTr key={tag.id}>
+                  <AdminTd className="whitespace-nowrap font-mono text-[0.6875rem]">
                     {tag.slug}
-                  </td>
-                  <td className="px-4 py-3">{tag.nameEn}</td>
-                  <td className="px-4 py-3">{tag.nameVi}</td>
-                  <td className="whitespace-nowrap px-4 py-3">
-                    {tag.courseCount}
-                  </td>
-                  <td className="whitespace-nowrap px-4 py-3">
+                  </AdminTd>
+                  <AdminTd>{tag.nameEn}</AdminTd>
+                  <AdminTd>{tag.nameVi}</AdminTd>
+                  <AdminTd numeric>{tag.courseCount}</AdminTd>
+                  <AdminTd className="whitespace-nowrap text-muted-foreground">
                     {tag.active ? t.common.yes : t.common.no}
-                  </td>
-                </tr>
+                  </AdminTd>
+                </AdminTr>
               ))}
             </tbody>
-          </table>
-        </div>
-
-        {tags.length === 0 ? (
-          <p className="rounded-xl border border-dashed border-border p-6 text-sm text-muted-foreground">
-            {t.taxonomy.empty}
-          </p>
-        ) : null}
-      </div>
+          </AdminTable>
+        )}
+      </AdminPanel>
     </>
   );
 }

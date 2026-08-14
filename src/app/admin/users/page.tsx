@@ -1,7 +1,16 @@
 import { redirect } from "next/navigation";
 
+import { AdminEmptyState } from "@/components/admin/admin-empty-state";
 import { AdminPageHeader } from "@/components/admin/admin-page-header";
+import { AdminPanel } from "@/components/admin/admin-panel";
+import {
+  AdminTable,
+  AdminTd,
+  AdminTh,
+  AdminTr,
+} from "@/components/admin/admin-table";
 import { UserRoleSelect } from "@/components/admin/user-role-select";
+import { Badge } from "@/components/ui/badge";
 import { getDb } from "@/db";
 import { listUsers } from "@/db/repositories/user-repository";
 import { getSession } from "@/lib/auth/guards";
@@ -27,35 +36,36 @@ export default async function AdminUsersPage() {
 
   return (
     <>
-      <AdminPageHeader title={t.users.heading} />
+      <AdminPageHeader
+        title={t.users.heading}
+        description={t.users.description}
+      />
 
-      <div className="space-y-4">
-        <p className="text-sm text-muted-foreground">{t.users.description}</p>
-
-        <div className="overflow-x-auto rounded-xl border border-border">
-          <table className="min-w-full text-left text-sm">
-            <caption className="sr-only">{t.users.heading}</caption>
-            <thead className="bg-muted/50">
+      <AdminPanel
+        title={t.users.heading}
+        actions={<Badge variant="outline">{users.length}</Badge>}
+        flush
+      >
+        {users.length === 0 ? (
+          <AdminEmptyState message={t.users.empty} />
+        ) : (
+          <AdminTable caption={t.users.heading}>
+            <thead>
               <tr>
-                <th scope="col" className="px-4 py-3 font-medium">
-                  {t.users.email}
-                </th>
-                <th
-                  scope="col"
-                  className="whitespace-nowrap px-4 py-3 font-medium"
-                >
-                  {t.users.role}
-                </th>
+                <AdminTh>{t.users.email}</AdminTh>
+                <AdminTh>{t.users.role}</AdminTh>
               </tr>
             </thead>
             <tbody>
               {users.map((user) => (
-                <tr key={user.id} className="border-t border-border">
-                  <td className="px-4 py-3">
+                <AdminTr key={user.id}>
+                  <AdminTd>
                     <p className="font-medium">{user.email}</p>
-                    <p className="text-xs text-muted-foreground">{user.name}</p>
-                  </td>
-                  <td className="whitespace-nowrap px-4 py-3">
+                    <p className="text-[0.6875rem] text-muted-foreground">
+                      {user.name}
+                    </p>
+                  </AdminTd>
+                  <AdminTd className="whitespace-nowrap">
                     <UserRoleSelect
                       userId={user.id}
                       role={user.role}
@@ -64,23 +74,13 @@ export default async function AdminUsersPage() {
                         lastAdmin: t.users.lastAdmin,
                       }}
                     />
-                  </td>
-                </tr>
+                  </AdminTd>
+                </AdminTr>
               ))}
-              {users.length === 0 ? (
-                <tr>
-                  <td
-                    colSpan={2}
-                    className="px-4 py-8 text-center text-muted-foreground"
-                  >
-                    {t.users.empty}
-                  </td>
-                </tr>
-              ) : null}
             </tbody>
-          </table>
-        </div>
-      </div>
+          </AdminTable>
+        )}
+      </AdminPanel>
     </>
   );
 }

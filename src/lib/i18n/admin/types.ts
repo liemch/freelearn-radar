@@ -75,7 +75,6 @@ export type AdminDictionary = {
       categories: string;
       discoveryErrors: string;
       unknownCertificate: string;
-      staleVerification: string;
     };
     actionRequired: string;
     actionRequiredDescription: string;
@@ -104,6 +103,14 @@ export type AdminDictionary = {
     never: string;
     lastSignal: string;
     errorsRecorded: (count: number) => string;
+    collector: string;
+    cronJob: string;
+    aiEnrichment: string;
+    searchProvider: string;
+    recheck: string;
+    checking: string;
+    notChecked: string;
+    noRecordedSignal: string;
   };
   courses: {
     heading: string;
@@ -267,7 +274,11 @@ export type AdminDictionary = {
     runActor: string;
     runTime: string;
     queriesEnabled: string;
+    queriesTotal: string;
     queriesDue: string;
+    runCreatedLatest: string;
+    runErrorsLatest: string;
+    fromLatestRun: string;
     notRecorded: string;
     description: string;
     controls: string;

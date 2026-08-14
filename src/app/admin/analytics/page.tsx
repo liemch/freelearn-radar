@@ -1,7 +1,9 @@
 import Link from "next/link";
 import { redirect } from "next/navigation";
 
+import { AdminEmptyState } from "@/components/admin/admin-empty-state";
 import { AdminPageHeader } from "@/components/admin/admin-page-header";
+import { AdminPanel } from "@/components/admin/admin-panel";
 import { getDb } from "@/db";
 import {
   listTopClickedCategories,
@@ -38,9 +40,12 @@ export default async function AdminAnalyticsPage() {
 
   return (
     <>
-      <AdminPageHeader title={t.analytics.outboundAnalytics} />
+      <AdminPageHeader
+        title={t.analytics.outboundAnalytics}
+        description={t.analytics.description}
+      />
 
-      <div className="grid gap-6 lg:grid-cols-3">
+      <div className="grid gap-4 lg:grid-cols-3">
         <AnalyticsList
           title={t.analytics.topClickedCourses}
           emptyLabel={t.analytics.noClicks}
@@ -85,25 +90,30 @@ function AnalyticsList({
   items: Array<{ id: string; label: string; value: number; href?: string }>;
 }) {
   return (
-    <section className="rounded-xl border border-border bg-card p-5">
-      <h2 className="font-semibold">{title}</h2>
-      <ul className="mt-4 space-y-3">
-        {items.map((item) => (
-          <li key={item.id} className="flex items-center justify-between gap-3 text-sm">
-            {item.href ? (
-              <Link href={item.href} className="hover:text-primary">
-                {item.label}
-              </Link>
-            ) : (
-              <span>{item.label}</span>
-            )}
-            <span className="font-medium">{item.value}</span>
-          </li>
-        ))}
-        {items.length === 0 ? (
-          <li className="text-sm text-muted-foreground">{emptyLabel}</li>
-        ) : null}
-      </ul>
-    </section>
+    <AdminPanel title={title} flush>
+      {items.length === 0 ? (
+        <AdminEmptyState message={emptyLabel} />
+      ) : (
+        <ul className="divide-y divide-border/60">
+          {items.map((item) => (
+            <li
+              key={item.id}
+              className="flex items-center justify-between gap-3 px-3.5 py-2 text-[0.8125rem] transition hover:bg-muted/40"
+            >
+              {item.href ? (
+                <Link href={item.href} className="min-w-0 hover:text-primary">
+                  {item.label}
+                </Link>
+              ) : (
+                <span className="min-w-0">{item.label}</span>
+              )}
+              <span className="shrink-0 font-medium tabular-nums">
+                {item.value}
+              </span>
+            </li>
+          ))}
+        </ul>
+      )}
+    </AdminPanel>
   );
 }

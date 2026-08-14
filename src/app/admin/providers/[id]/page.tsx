@@ -30,13 +30,16 @@ export default async function AdminProviderDetailPage({ params }: PageProps) {
 
   return (
     <>
-      <AdminPageHeader title={provider.name} />
+      <AdminPageHeader
+        title={provider.name}
+        meta={
+          <span className="text-xs text-muted-foreground">
+            {provider.slug} · {t.providers.domain}: {provider.domain}
+          </span>
+        }
+      />
 
-      <div className="space-y-6">
-        <p className="text-sm text-muted-foreground">
-          {provider.slug} · {t.providers.domain}: {provider.domain}
-        </p>
-
+      <div className="space-y-4">
         <ProviderEditForm
           providerId={provider.id}
           canWrite={canWrite}

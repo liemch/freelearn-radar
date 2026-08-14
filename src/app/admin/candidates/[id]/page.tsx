@@ -1,6 +1,8 @@
 import { notFound, redirect } from "next/navigation";
+import type { ReactNode } from "react";
 
 import { AdminPageHeader } from "@/components/admin/admin-page-header";
+import { AdminPanel } from "@/components/admin/admin-panel";
 import { CandidateActions } from "@/components/admin/candidate-actions";
 import { CandidateSourceImage } from "@/components/admin/candidate-source-image";
 import { Badge, type BadgeProps } from "@/components/ui/badge";
@@ -49,6 +51,26 @@ function discoveryStatusVariant(
     default:
       return "neutral";
   }
+}
+
+/** Label/value pair at the density of the rest of the admin console. */
+function Field({
+  label,
+  children,
+  wide = false,
+}: {
+  label: string;
+  children: ReactNode;
+  wide?: boolean;
+}) {
+  return (
+    <div className={wide ? "sm:col-span-2" : undefined}>
+      <p className="text-[0.6875rem] font-semibold uppercase tracking-wide text-muted-foreground">
+        {label}
+      </p>
+      <div className="mt-1 text-[0.8125rem]">{children}</div>
+    </div>
+  );
 }
 
 type PageProps = { params: Promise<{ id: string }> };
@@ -123,6 +145,18 @@ export default async function AdminCandidateDetailPage({ params }: PageProps) {
     <>
       <AdminPageHeader
         title={candidate.rawTitle || t.candidates.untitled}
+        meta={
+          <>
+            <Badge
+              variant={discoveryStatusVariant(candidate.discoveryStatus)}
+            >
+              {getDiscoveryStatusLabel(candidate.discoveryStatus)}
+            </Badge>
+            <span className="text-xs text-muted-foreground">
+              {candidate.provider || t.common.unknown}
+            </span>
+          </>
+        }
         actions={
           <CandidateActions
             candidateId={candidate.id}
@@ -147,131 +181,115 @@ export default async function AdminCandidateDetailPage({ params }: PageProps) {
         }
       />
 
-      <div className="space-y-6">
-        <section className="grid gap-4 rounded-xl border border-border p-5 sm:grid-cols-2">
-          <div>
-            <p className="text-sm text-muted-foreground">{t.common.status}</p>
-            <p className="mt-1">
+      <div className="space-y-4">
+        <AdminPanel>
+          <div className="grid gap-3.5 sm:grid-cols-2">
+            <Field label={t.common.status}>
               <Badge
                 variant={discoveryStatusVariant(candidate.discoveryStatus)}
               >
                 {getDiscoveryStatusLabel(candidate.discoveryStatus)}
               </Badge>
-            </p>
-            <p className="mt-1 font-mono text-xs text-muted-foreground">
-              {candidate.discoveryStatus}
-            </p>
-          </div>
-          <div>
-            <p className="text-sm text-muted-foreground">{t.candidates.source}</p>
-            <p className="font-medium">{candidate.sourceType}</p>
-            {candidate.searchQuery ? (
-              <p className="mt-1 text-xs text-muted-foreground">
-                {t.candidates.query}: {candidate.searchQuery}
+              <p className="mt-1 font-mono text-[0.6875rem] text-muted-foreground">
+                {candidate.discoveryStatus}
+              </p>
+            </Field>
+            <Field label={t.candidates.source}>
+              <p className="font-medium">{candidate.sourceType}</p>
+              {candidate.searchQuery ? (
+                <p className="mt-0.5 text-xs text-muted-foreground">
+                  {t.candidates.query}: {candidate.searchQuery}
+                </p>
+              ) : null}
+            </Field>
+            <Field label={t.candidates.providerHint}>
+              <p className="font-medium">
+                {candidate.provider || t.common.unknown}
+              </p>
+            </Field>
+            <Field label={t.candidates.aiConfidence}>
+              <p className="font-medium tabular-nums">
+                {candidate.confidence ?? t.candidates.notAvailable} · {band}
+              </p>
+              <p className="mt-0.5 text-xs text-muted-foreground">
+                {confidenceLabel(band)}
+              </p>
+            </Field>
+            <Field label={t.courses.canonicalUrl} wide>
+              <a
+                href={candidate.canonicalUrl}
+                className="break-all text-primary"
+                target="_blank"
+                rel="noreferrer"
+              >
+                {candidate.canonicalUrl}
+              </a>
+            </Field>
+            {candidate.sourceFinalUrl ? (
+              <Field label={t.candidates.finalSourceUrl} wide>
+                <a
+                  href={candidate.sourceFinalUrl}
+                  className="break-all text-primary"
+                  target="_blank"
+                  rel="noreferrer"
+                >
+                  {candidate.sourceFinalUrl}
+                </a>
+                {candidate.sourceFetchedAt ? (
+                  <p className="mt-0.5 text-xs text-muted-foreground">
+                    {t.candidates.fetchedAt}:{" "}
+                    {candidate.sourceFetchedAt.toISOString()}
+                  </p>
+                ) : null}
+              </Field>
+            ) : null}
+            {candidate.sourceImageUrl ? (
+              <Field label={t.candidates.imageSource} wide>
+                <a
+                  href={candidate.sourceImageUrl}
+                  className="break-all text-primary"
+                  target="_blank"
+                  rel="noreferrer"
+                >
+                  {candidate.sourceImageUrl}
+                </a>
+                <CandidateSourceImage
+                  src={candidate.sourceImageUrl}
+                  alt={t.candidates.imagePreview}
+                />
+              </Field>
+            ) : candidate.sourceFetchedAt ? (
+              <p className="text-[0.8125rem] text-muted-foreground sm:col-span-2">
+                {t.candidates.noSourceImage}
+              </p>
+            ) : null}
+            {candidate.errorMessage ? (
+              <p className="text-[0.8125rem] text-destructive sm:col-span-2">
+                {candidate.errorMessage}
               </p>
             ) : null}
           </div>
-          <div>
-            <p className="text-sm text-muted-foreground">
-              {t.candidates.providerHint}
-            </p>
-            <p className="font-medium">
-              {candidate.provider || t.common.unknown}
-            </p>
-          </div>
-          <div>
-            <p className="text-sm text-muted-foreground">
-              {t.candidates.aiConfidence}
-            </p>
-            <p className="font-medium">
-              {candidate.confidence ?? t.candidates.notAvailable} · {band}
-            </p>
-            <p className="mt-1 text-xs text-muted-foreground">
-              {confidenceLabel(band)}
-            </p>
-          </div>
-          <div className="sm:col-span-2">
-            <p className="text-sm text-muted-foreground">
-              {t.courses.canonicalUrl}
-            </p>
-            <a
-              href={candidate.canonicalUrl}
-              className="break-all text-sm text-primary"
-              target="_blank"
-              rel="noreferrer"
-            >
-              {candidate.canonicalUrl}
-            </a>
-          </div>
-          {candidate.sourceFinalUrl ? (
-            <div className="sm:col-span-2">
-              <p className="text-sm text-muted-foreground">
-                {t.candidates.finalSourceUrl}
-              </p>
-              <a
-                href={candidate.sourceFinalUrl}
-                className="break-all text-sm text-primary"
-                target="_blank"
-                rel="noreferrer"
-              >
-                {candidate.sourceFinalUrl}
-              </a>
-              {candidate.sourceFetchedAt ? (
-                <p className="mt-1 text-xs text-muted-foreground">
-                  {t.candidates.fetchedAt}:{" "}
-                  {candidate.sourceFetchedAt.toISOString()}
-                </p>
-              ) : null}
-            </div>
-          ) : null}
-          {candidate.sourceImageUrl ? (
-            <div className="sm:col-span-2">
-              <p className="text-sm text-muted-foreground">
-                {t.candidates.imageSource}
-              </p>
-              <a
-                href={candidate.sourceImageUrl}
-                className="break-all text-sm text-primary"
-                target="_blank"
-                rel="noreferrer"
-              >
-                {candidate.sourceImageUrl}
-              </a>
-              <CandidateSourceImage
-                src={candidate.sourceImageUrl}
-                alt={t.candidates.imagePreview}
-              />
-            </div>
-          ) : candidate.sourceFetchedAt ? (
-            <p className="sm:col-span-2 text-sm text-muted-foreground">
-              {t.candidates.noSourceImage}
-            </p>
-          ) : null}
-          {candidate.errorMessage ? (
-            <p className="sm:col-span-2 text-sm text-destructive">
-              {candidate.errorMessage}
-            </p>
-          ) : null}
-        </section>
+        </AdminPanel>
 
-        <section className="rounded-xl border border-border p-5">
-          <h2 className="font-semibold">{t.candidates.whyClassification}</h2>
-          <p className="mt-1 text-sm text-muted-foreground">
-            {t.candidates.whyClassificationDescription}
-          </p>
-          <dl className="mt-4 grid gap-3 text-sm sm:grid-cols-2">
+        <AdminPanel
+          title={t.candidates.whyClassification}
+          description={t.candidates.whyClassificationDescription}
+        >
+          <dl className="grid gap-3.5 sm:grid-cols-2">
             <div>
-              <dt className="text-muted-foreground">
+              <dt className="text-[0.6875rem] font-semibold uppercase tracking-wide text-muted-foreground">
                 {t.candidates.freeStatus}
               </dt>
-              <dd className="font-medium">
+              <dd className="mt-1 text-[0.8125rem] font-medium">
                 {getPriceTypeLabel(free.priceType).label}
               </dd>
               <dd className="text-xs text-muted-foreground">{free.rationale}</dd>
             </div>
             <div>
-              <dt className="text-muted-foreground">{t.courses.certificate}</dt>
-              <dd className="font-medium">
+              <dt className="text-[0.6875rem] font-semibold uppercase tracking-wide text-muted-foreground">
+                {t.courses.certificate}
+              </dt>
+              <dd className="mt-1 text-[0.8125rem] font-medium">
                 {getCertificateTypeLabel(certificate.certificateType)}
               </dd>
               <dd className="text-xs text-muted-foreground">
@@ -279,11 +297,11 @@ export default async function AdminCandidateDetailPage({ params }: PageProps) {
               </dd>
             </div>
           </dl>
-          <p className="mt-4 text-xs text-muted-foreground">
+          <p className="mt-3 text-xs text-muted-foreground">
             {t.candidates.evidence}: {summarizePriceEvidence(evidencePreview)}
           </p>
           {analysis?.price_type ? (
-            <p className="mt-2 text-xs text-muted-foreground">
+            <p className="mt-1.5 text-xs text-muted-foreground">
               {t.candidates.aiSuggestionNote
                 .replaceAll("{price}", String(analysis.price_type))
                 .replaceAll(
@@ -294,23 +312,22 @@ export default async function AdminCandidateDetailPage({ params }: PageProps) {
                 )}
             </p>
           ) : null}
-        </section>
+        </AdminPanel>
 
-        <section className="rounded-xl border border-border p-5">
-          <h2 className="font-semibold">{t.candidates.sourceEvidence}</h2>
-          <p className="mt-2 max-h-72 overflow-y-auto whitespace-pre-wrap text-sm text-muted-foreground">
+        <AdminPanel title={t.candidates.sourceEvidence}>
+          <p className="max-h-72 overflow-y-auto whitespace-pre-wrap text-[0.8125rem] text-muted-foreground">
             {(candidate.rawContent || candidate.rawDescription || "").slice(
               0,
               4000,
             ) || t.candidates.noRawContent}
           </p>
-        </section>
+        </AdminPanel>
 
-        <details className="rounded-xl border border-border p-5">
-          <summary className="cursor-pointer font-semibold">
+        <details className="overflow-hidden rounded-md border border-border bg-card">
+          <summary className="cursor-pointer px-3.5 py-2.5 text-[0.8125rem] font-semibold">
             {t.candidates.technicalDetails}
           </summary>
-          <pre className="mt-3 overflow-x-auto rounded-md bg-muted p-3 text-xs">
+          <pre className="overflow-x-auto border-t border-border bg-muted p-3 text-[0.6875rem]">
             {JSON.stringify(
               {
                 sourceFetch: candidate.sourceEvidenceJson ?? null,

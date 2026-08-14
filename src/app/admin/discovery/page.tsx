@@ -1,20 +1,27 @@
 import Link from "next/link";
 import { redirect } from "next/navigation";
 
+import { AdminMetric, AdminMetricRow } from "@/components/admin/admin-metric";
 import { AdminPageHeader } from "@/components/admin/admin-page-header";
-import { AiDiagnosePanel } from "@/components/admin/ai-diagnose-panel";
+import { AdminStatus } from "@/components/admin/admin-status";
 import { DiscoveryRunForm } from "@/components/admin/discovery-run-form";
-import { HealthPanel } from "@/components/admin/health-panel";
+import { LatestRunPanel } from "@/components/admin/latest-run-panel";
 import { RunHistoryTable } from "@/components/admin/run-history-table";
-import { Badge } from "@/components/ui/badge";
+import {
+  ServiceHealthPanel,
+  type ServiceHealthRow,
+} from "@/components/admin/service-health-panel";
 import { listDiscoveryQueryFacets } from "@/db/repositories/discovery-query-repository";
 import {
   getOperationsSnapshot,
+  type HealthState,
   type OperationsSnapshot,
+  type SubsystemHealth,
 } from "@/domain/admin/operations-snapshot";
 import { getSession } from "@/lib/auth/guards";
 import { withDb } from "@/lib/db-safe";
 import { getAdminDictionary } from "@/lib/i18n/admin";
+import type { AdminDictionary } from "@/lib/i18n/admin/types";
 import { getAdminLocale } from "@/lib/i18n/admin-locale";
 
 export const dynamic = "force-dynamic";
@@ -28,6 +35,24 @@ const EMPTY_SNAPSHOT: OperationsSnapshot = {
   latestRun: null,
   recentRuns: [],
 };
+
+function stateLabel(state: HealthState, t: AdminDictionary): string {
+  if (state === "healthy") return t.health.healthy;
+  if (state === "degraded") return t.health.degraded;
+  if (state === "failed") return t.health.failed;
+  return t.health.unknown;
+}
+
+function signalDetail(
+  health: SubsystemHealth,
+  t: AdminDictionary,
+  locale: string,
+): string {
+  if (!health.observedAt) return t.health.unknownHint;
+  return `${t.health.lastSignal}: ${health.observedAt.toLocaleString(
+    locale === "vi" ? "vi-VN" : "en-GB",
+  )}`;
+}
 
 export default async function AdminDiscoveryPage() {
   const session = await getSession();
@@ -43,82 +68,152 @@ export default async function AdminDiscoveryPage() {
     }),
     withDb(
       "admin.discovery.snapshot",
-      (db) => getOperationsSnapshot(db, { runHistoryLimit: 10 }),
+      (db) => getOperationsSnapshot(db, { runHistoryLimit: 12 }),
       EMPTY_SNAPSHOT,
     ),
   ]);
 
+  const latest = snapshot.latestRun;
+
+  /*
+   * Search is listed as Unknown, not Healthy. Nothing records a Tavily outcome
+   * anywhere, so the only honest state is "no signal" — and saying so is what
+   * eventually gets the signal added.
+   */
+  const serviceRows: ServiceHealthRow[] = [
+    {
+      key: "collector",
+      label: t.health.collector,
+      state: snapshot.discovery.state,
+      stateLabel: stateLabel(snapshot.discovery.state, t),
+      detail: signalDetail(snapshot.discovery, t, locale),
+    },
+    {
+      key: "cron",
+      label: t.health.cronJob,
+      state: snapshot.monitor.state,
+      stateLabel: stateLabel(snapshot.monitor.state, t),
+      detail: signalDetail(snapshot.monitor, t, locale),
+    },
+    {
+      key: "search",
+      label: t.health.searchProvider,
+      state: "unknown",
+      stateLabel: t.health.unknown,
+      detail: t.health.noRecordedSignal,
+    },
+  ];
+
   return (
     <>
       <AdminPageHeader
-        title={t.discovery.controls}
+        title={t.discovery.heading}
         description={t.discovery.description}
-        actions={
+        meta={
           <>
-            <Badge variant="neutral">
-              {t.discovery.queriesEnabled}: {snapshot.queries.enabled}
-            </Badge>
-            <Badge
-              variant={snapshot.queries.dueNow > 0 ? "info" : "outline"}
-            >
-              {t.discovery.queriesDue}: {snapshot.queries.dueNow}
-            </Badge>
+            <AdminStatus
+              state={snapshot.discovery.state}
+              label={`${t.health.collector} · ${stateLabel(
+                snapshot.discovery.state,
+                t,
+              )}`}
+            />
+            <span className="text-xs text-muted-foreground">
+              {latest
+                ? `${t.discovery.latestRun}: ${latest.at.toLocaleString(
+                    locale === "vi" ? "vi-VN" : "en-GB",
+                  )}`
+                : t.discovery.latestRunNone}
+            </span>
           </>
+        }
+        actions={
+          <Link
+            href="/admin/discovery/queries"
+            className="text-xs font-medium text-primary hover:underline"
+          >
+            {t.nav.discoveryQueries}
+          </Link>
         }
       />
 
-      <div className="space-y-6">
+      <div className="space-y-4">
         {/*
-          Health first: the question an operator opens this page with is "is it
-          running?", not "let me run it". Running it before knowing that is how
-          you end up triggering a batch against a broken provider.
+          The four numbers an operator needs before deciding to run anything:
+          how much is configured, how much is due, and what the last run
+          produced and cost.
         */}
-        <HealthPanel
-          t={t}
-          locale={locale}
-          items={[
-            { label: t.health.discovery, health: snapshot.discovery },
-            { label: t.health.monitor, health: snapshot.monitor },
-          ]}
-        />
-
-        <div className="grid gap-6 lg:grid-cols-[1.35fr_1fr]">
-          <DiscoveryRunForm
-            providers={facets.providers}
-            categories={facets.categories}
-            labels={{
-              runDiscovery: t.discovery.runDiscovery,
-              running: t.discovery.running,
-              formDescription: t.discovery.formDescription,
-              topic: t.discovery.topic,
-              allTopics: t.discovery.allTopics,
-              provider: t.discovery.provider,
-              allProviders: t.discovery.allProviders,
-              queryLimit: t.discovery.queryLimit,
-              runFailed: t.discovery.runFailed,
-              ignoreSchedule: t.discovery.ignoreSchedule,
-              ignoreScheduleHint: t.discovery.ignoreScheduleHint,
-              nothingDue: t.discovery.nothingDue,
-              summary: t.discovery.summary,
-            }}
+        <AdminMetricRow>
+          <AdminMetric
+            label={t.discovery.queriesEnabled}
+            value={snapshot.queries.enabled}
+            hint={`${snapshot.queries.total} ${t.discovery.queriesTotal}`}
+            href="/admin/discovery/queries"
           />
+          <AdminMetric
+            label={t.discovery.queriesDue}
+            value={snapshot.queries.dueNow}
+            tone={snapshot.queries.dueNow > 0 ? "attention" : "default"}
+            href="/admin/discovery/queries"
+          />
+          <AdminMetric
+            label={t.discovery.runCreatedLatest}
+            value={latest?.created ?? "—"}
+            hint={t.discovery.fromLatestRun}
+          />
+          <AdminMetric
+            label={t.discovery.runErrorsLatest}
+            value={latest?.errors ?? "—"}
+            tone={(latest?.errors ?? 0) > 0 ? "critical" : "default"}
+            hint={t.discovery.fromLatestRun}
+          />
+        </AdminMetricRow>
 
-          <AiDiagnosePanel
+        <div className="grid gap-4 xl:grid-cols-[minmax(0,1.9fr)_minmax(0,1fr)]">
+          <div className="space-y-4">
+            <DiscoveryRunForm
+              providers={facets.providers}
+              categories={facets.categories}
+              labels={{
+                runDiscovery: t.discovery.runDiscovery,
+                running: t.discovery.running,
+                formDescription: t.discovery.formDescription,
+                topic: t.discovery.topic,
+                allTopics: t.discovery.allTopics,
+                provider: t.discovery.provider,
+                allProviders: t.discovery.allProviders,
+                queryLimit: t.discovery.queryLimit,
+                runFailed: t.discovery.runFailed,
+                ignoreSchedule: t.discovery.ignoreSchedule,
+                ignoreScheduleHint: t.discovery.ignoreScheduleHint,
+                nothingDue: t.discovery.nothingDue,
+                summary: t.discovery.summary,
+              }}
+            />
+
+            <LatestRunPanel t={t} locale={locale} run={latest} />
+          </div>
+
+          <ServiceHealthPanel
+            rows={serviceRows}
             labels={{
-              heading: t.discovery.aiCheckHeading,
-              description: t.discovery.aiCheckDescription,
-              run: t.discovery.aiCheckRun,
-              running: t.discovery.aiCheckRunning,
-              success: t.discovery.aiCheckSuccess,
-              failure: t.discovery.aiCheckFailure,
-              requestFailed: t.discovery.aiCheckRequestFailed,
+              heading: t.health.heading,
+              description: t.health.description,
+              healthy: t.health.healthy,
+              failed: t.health.failed,
+              unknown: t.health.unknown,
+              aiLabel: t.health.aiEnrichment,
+              recheck: t.health.recheck,
+              checking: t.health.checking,
+              notChecked: t.health.notChecked,
+              checkFailed: t.discovery.aiCheckRequestFailed,
             }}
           />
         </div>
 
         <RunHistoryTable t={t} locale={locale} runs={snapshot.recentRuns} />
 
-        <p className="text-sm text-muted-foreground">
+        <p className="text-xs text-muted-foreground">
           {t.discovery.afterRunHint}{" "}
           <Link
             href="/admin/candidates"

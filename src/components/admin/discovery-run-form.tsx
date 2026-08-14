@@ -3,6 +3,7 @@
 import { Loader2 } from "lucide-react";
 import { useState } from "react";
 
+import { AdminPanel } from "@/components/admin/admin-panel";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
 
@@ -48,7 +49,9 @@ type DiscoveryRunFormProps = {
 };
 
 const selectClass =
-  "h-9 w-full rounded-md border border-input bg-background px-3 text-sm";
+  "h-8 w-full rounded border border-input bg-background px-2 text-[0.8125rem]";
+const fieldLabelClass =
+  "text-[0.6875rem] font-medium uppercase tracking-wide text-muted-foreground";
 
 export function DiscoveryRunForm({
   providers,
@@ -120,90 +123,115 @@ export function DiscoveryRunForm({
   }
 
   return (
-    <div className="space-y-4 rounded-xl border border-border bg-card p-6">
-      <div className="space-y-1">
-        <h2 className="text-lg font-semibold">{labels.runDiscovery}</h2>
-        <p className="text-sm text-muted-foreground">{labels.formDescription}</p>
-      </div>
+    <AdminPanel title={labels.runDiscovery} description={labels.formDescription}>
+      <div className="space-y-3">
+        <div className="grid gap-3 sm:grid-cols-3">
+          <div className="space-y-1">
+            <Label htmlFor="discovery-topic" className={fieldLabelClass}>
+              {labels.topic}
+            </Label>
+            <select
+              id="discovery-topic"
+              className={selectClass}
+              value={category}
+              onChange={(event) => setCategory(event.target.value)}
+            >
+              <option value="">{labels.allTopics}</option>
+              {categories.map((item) => (
+                <option key={item} value={item}>
+                  {item}
+                </option>
+              ))}
+            </select>
+          </div>
 
-      <div className="grid gap-4 sm:grid-cols-3">
-        <div className="space-y-1.5">
-          <Label htmlFor="discovery-topic">{labels.topic}</Label>
-          <select
-            id="discovery-topic"
-            className={selectClass}
-            value={category}
-            onChange={(event) => setCategory(event.target.value)}
-          >
-            <option value="">{labels.allTopics}</option>
-            {categories.map((item) => (
-              <option key={item} value={item}>
-                {item}
-              </option>
-            ))}
-          </select>
+          <div className="space-y-1">
+            <Label htmlFor="discovery-provider" className={fieldLabelClass}>
+              {labels.provider}
+            </Label>
+            <select
+              id="discovery-provider"
+              className={selectClass}
+              value={provider}
+              onChange={(event) => setProvider(event.target.value)}
+            >
+              <option value="">{labels.allProviders}</option>
+              {providers.map((item) => (
+                <option key={item} value={item}>
+                  {item}
+                </option>
+              ))}
+            </select>
+          </div>
+
+          <div className="space-y-1">
+            <Label htmlFor="discovery-limit" className={fieldLabelClass}>
+              {labels.queryLimit}
+            </Label>
+            <select
+              id="discovery-limit"
+              className={selectClass}
+              value={limit}
+              onChange={(event) => setLimit(Number(event.target.value))}
+            >
+              {[1, 3, 5, 10, 15].map((item) => (
+                <option key={item} value={item}>
+                  {item}
+                </option>
+              ))}
+            </select>
+          </div>
         </div>
 
-        <div className="space-y-1.5">
-          <Label htmlFor="discovery-provider">{labels.provider}</Label>
-          <select
-            id="discovery-provider"
-            className={selectClass}
-            value={provider}
-            onChange={(event) => setProvider(event.target.value)}
+        <div className="flex flex-wrap items-center justify-between gap-3 border-t border-border/60 pt-3">
+          <label className="flex items-start gap-2 text-[0.8125rem]">
+            <input
+              type="checkbox"
+              className="mt-0.5 size-3.5 rounded border-input"
+              checked={ignoreSchedule}
+              onChange={(event) => setIgnoreSchedule(event.target.checked)}
+            />
+            <span className="min-w-0">
+              {labels.ignoreSchedule}
+              <span className="block text-[0.6875rem] leading-tight text-muted-foreground">
+                {labels.ignoreScheduleHint}
+              </span>
+            </span>
+          </label>
+
+          <Button
+            size="sm"
+            onClick={handleRun}
+            disabled={busy}
+            aria-busy={busy}
+            className="shrink-0"
           >
-            <option value="">{labels.allProviders}</option>
-            {providers.map((item) => (
-              <option key={item} value={item}>
-                {item}
-              </option>
-            ))}
-          </select>
+            {busy ? (
+              <Loader2 className="size-3.5 animate-spin" aria-hidden />
+            ) : null}
+            {busy ? labels.running : labels.runDiscovery}
+          </Button>
         </div>
 
-        <div className="space-y-1.5">
-          <Label htmlFor="discovery-limit">{labels.queryLimit}</Label>
-          <select
-            id="discovery-limit"
-            className={selectClass}
-            value={limit}
-            onChange={(event) => setLimit(Number(event.target.value))}
-          >
-            {[1, 3, 5, 10, 15].map((item) => (
-              <option key={item} value={item}>
-                {item}
-              </option>
-            ))}
-          </select>
-        </div>
+        {/* Outcome sits inside the panel that produced it, not further down the page. */}
+        {message || hint || error ? (
+          <div className="space-y-1 rounded border border-border/60 bg-muted/40 px-3 py-2">
+            {message ? (
+              <p className="text-xs text-foreground" role="status">
+                {message}
+              </p>
+            ) : null}
+            {hint ? (
+              <p className="text-xs text-warning-foreground">{hint}</p>
+            ) : null}
+            {error ? (
+              <p className="text-xs text-destructive-foreground" role="alert">
+                {error}
+              </p>
+            ) : null}
+          </div>
+        ) : null}
       </div>
-
-      <div className="space-y-1.5">
-        <label className="flex items-center gap-2 text-sm">
-          <input
-            type="checkbox"
-            className="size-4 rounded border-input"
-            checked={ignoreSchedule}
-            onChange={(event) => setIgnoreSchedule(event.target.checked)}
-          />
-          {labels.ignoreSchedule}
-        </label>
-        <p className="text-xs text-muted-foreground">
-          {labels.ignoreScheduleHint}
-        </p>
-      </div>
-
-      <Button onClick={handleRun} disabled={busy} aria-busy={busy}>
-        {busy ? <Loader2 className="animate-spin" aria-hidden /> : null}
-        {busy ? labels.running : labels.runDiscovery}
-      </Button>
-      {message ? (
-        <p className="text-sm text-muted-foreground" role="status">
-          {message}
-        </p>
-      ) : null}
-      {hint ? <p className="text-sm text-amber-700">{hint}</p> : null}
-      {error ? <p className="text-sm text-destructive">{error}</p> : null}
-    </div>
+    </AdminPanel>
   );
 }

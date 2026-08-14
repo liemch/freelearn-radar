@@ -34,6 +34,11 @@
   --color-info-surface: var(--info-surface);
   --color-destructive-surface: var(--destructive-surface);
   --color-destructive-foreground: var(--destructive-foreground);
+  --color-admin-nav: var(--admin-nav);
+  --color-admin-nav-foreground: var(--admin-nav-foreground);
+  --color-admin-nav-muted: var(--admin-nav-muted);
+  --color-admin-nav-active: var(--admin-nav-active);
+  --color-admin-nav-border: var(--admin-nav-border);
   --radius-sm: calc(var(--radius) - 4px);
   --radius-md: calc(var(--radius) - 2px);
   --radius-lg: var(--radius);
@@ -83,6 +88,17 @@
   --destructive-foreground: oklch(0.42 0.16 25);
   --destructive-surface: oklch(0.96 0.03 25);
 
+  /*
+   * Admin navigation. A deep brand rail rather than another white column: it
+   * separates the operations console from the public site at a glance, and
+   * gives the sidebar visual purpose so it stops reading as empty margin.
+   */
+  --admin-nav: oklch(0.27 0.045 175);
+  --admin-nav-foreground: oklch(0.97 0.01 175);
+  --admin-nav-muted: oklch(0.74 0.03 175);
+  --admin-nav-active: oklch(0.37 0.065 175);
+  --admin-nav-border: oklch(0.33 0.05 175);
+
   --font-body: "Manrope", ui-sans-serif, system-ui, sans-serif;
   --font-display: "Fraunces", ui-serif, Georgia, serif;
 }
@@ -106,6 +122,16 @@
   .font-display {
     font-family: var(--font-display), ui-serif, Georgia, serif;
     letter-spacing: -0.02em;
+  }
+
+  /*
+   * The editorial serif is a public-site decision. Admin is an application:
+   * dense, scanned rather than read, and its headings compete with data rather
+   * than introduce prose. It uses the UI face throughout.
+   */
+  .admin-ui :is(h1, h2, h3, h4) {
+    font-family: var(--font-body), ui-sans-serif, system-ui, sans-serif;
+    letter-spacing: -0.011em;
   }
 
   :focus-visible {

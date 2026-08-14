@@ -9,8 +9,6 @@ import {
   type AdminNavLabels,
 } from "@/components/admin/admin-nav";
 import { AdminLogoutButton } from "@/components/admin/logout-button";
-import { BrandMark } from "@/components/brand/brand-mark";
-import { Badge } from "@/components/ui/badge";
 import type { SessionPayload } from "@/lib/auth/session";
 import type { Locale } from "@/lib/i18n/config";
 import { getAdminDictionary } from "@/lib/i18n/admin";
@@ -22,12 +20,14 @@ type AdminShellProps = {
 };
 
 /**
- * One chrome for every admin route, replacing the header markup each page used
- * to repeat — which is why only the dashboard ever showed the role, language
- * switcher, and sign-out.
+ * One chrome for every admin route.
  *
- * The navigation lists existing routes only; capabilities the signed-in role
- * cannot use are omitted rather than shown and then rejected.
+ * `admin-ui` switches headings to the UI sans face; the editorial serif is a
+ * public-site decision and made the console read like an article.
+ *
+ * The workspace is capped at 1600px rather than the public 1152px container:
+ * operations pages carry tables and multi-column panels, and constraining them
+ * to a reading measure wastes most of a large display.
  */
 export function AdminShell({ session, locale, children }: AdminShellProps) {
   const t = getAdminDictionary(locale);
@@ -54,49 +54,52 @@ export function AdminShell({ session, locale, children }: AdminShellProps) {
     openMenu: t.common.openMenu,
     closeMenu: t.common.closeMenu,
     sections: t.common.sections,
+    subtitle: t.common.adminDashboard,
   };
 
   return (
-    <div className="min-h-screen bg-surface">
-      <header className="sticky top-0 z-40 border-b border-border bg-card">
-        <div className="flex h-[3.25rem] items-center gap-3 px-4 sm:px-5">
-          <AdminMobileNav items={items} labels={navLabels} />
+    <div className="admin-ui flex min-h-screen bg-surface">
+      <AdminNavRail items={items} labels={navLabels} />
 
-          <Link
-            href="/admin"
-            className="flex min-w-0 items-center gap-2 rounded-md"
-          >
-            <BrandMark className="size-6 shrink-0 text-primary" />
-            <span className="min-w-0 truncate">
-              <span className="block text-sm font-semibold leading-tight">
-                FreeLearn Radar
-              </span>
-              <span className="block text-[0.6875rem] leading-tight text-muted-foreground">
-                {t.common.adminDashboard}
-              </span>
-            </span>
-          </Link>
+      <div className="flex min-w-0 flex-1 flex-col">
+        <header className="sticky top-0 z-30 border-b border-border bg-card">
+          <div className="flex h-12 items-center gap-2.5 px-3 sm:px-5">
+            <AdminMobileNav items={items} labels={navLabels} />
 
-          <div className="ml-auto flex items-center gap-2">
-            <Badge variant="brand" className="hidden sm:inline-flex">
-              {session.role}
-            </Badge>
-            <span className="hidden max-w-[14rem] truncate text-sm text-muted-foreground md:inline">
-              {session.email}
-            </span>
-            <AdminLanguageSwitcher locale={locale} label={t.common.language} />
-            <AdminLogoutButton
-              label={t.common.signOut}
-              signingOutLabel={t.common.signingOut}
-            />
+            <Link
+              href="/admin"
+              className="truncate text-[0.8125rem] font-semibold lg:hidden"
+            >
+              FreeLearn Radar
+            </Link>
+
+            {/*
+              The account block is context, not content: small, muted, and the
+              first thing to drop as the viewport narrows.
+            */}
+            <div className="ml-auto flex items-center gap-2">
+              <span className="hidden text-xs text-muted-foreground lg:inline">
+                <span className="font-medium text-foreground">
+                  {session.role}
+                </span>
+                <span aria-hidden="true" className="mx-1.5 text-border">
+                  ·
+                </span>
+                <span className="max-w-[13rem] truncate align-bottom">
+                  {session.email}
+                </span>
+              </span>
+              <AdminLanguageSwitcher locale={locale} label={t.common.language} />
+              <AdminLogoutButton
+                label={t.common.signOut}
+                signingOutLabel={t.common.signingOut}
+              />
+            </div>
           </div>
-        </div>
-      </header>
+        </header>
 
-      <div className="flex items-start">
-        <AdminNavRail items={items} labels={navLabels} />
-        <main className="min-w-0 flex-1 px-4 py-6 sm:px-6">
-          <div className="mx-auto max-w-6xl">{children}</div>
+        <main className="min-w-0 flex-1 px-3 py-4 sm:px-5 sm:py-5">
+          <div className="mx-auto w-full max-w-[1600px]">{children}</div>
         </main>
       </div>
     </div>

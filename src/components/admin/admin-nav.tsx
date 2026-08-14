@@ -17,6 +17,7 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useEffect, useState } from "react";
 
+import { BrandMark } from "@/components/brand/brand-mark";
 import { cn } from "@/lib/utils";
 
 export type AdminNavIcon =
@@ -40,6 +41,8 @@ export type AdminNavLabels = {
   openMenu: string;
   closeMenu: string;
   sections: string;
+  /** Second line under the wordmark, e.g. "Admin console". */
+  subtitle: string;
 };
 
 const ICONS: Record<AdminNavIcon, typeof LayoutDashboard> = {
@@ -80,7 +83,7 @@ function NavList({ items }: { items: AdminNavItem[] }) {
   const pathname = usePathname() ?? "/admin";
 
   return (
-    <ul className="space-y-0.5">
+    <ul className="space-y-px">
       {items.map((item) => {
         const Icon = ICONS[item.icon];
         const active = isActive(pathname, item.href, items);
@@ -91,10 +94,10 @@ function NavList({ items }: { items: AdminNavItem[] }) {
               href={item.href}
               aria-current={active ? "page" : undefined}
               className={cn(
-                "flex items-center gap-2.5 rounded-md px-3 py-2 text-sm font-medium transition",
+                "flex items-center gap-2.5 rounded px-2.5 py-1.5 text-[0.8125rem] transition",
                 active
-                  ? "bg-primary/10 text-primary"
-                  : "text-muted-foreground hover:bg-accent hover:text-accent-foreground",
+                  ? "bg-admin-nav-active font-medium text-admin-nav-foreground"
+                  : "text-admin-nav-muted hover:bg-admin-nav-active/60 hover:text-admin-nav-foreground",
               )}
             >
               <Icon className="size-4 shrink-0" aria-hidden="true" />
@@ -107,7 +110,30 @@ function NavList({ items }: { items: AdminNavItem[] }) {
   );
 }
 
-/** Persistent rail from `lg` up, where there is width to spare. */
+function NavBrand({ subtitle }: { subtitle: string }) {
+  return (
+    <Link
+      href="/admin"
+      className="flex min-w-0 items-center gap-2 px-2.5 py-3 text-admin-nav-foreground"
+    >
+      <BrandMark className="size-5 shrink-0" />
+      <span className="min-w-0">
+        <span className="block truncate text-[0.8125rem] font-semibold leading-tight">
+          FreeLearn Radar
+        </span>
+        <span className="block truncate text-[0.625rem] uppercase tracking-[0.12em] leading-tight text-admin-nav-muted">
+          {subtitle}
+        </span>
+      </span>
+    </Link>
+  );
+}
+
+/**
+ * Persistent rail from `lg` up. Deep brand surface rather than a third white
+ * column: it separates the console from the public site instantly, and gives
+ * the rail enough presence to justify the width it occupies.
+ */
 export function AdminNavRail({
   items,
   labels,
@@ -116,14 +142,15 @@ export function AdminNavRail({
   labels: AdminNavLabels;
 }) {
   return (
-    <nav
-      aria-label={labels.sections}
-      className="hidden w-56 shrink-0 border-r border-border bg-card lg:block"
-    >
-      <div className="sticky top-[3.25rem] max-h-[calc(100vh-3.25rem)] overflow-y-auto p-3">
+    <div className="sticky top-0 hidden h-screen w-[13.5rem] shrink-0 flex-col border-r border-admin-nav-border bg-admin-nav lg:flex">
+      <NavBrand subtitle={labels.subtitle} />
+      <nav
+        aria-label={labels.sections}
+        className="min-h-0 flex-1 overflow-y-auto px-2 pb-3"
+      >
         <NavList items={items} />
-      </div>
-    </nav>
+      </nav>
+    </div>
   );
 }
 
@@ -162,7 +189,7 @@ export function AdminMobileNav({
         onClick={() => setOpen(true)}
         aria-label={labels.openMenu}
         aria-expanded={open}
-        className="inline-flex size-9 shrink-0 items-center justify-center rounded-md border border-border text-muted-foreground transition hover:bg-accent lg:hidden"
+        className="inline-flex size-8 shrink-0 items-center justify-center rounded border border-border text-muted-foreground transition hover:bg-accent lg:hidden"
       >
         <Menu className="size-4" aria-hidden="true" />
       </button>
@@ -173,27 +200,27 @@ export function AdminMobileNav({
             type="button"
             aria-label={labels.closeMenu}
             onClick={() => setOpen(false)}
-            className="absolute inset-0 bg-foreground/40"
+            className="absolute inset-0 bg-foreground/50"
           />
-          <nav
-            aria-label={labels.sections}
-            className="absolute inset-y-0 left-0 flex w-72 max-w-[85vw] flex-col bg-card shadow-xl"
-          >
-            <div className="flex items-center justify-between border-b border-border px-3 py-2.5">
-              <span className="text-sm font-semibold">{labels.sections}</span>
+          <div className="absolute inset-y-0 left-0 flex w-64 max-w-[82vw] flex-col bg-admin-nav">
+            <div className="flex items-center justify-between pr-2">
+              <NavBrand subtitle={labels.subtitle} />
               <button
                 type="button"
                 onClick={() => setOpen(false)}
                 aria-label={labels.closeMenu}
-                className="inline-flex size-9 items-center justify-center rounded-md text-muted-foreground transition hover:bg-accent"
+                className="inline-flex size-8 items-center justify-center rounded text-admin-nav-muted transition hover:bg-admin-nav-active hover:text-admin-nav-foreground"
               >
                 <X className="size-4" aria-hidden="true" />
               </button>
             </div>
-            <div className="flex-1 overflow-y-auto p-3">
+            <nav
+              aria-label={labels.sections}
+              className="min-h-0 flex-1 overflow-y-auto px-2 pb-3"
+            >
               <NavList items={items} />
-            </div>
-          </nav>
+            </nav>
+          </div>
         </div>
       ) : null}
     </>

@@ -1,7 +1,16 @@
 import { redirect } from "next/navigation";
 
+import { AdminEmptyState } from "@/components/admin/admin-empty-state";
 import { AdminPageHeader } from "@/components/admin/admin-page-header";
+import { AdminPanel } from "@/components/admin/admin-panel";
+import {
+  AdminTable,
+  AdminTd,
+  AdminTh,
+  AdminTr,
+} from "@/components/admin/admin-table";
 import { DiscoveryQueryToggle } from "@/components/admin/discovery-query-toggle";
+import { Badge } from "@/components/ui/badge";
 import { getDb } from "@/db";
 import { listDiscoveryQueries } from "@/db/repositories/discovery-query-repository";
 import { getSession } from "@/lib/auth/guards";
@@ -27,75 +36,50 @@ export default async function AdminDiscoveryQueriesPage() {
 
   return (
     <>
-      <AdminPageHeader title={t.discoveryQueries.heading} />
+      <AdminPageHeader
+        title={t.discoveryQueries.heading}
+        description={t.discoveryQueries.description}
+      />
 
-      <div className="space-y-4">
-        <p className="text-sm text-muted-foreground">
-          {t.discoveryQueries.description}
-        </p>
-
-        <div className="overflow-x-auto rounded-xl border border-border">
-          <table className="min-w-full text-left text-sm">
-            <caption className="sr-only">{t.discoveryQueries.heading}</caption>
-            <thead className="bg-muted/50">
+      <AdminPanel
+        title={t.discoveryQueries.heading}
+        actions={<Badge variant="outline">{queries.length}</Badge>}
+        flush
+      >
+        {queries.length === 0 ? (
+          <AdminEmptyState message={t.discoveryQueries.empty} />
+        ) : (
+          <AdminTable caption={t.discoveryQueries.heading}>
+            <thead>
               <tr>
-                <th scope="col" className="px-4 py-3 font-medium">
-                  {t.discovery.query}
-                </th>
-                <th
-                  scope="col"
-                  className="whitespace-nowrap px-4 py-3 font-medium"
-                >
-                  {t.discovery.provider}
-                </th>
-                <th
-                  scope="col"
-                  className="whitespace-nowrap px-4 py-3 font-medium"
-                >
-                  {t.discoveryQueries.junkRate}
-                </th>
-                <th
-                  scope="col"
-                  className="whitespace-nowrap px-4 py-3 font-medium"
-                >
-                  {t.discoveryQueries.successCount}
-                </th>
-                <th
-                  scope="col"
-                  className="whitespace-nowrap px-4 py-3 font-medium"
-                >
-                  {t.discoveryQueries.failureCount}
-                </th>
-                <th
-                  scope="col"
-                  className="whitespace-nowrap px-4 py-3 font-medium"
-                >
-                  {t.discoveryQueries.enabled}
-                </th>
+                <AdminTh>{t.discovery.query}</AdminTh>
+                <AdminTh>{t.discovery.provider}</AdminTh>
+                <AdminTh numeric>{t.discoveryQueries.junkRate}</AdminTh>
+                <AdminTh numeric>{t.discoveryQueries.successCount}</AdminTh>
+                <AdminTh numeric>{t.discoveryQueries.failureCount}</AdminTh>
+                <AdminTh>{t.discoveryQueries.enabled}</AdminTh>
               </tr>
             </thead>
             <tbody>
               {queries.map((query) => (
-                <tr key={query.id} className="border-t border-border">
-                  <td className="px-4 py-3">
+                <AdminTr key={query.id}>
+                  <AdminTd>
                     <p className="font-medium">{query.query}</p>
-                    <p className="text-xs text-muted-foreground">
+                    <p className="text-[0.6875rem] text-muted-foreground">
                       {query.category}
                     </p>
-                  </td>
-                  <td className="whitespace-nowrap px-4 py-3">
+                  </AdminTd>
+                  <AdminTd className="whitespace-nowrap text-muted-foreground">
                     {query.provider}
-                  </td>
-                  <td className="whitespace-nowrap px-4 py-3">
+                  </AdminTd>
+                  <AdminTd numeric className="text-muted-foreground">
                     {query.junkRate ?? t.common.notSet}
-                  </td>
-                  <td className="whitespace-nowrap px-4 py-3">
-                    {query.successCount}
-                  </td>
-                  <td className="whitespace-nowrap px-4 py-3">
+                  </AdminTd>
+                  <AdminTd numeric>{query.successCount}</AdminTd>
+                  <AdminTd numeric className="text-muted-foreground">
                     {query.failureCount}
-                  </td>
-                  <td className="whitespace-nowrap px-4 py-3">
+                  </AdminTd>
+                  <AdminTd className="whitespace-nowrap">
                     {canWrite ? (
                       <DiscoveryQueryToggle
                         queryId={query.id}
@@ -106,27 +90,17 @@ export default async function AdminDiscoveryQueriesPage() {
                         }}
                       />
                     ) : (
-                      <span>
+                      <span className="text-muted-foreground">
                         {query.enabled ? t.common.yes : t.common.no}
                       </span>
                     )}
-                  </td>
-                </tr>
+                  </AdminTd>
+                </AdminTr>
               ))}
-              {queries.length === 0 ? (
-                <tr>
-                  <td
-                    colSpan={6}
-                    className="px-4 py-8 text-center text-muted-foreground"
-                  >
-                    {t.discoveryQueries.empty}
-                  </td>
-                </tr>
-              ) : null}
             </tbody>
-          </table>
-        </div>
-      </div>
+          </AdminTable>
+        )}
+      </AdminPanel>
     </>
   );
 }

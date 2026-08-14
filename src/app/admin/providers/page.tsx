@@ -1,7 +1,10 @@
 import Link from "next/link";
 import { redirect } from "next/navigation";
 
+import { AdminEmptyState } from "@/components/admin/admin-empty-state";
 import { AdminPageHeader } from "@/components/admin/admin-page-header";
+import { AdminPanel } from "@/components/admin/admin-panel";
+import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { getDb } from "@/db";
 import { listProviders } from "@/db/repositories/provider-repository";
@@ -27,44 +30,52 @@ export default async function AdminProvidersPage() {
 
   return (
     <>
-      <AdminPageHeader title={t.providers.heading} />
+      <AdminPageHeader
+        title={t.providers.heading}
+        description={t.providers.description}
+      />
 
-      <div className="space-y-4">
-        <p className="text-sm text-muted-foreground">{t.providers.description}</p>
-        {providers.map((provider) => (
-          <article
-            key={provider.id}
-            className="rounded-xl border border-border bg-card p-5 shadow-sm"
-          >
-            <div className="flex flex-wrap items-start justify-between gap-4">
-              <div>
-                <Link
-                  href={`/admin/providers/${provider.id}`}
-                  className="text-lg font-semibold hover:text-primary"
-                >
-                  {provider.name}
-                </Link>
-                <p className="text-sm text-muted-foreground">
-                  {provider.slug} · {t.providers.domain}: {provider.domain}
-                </p>
-                <p className="mt-1 text-xs text-muted-foreground">
-                  {t.providers.active}: {provider.active ? t.common.yes : t.common.no}
-                </p>
-              </div>
-              <Button asChild size="sm" variant="outline">
-                <Link href={`/admin/providers/${provider.id}`}>
-                  {t.common.edit}
-                </Link>
-              </Button>
-            </div>
-          </article>
-        ))}
+      <AdminPanel
+        title={t.providers.heading}
+        actions={<Badge variant="outline">{providers.length}</Badge>}
+        flush
+      >
         {providers.length === 0 ? (
-          <p className="rounded-xl border border-dashed border-border p-6 text-sm text-muted-foreground">
-            {t.providers.empty}
-          </p>
-        ) : null}
-      </div>
+          <AdminEmptyState message={t.providers.empty} />
+        ) : (
+          <ul className="divide-y divide-border/60">
+            {providers.map((provider) => (
+              <li
+                key={provider.id}
+                className="flex flex-wrap items-center justify-between gap-3 px-3.5 py-2.5 transition hover:bg-muted/40"
+              >
+                <div className="min-w-0">
+                  <div className="flex flex-wrap items-center gap-2">
+                    <Link
+                      href={`/admin/providers/${provider.id}`}
+                      className="text-[0.8125rem] font-semibold hover:text-primary"
+                    >
+                      {provider.name}
+                    </Link>
+                    <Badge variant={provider.active ? "success" : "outline"}>
+                      {t.providers.active}:{" "}
+                      {provider.active ? t.common.yes : t.common.no}
+                    </Badge>
+                  </div>
+                  <p className="text-xs text-muted-foreground">
+                    {provider.slug} · {t.providers.domain}: {provider.domain}
+                  </p>
+                </div>
+                <Button asChild size="sm" variant="outline">
+                  <Link href={`/admin/providers/${provider.id}`}>
+                    {t.common.edit}
+                  </Link>
+                </Button>
+              </li>
+            ))}
+          </ul>
+        )}
+      </AdminPanel>
     </>
   );
 }
