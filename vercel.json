@@ -23,7 +23,7 @@
     },
     {
       "path": "/api/cron/coupons",
-      "schedule": "0 */6 * * *"
+      "schedule": "0 21 * * *"
     }
   ]
 }

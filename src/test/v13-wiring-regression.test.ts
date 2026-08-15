@@ -46,7 +46,41 @@ describe("P1-7 — every cron route must be registered with the scheduler", () =
       expect(entry.schedule).toMatch(/^[\d*/,\-\s]+$/);
     }
   });
+
+  // Hobby rejects any expression that fires more than once a day, and it
+  // rejects it at deploy time — so an over-frequent schedule does not degrade
+  // the cron, it takes the whole deployment down with it.
+  it.each((vercelConfig.crons ?? []).map((entry) => entry.schedule))(
+    "%s fires at most once per day",
+    (schedule) => {
+      const [minute, hour] = schedule.split(/\s+/);
+      expect(countCronFields(minute)).toBe(1);
+      expect(countCronFields(hour)).toBe(1);
+    },
+  );
 });
+
+/**
+ * Number of distinct values a minute/hour cron field expands to. Anything
+ * above one in either field means more than one fire per day.
+ */
+function countCronFields(field: string | undefined): number {
+  if (field === undefined || field === "*") {
+    return Number.POSITIVE_INFINITY;
+  }
+
+  return field.split(",").reduce((total, part) => {
+    const [range, step] = part.split("/");
+    if (step !== undefined) {
+      return Number.POSITIVE_INFINITY;
+    }
+    const [start, end] = (range ?? "").split("-");
+    if (end !== undefined) {
+      return total + (Number(end) - Number(start) + 1);
+    }
+    return total + 1;
+  }, 0);
+}
 
 describe("P1-6 — the media resolver must have a production caller", () => {
   it("is invoked from a cron route, not only from tests", () => {
