@@ -54,12 +54,21 @@ function signalDetail(
   )}`;
 }
 
-export default async function AdminDiscoveryPage() {
+export default async function AdminDiscoveryPage({
+  searchParams,
+}: {
+  searchParams: Promise<Record<string, string | string[] | undefined>>;
+}) {
   const session = await getSession();
   if (!session) redirect("/admin/login");
 
   const locale = await getAdminLocale();
   const t = getAdminDictionary(locale);
+  const params = await searchParams;
+  const initialCategory =
+    typeof params.category === "string" ? params.category : "";
+  const initialProvider =
+    typeof params.provider === "string" ? params.provider : "";
 
   const [facets, snapshot] = await Promise.all([
     withDb("admin.discovery.facets", (db) => listDiscoveryQueryFacets(db), {
@@ -174,6 +183,8 @@ export default async function AdminDiscoveryPage() {
             <DiscoveryRunForm
               providers={facets.providers}
               categories={facets.categories}
+              initialCategory={initialCategory}
+              initialProvider={initialProvider}
               labels={{
                 runDiscovery: t.discovery.runDiscovery,
                 running: t.discovery.running,

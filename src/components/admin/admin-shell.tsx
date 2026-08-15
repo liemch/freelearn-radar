@@ -43,6 +43,11 @@ export function AdminShell({ session, locale, children }: AdminShellProps) {
       label: t.nav.discoveryQueries,
       icon: "queries",
     },
+    {
+      href: "/admin/discovery/demand",
+      label: t.nav.discoveryDemand,
+      icon: "search",
+    },
     { href: "/admin/providers", label: t.nav.providers, icon: "providers" },
     { href: "/admin/taxonomy", label: t.nav.taxonomy, icon: "taxonomy" },
     ...(session.role === "ADMIN"

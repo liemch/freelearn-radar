@@ -1,11 +1,18 @@
 import { and, asc, eq, isNull, lte, or, sql } from "drizzle-orm";
 
+import { coverageThresholds } from "@/config/coverage-thresholds";
 import type { Db } from "@/db";
 import {
   discoveryQueries,
   type DiscoveryQuery,
 } from "@/db/schema";
 import { writeAuditLog } from "@/domain/admin/audit-log";
+import {
+  coverageStatusRank,
+  discoveryPriorityScore,
+  nextRunHoursForJunkRate,
+  type CoverageStatus,
+} from "@/domain/coverage/classify-coverage";
 import { getServerEnv } from "@/lib/env";
 
 /**
@@ -23,6 +30,11 @@ import { getServerEnv } from "@/lib/env";
 export function interleaveByCategory<T extends { category: string | null }>(
   queries: T[],
   limit: number,
+  /**
+   * Optional M26 coverage map: EMPTY/THIN categories lead each interleave
+   * round without stopping discovery for HEALTHY/STRONG ones.
+   */
+  coverageByCategory?: Map<string, CoverageStatus>,
 ): T[] {
   if (limit <= 0) return [];
 
@@ -36,7 +48,27 @@ export function interleaveByCategory<T extends { category: string | null }>(
 
   // Insertion order follows the incoming ordering (least-recently-run first),
   // so the category whose queries are most overdue still leads each round.
-  const order = [...buckets.keys()];
+  // M26: when coverage is known, prefer EMPTY/THIN buckets first.
+  let order = [...buckets.keys()];
+  if (coverageByCategory && coverageByCategory.size > 0) {
+    order = order.sort((a, b) => {
+      const ca = coverageByCategory.get(a) ?? "HEALTHY";
+      const cb = coverageByCategory.get(b) ?? "HEALTHY";
+      const scoreA = discoveryPriorityScore({
+        coverage: ca,
+        zeroResultDemand: 0,
+        recentYield: null,
+      });
+      const scoreB = discoveryPriorityScore({
+        coverage: cb,
+        zeroResultDemand: 0,
+        recentYield: null,
+      });
+      if (scoreB !== scoreA) return scoreB - scoreA;
+      return coverageStatusRank(ca) - coverageStatusRank(cb);
+    });
+  }
+
   const selected: T[] = [];
   let round = 0;
 
@@ -106,19 +138,51 @@ export async function listDueDiscoveryQueries(
     return pool.slice(0, queryLimit);
   }
 
-  return interleaveByCategory(pool, queryLimit);
+  let coverageByCategory: Map<string, CoverageStatus> | undefined;
+  try {
+    const { listCategoryCoverage } = await import(
+      "@/domain/coverage/catalog-metrics"
+    );
+    const rows = await listCategoryCoverage(db);
+    coverageByCategory = new Map(
+      rows.map((row) => [row.categorySlug, row.coverage]),
+    );
+  } catch {
+    coverageByCategory = undefined;
+  }
+
+  return interleaveByCategory(pool, queryLimit, coverageByCategory);
 }
 
 export async function markDiscoveryQuerySuccess(
   db: Db,
   id: string,
+  options?: {
+    /** 0–1 share of duplicate+invalid among results this run. */
+    junkRate?: number;
+  },
 ): Promise<void> {
+  const junkRate =
+    options?.junkRate != null
+      ? Math.min(1, Math.max(0, options.junkRate))
+      : null;
+  const hours =
+    junkRate != null
+      ? nextRunHoursForJunkRate(junkRate)
+      : coverageThresholds.schedule.successDefaultHours;
+
   await db
     .update(discoveryQueries)
     .set({
       lastRunAt: new Date(),
-      nextRunAt: new Date(Date.now() + 24 * 60 * 60 * 1000),
+      nextRunAt: new Date(Date.now() + hours * 60 * 60 * 1000),
       successCount: sql`${discoveryQueries.successCount} + 1`,
+      ...(junkRate != null
+        ? {
+            junkRate: junkRate.toFixed(4),
+            lastJunkReviewAt: new Date(),
+          }
+        : {}),
     })
     .where(eq(discoveryQueries.id, id));
 
@@ -127,7 +191,7 @@ export async function markDiscoveryQuerySuccess(
     action: "DISCOVERY_QUERY_SUCCEEDED",
     entityType: "discovery_query",
     entityId: id,
-    after: { nextRunInHours: 24 },
+    after: { nextRunInHours: hours, junkRate },
   });
 }
 

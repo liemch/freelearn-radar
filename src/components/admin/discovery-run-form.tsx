@@ -49,6 +49,9 @@ type DiscoveryRunFormProps = {
   providers: string[];
   categories: string[];
   labels: DiscoveryRunFormLabels;
+  /** Prefill from coverage recommendation / URL (M27). */
+  initialCategory?: string;
+  initialProvider?: string;
 };
 
 const selectClass =
@@ -60,18 +63,26 @@ export function DiscoveryRunForm({
   providers,
   categories,
   labels,
+  initialCategory = "",
+  initialProvider = "",
 }: DiscoveryRunFormProps) {
-  const [provider, setProvider] = useState("");
-  const [category, setCategory] = useState("");
+  const [provider, setProvider] = useState(initialProvider);
+  const [category, setCategory] = useState(initialCategory);
   const [limit, setLimit] = useState(25);
   const [resultLimit, setResultLimit] = useState(10);
   const [ignoreSchedule, setIgnoreSchedule] = useState(true);
   const [busy, setBusy] = useState(false);
+  const [confirming, setConfirming] = useState(false);
   const [message, setMessage] = useState<string | null>(null);
   const [hint, setHint] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
 
   async function handleRun() {
+    if (!confirming) {
+      setConfirming(true);
+      return;
+    }
+
     setBusy(true);
     setMessage(null);
     setHint(null);
@@ -127,8 +138,17 @@ export function DiscoveryRunForm({
       setError(labels.runFailed);
     } finally {
       setBusy(false);
+      setConfirming(false);
     }
   }
+
+  const confirmSummary = [
+    category ? `topic=${category}` : "topic=ALL",
+    provider ? `provider=${provider}` : "provider=ALL",
+    `queries≤${limit}`,
+    `results/query≤${resultLimit}`,
+    `maxCandidates≤${limit * resultLimit}`,
+  ].join(" · ");
 
   return (
     <AdminPanel title={labels.runDiscovery} description={labels.formDescription}>
@@ -142,7 +162,10 @@ export function DiscoveryRunForm({
               id="discovery-topic"
               className={selectClass}
               value={category}
-              onChange={(event) => setCategory(event.target.value)}
+              onChange={(event) => {
+                setCategory(event.target.value);
+                setConfirming(false);
+              }}
             >
               <option value="">{labels.allTopics}</option>
               {categories.map((item) => (
@@ -161,7 +184,10 @@ export function DiscoveryRunForm({
               id="discovery-provider"
               className={selectClass}
               value={provider}
-              onChange={(event) => setProvider(event.target.value)}
+              onChange={(event) => {
+                setProvider(event.target.value);
+                setConfirming(false);
+              }}
             >
               <option value="">{labels.allProviders}</option>
               {providers.map((item) => (
@@ -180,7 +206,10 @@ export function DiscoveryRunForm({
               id="discovery-limit"
               className={selectClass}
               value={limit}
-              onChange={(event) => setLimit(Number(event.target.value))}
+              onChange={(event) => {
+                setLimit(Number(event.target.value));
+                setConfirming(false);
+              }}
             >
               {[5, 10, 15, 25, 50].map((item) => (
                 <option key={item} value={item}>
@@ -198,7 +227,10 @@ export function DiscoveryRunForm({
               id="discovery-result-limit"
               className={selectClass}
               value={resultLimit}
-              onChange={(event) => setResultLimit(Number(event.target.value))}
+              onChange={(event) => {
+                setResultLimit(Number(event.target.value));
+                setConfirming(false);
+              }}
             >
               {[3, 5, 8, 10].map((item) => (
                 <option key={item} value={item}>
@@ -209,13 +241,25 @@ export function DiscoveryRunForm({
           </div>
         </div>
 
+        {confirming ? (
+          <div
+            className="rounded border border-amber-500/40 bg-amber-500/10 px-3 py-2 text-xs text-foreground"
+            role="status"
+          >
+            Xác nhận phạm vi trước khi chạy: {confirmSummary}. Không auto-publish.
+          </div>
+        ) : null}
+
         <div className="flex flex-wrap items-center justify-between gap-3 border-t border-border/60 pt-3">
           <label className="flex items-start gap-2 text-[0.8125rem]">
             <input
               type="checkbox"
               className="mt-0.5 size-3.5 rounded border-input"
               checked={ignoreSchedule}
-              onChange={(event) => setIgnoreSchedule(event.target.checked)}
+              onChange={(event) => {
+                setIgnoreSchedule(event.target.checked);
+                setConfirming(false);
+              }}
             />
             <span className="min-w-0">
               {labels.ignoreSchedule}
@@ -235,7 +279,11 @@ export function DiscoveryRunForm({
             {busy ? (
               <Loader2 className="size-3.5 animate-spin" aria-hidden />
             ) : null}
-            {busy ? labels.running : labels.runDiscovery}
+            {busy
+              ? labels.running
+              : confirming
+                ? "Xác nhận chạy"
+                : labels.runDiscovery}
           </Button>
         </div>
 

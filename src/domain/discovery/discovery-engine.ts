@@ -70,9 +70,11 @@ export async function runDiscoveryBatch(
   for (const query of queries) {
     summary.queriesProcessed += 1;
     const domain = inferDomain(query.provider);
-    let createdForQuery = 0;
+      let createdForQuery = 0;
+      let duplicateForQuery = 0;
+      let invalidForQuery = 0;
 
-    try {
+      try {
       const results = await searchProvider.search({
         query: query.query,
         maxResults: resultLimit,
@@ -84,6 +86,7 @@ export async function runDiscoveryBatch(
           result,
           searchQuery: query.query,
           providerHint: query.provider,
+          discoveryQueryId: query.id,
         });
 
         if (outcome.status === "CREATED") {
@@ -91,12 +94,20 @@ export async function runDiscoveryBatch(
           createdForQuery += 1;
         } else if (outcome.status === "DUPLICATE") {
           summary.duplicates += 1;
+          duplicateForQuery += 1;
         } else {
           summary.invalid += 1;
+          invalidForQuery += 1;
         }
       }
 
-      await markDiscoveryQuerySuccess(db, query.id);
+      const resultCount = results.length;
+      const junkRate =
+        resultCount > 0
+          ? (duplicateForQuery + invalidForQuery) / resultCount
+          : 1;
+
+      await markDiscoveryQuerySuccess(db, query.id, { junkRate });
 
       if (query.category) {
         await bumpDiscoveryCategoryStats(db, query.category, {

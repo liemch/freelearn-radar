@@ -5,8 +5,9 @@ import {
   findCandidateById,
   updateCandidate,
 } from "@/db/repositories/candidate-repository";
-import type { CourseCandidate } from "@/db/schema";
+import { discoveryRejections, type CourseCandidate } from "@/db/schema";
 import { writeAuditLog } from "@/domain/admin/audit-log";
+import { classifyDiscoveryFailureReason } from "@/domain/coverage/failure-reasons";
 import { detectDuplicate } from "@/domain/discovery/duplicate-detector";
 import { classifyUrlShape } from "@/domain/discovery/url-shape-classifier";
 import { prefilterCandidate } from "@/domain/quality/candidate-prefilter";
@@ -17,7 +18,30 @@ export type IngestSearchResultInput = {
   result: SearchResult;
   searchQuery: string;
   providerHint?: string;
+  /** When set, pre-ingest rejects are persisted to discovery_rejections (M26). */
+  discoveryQueryId?: string;
 };
+
+async function recordPreIngestRejection(
+  db: Db,
+  input: {
+    discoveryQueryId?: string;
+    url: string;
+    reason: string;
+    matchedRule?: string | null;
+  },
+): Promise<void> {
+  try {
+    await db.insert(discoveryRejections).values({
+      discoveryQueryId: input.discoveryQueryId ?? null,
+      url: input.url.slice(0, 2000),
+      reason: classifyDiscoveryFailureReason(input.reason),
+      matchedRule: input.matchedRule ?? input.reason.slice(0, 200),
+    });
+  } catch {
+    // Observability must never block discovery.
+  }
+}
 
 export type IngestOutcome =
   | { status: "CREATED"; candidate: CourseCandidate }
@@ -29,6 +53,11 @@ export async function ingestSearchResult(
   input: IngestSearchResultInput,
 ): Promise<IngestOutcome> {
   if (!isValidHttpUrl(input.result.url)) {
+    await recordPreIngestRejection(db, {
+      discoveryQueryId: input.discoveryQueryId,
+      url: input.result.url,
+      reason: "Invalid external URL",
+    });
     return { status: "INVALID", error: "Invalid external URL" };
   }
 
@@ -36,20 +65,34 @@ export async function ingestSearchResult(
   try {
     canonicalUrl = normalizeUrl(input.result.url);
   } catch (error) {
+    const message =
+      error instanceof Error ? error.message : "URL normalize failed";
+    await recordPreIngestRejection(db, {
+      discoveryQueryId: input.discoveryQueryId,
+      url: input.result.url,
+      reason: message,
+    });
     return {
       status: "INVALID",
-      error: error instanceof Error ? error.message : "URL normalize failed",
+      error: message,
     };
   }
 
   // M19 §67.5 — reject known non-course shapes before fetch/AI spend.
   const shape = classifyUrlShape(canonicalUrl);
   if (shape.class === "KNOWN_NON_COURSE") {
+    const error = `NON_COURSE_PATTERN: ${shape.reason}${
+      shape.matchedRule ? ` (${shape.matchedRule})` : ""
+    }`;
+    await recordPreIngestRejection(db, {
+      discoveryQueryId: input.discoveryQueryId,
+      url: canonicalUrl,
+      reason: error,
+      matchedRule: shape.matchedRule,
+    });
     return {
       status: "INVALID",
-      error: `NON_COURSE_PATTERN: ${shape.reason}${
-        shape.matchedRule ? ` (${shape.matchedRule})` : ""
-      }`,
+      error,
     };
   }
 
@@ -59,11 +102,22 @@ export async function ingestSearchResult(
     content: input.result.content,
   });
   if (!prefilter.accept) {
+    await recordPreIngestRejection(db, {
+      discoveryQueryId: input.discoveryQueryId,
+      url: canonicalUrl,
+      reason: prefilter.reason,
+    });
     return { status: "INVALID", error: prefilter.reason };
   }
 
   const duplicate = await detectDuplicate(db, canonicalUrl);
   if (duplicate.duplicate) {
+    await recordPreIngestRejection(db, {
+      discoveryQueryId: input.discoveryQueryId,
+      url: canonicalUrl,
+      reason: `DUPLICATE:${duplicate.reason}`,
+      matchedRule: duplicate.existingId,
+    });
     return {
       status: "DUPLICATE",
       reason: duplicate.reason,

@@ -187,7 +187,11 @@ describe("runDiscoveryBatch", () => {
       invalid: 0,
       errors: 0,
     });
-    expect(markDiscoveryQuerySuccess).toHaveBeenCalledWith({}, "q1");
+    expect(markDiscoveryQuerySuccess).toHaveBeenCalledWith(
+      {},
+      "q1",
+      expect.objectContaining({ junkRate: expect.any(Number) }),
+    );
     expect(bumpDiscoveryCategoryStats).toHaveBeenCalledWith(
       {},
       "ai",
