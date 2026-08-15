@@ -200,9 +200,10 @@ export async function listActive100OffOffers(
 
 export async function listOffersDueForRecheck(db: Db, limit = 25) {
   const now = new Date();
-  return db
-    .select()
+  const rows = await db
+    .select({ offer: courseOffers })
     .from(courseOffers)
+    .leftJoin(courses, eq(courseOffers.courseId, courses.id))
     .where(
       and(
         inArray(courseOffers.status, [
@@ -220,10 +221,15 @@ export async function listOffersDueForRecheck(db: Db, limit = 25) {
           isNull(courseOffers.nextRecheckAt),
           lte(courseOffers.nextRecheckAt, now),
         ),
+        // Archived/draft courses are out of normal operations — do not burn
+        // verification budget on them.
+        or(isNull(courseOffers.courseId), eq(courses.status, "PUBLISHED")),
       ),
     )
     .orderBy(asc(courseOffers.nextRecheckAt))
     .limit(limit);
+
+  return rows.map((row) => row.offer);
 }
 
 export async function updateCourseOfferStatus(

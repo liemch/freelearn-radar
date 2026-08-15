@@ -69,7 +69,14 @@ export async function POST(request: Request, context: RouteContext) {
     await writeAuditLog(db, {
       actorType: "USER",
       actorId: session.userId,
-      action: "COURSE_STATUS",
+      action:
+        body.status === "ARCHIVED"
+          ? "ARCHIVE"
+          : existing.status === "ARCHIVED" && body.status === "DRAFT"
+            ? "RESTORE"
+            : existing.status === "PUBLISHED" && body.status === "DRAFT"
+              ? "UNPUBLISH"
+              : "COURSE_STATUS",
       entityType: "course",
       entityId: course.id,
       before: { status: existing.status },

@@ -11,6 +11,7 @@ type CourseStatusActionsLabels = {
   publish: string;
   unpublish: string;
   archive: string;
+  restore: string;
   statusUpdateFailed: string;
   unableToUpdateStatus: string;
   publishBlockedHint: string;
@@ -94,7 +95,16 @@ export function CourseStatusActions({
           >
             {labels.archive}
           </Button>
-        ) : null}
+        ) : (
+          <Button
+            size="sm"
+            variant="outline"
+            disabled={isSubmitting}
+            onClick={() => updateStatus("DRAFT")}
+          >
+            {labels.restore}
+          </Button>
+        )}
       </div>
       {error ? <p className="text-xs text-destructive">{error}</p> : null}
     </div>

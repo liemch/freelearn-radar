@@ -42,6 +42,7 @@ export type CourseImageSourceType =
   | "CACHED"
   | "CATEGORY_FALLBACK"
   | "PROVIDER_FALLBACK"
+  | "ADMIN_OVERRIDE"
   | "NONE";
 
 export type CertificateType =

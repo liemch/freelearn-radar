@@ -19,10 +19,13 @@ import {
 } from "@/components/admin/service-health-panel";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { countCandidatesByStatus } from "@/db/repositories/candidate-repository";
+import {
+  countCandidatesByStatus,
+} from "@/db/repositories/candidate-repository";
 import {
   countCoursesByStatus,
   countPublishedCoursesByCertificate,
+  listCourses,
 } from "@/db/repositories/course-repository";
 import { listCategories } from "@/db/repositories/category-repository";
 import { listProviders } from "@/db/repositories/provider-repository";
@@ -81,23 +84,32 @@ export default async function AdminDashboardPage() {
       pendingReview,
       publishedCourses,
       draftCourses,
+      archivedCourses,
       providers,
       categories,
       discoveryErrors,
       unknownCertificate,
+      missingImageRows,
+      brokenImageRows,
       operations,
       recentActivity,
     ] = await Promise.all([
       countCandidatesByStatus(db, "READY_FOR_REVIEW"),
       countCoursesByStatus(db, "PUBLISHED"),
       countCoursesByStatus(db, "DRAFT"),
+      countCoursesByStatus(db, "ARCHIVED"),
       listProviders(db, false),
       listCategories(db),
       countCandidatesByStatus(db, "ERROR"),
       countPublishedCoursesByCertificate(db, "UNKNOWN"),
+      listCourses(db, { imageStatus: "MISSING", limit: 500 }),
+      listCourses(db, { imageStatus: "BROKEN", limit: 500 }),
       getOperationsSnapshot(db, { runHistoryLimit: 1 }),
       listRecentActivity(db, 8),
     ]);
+
+    const missingImages = missingImageRows.length;
+    const brokenImages = brokenImageRows.length;
 
     workItems = [
       {
@@ -115,18 +127,33 @@ export default async function AdminDashboardPage() {
         value: unknownCertificate,
         href: "/admin/courses?certificate=UNKNOWN",
       },
+      {
+        label: t.dashboard.stats.missingImages,
+        value: missingImages,
+        href: "/admin/courses?imageStatus=MISSING",
+      },
+      {
+        label: t.dashboard.stats.brokenImages,
+        value: brokenImages,
+        href: "/admin/courses?imageStatus=BROKEN",
+      },
+      {
+        label: t.dashboard.stats.archivedCourses,
+        value: archivedCourses,
+        href: "/admin/courses?status=ARCHIVED",
+      },
     ];
 
     stats = [
       {
         label: t.dashboard.stats.publishedCourses,
         value: publishedCourses,
-        href: "/admin/courses",
+        href: "/admin/courses?status=PUBLISHED",
       },
       {
         label: t.dashboard.stats.draftCourses,
         value: draftCourses,
-        href: "/admin/courses",
+        href: "/admin/courses?status=DRAFT",
       },
       {
         label: t.dashboard.stats.providers,

@@ -41,6 +41,9 @@ export function generateStaticParams() {
   return listTopicSlugs().map((topic) => ({ topic }));
 }
 
+/** ISR safety net so Admin branding updates do not stick forever on SSG shells. */
+export const revalidate = 3600;
+
 export async function generateMetadata({
   params,
 }: TopicPageProps): Promise<Metadata> {

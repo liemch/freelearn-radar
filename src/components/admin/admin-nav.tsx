@@ -15,6 +15,7 @@ import {
   Radar,
   Search,
   Server,
+  ShoppingBag,
   Tags,
   Ticket,
   Users,
@@ -40,6 +41,7 @@ export type AdminNavIcon =
   | "search"
   | "embeddings"
   | "monetization"
+  | "affiliateProducts"
   | "coupons"
   | "coverage"
   | "mediaQuality"
@@ -72,6 +74,7 @@ const ICONS: Record<AdminNavIcon, typeof LayoutDashboard> = {
   search: Search,
   embeddings: Layers,
   monetization: CircleDollarSign,
+  affiliateProducts: ShoppingBag,
   coupons: Ticket,
   coverage: PieChart,
   mediaQuality: Image,

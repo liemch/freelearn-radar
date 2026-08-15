@@ -56,6 +56,11 @@ export function AdminShell({ session, locale, children }: AdminShellProps) {
       label: t.nav.monetization,
       icon: "monetization",
     },
+    {
+      href: "/admin/affiliate/products",
+      label: t.nav.affiliateProducts,
+      icon: "affiliateProducts",
+    },
     { href: "/admin/coupons", label: t.nav.coupons, icon: "coupons" },
     { href: "/admin/coverage", label: t.nav.coverage, icon: "coverage" },
     {

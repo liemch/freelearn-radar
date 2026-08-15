@@ -72,7 +72,9 @@ export async function PATCH(request: Request, context: RouteContext) {
       );
     }
 
-    const status = body.status ?? existing.status;
+    // Status transitions only go through /status (or lifecycle). Ignoring form
+    // status closes the P0 bypass that skipped assertCourseStatusTransition.
+    const status = existing.status;
 
     if (status === "PUBLISHED") {
       assertVisibleOnPublicCatalog(body.priceType);

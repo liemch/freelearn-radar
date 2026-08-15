@@ -11,6 +11,7 @@ import {
   saveBrandingAsset,
   saveBrandingText,
 } from "@/domain/branding/site-branding";
+import { revalidatePublicBranding } from "@/domain/branding/revalidate-public";
 import { getSession } from "@/lib/auth/guards";
 import { assertAdmin, authzResponse } from "@/lib/auth/rbac";
 import { logger } from "@/lib/logger";
@@ -81,6 +82,7 @@ export async function PATCH(request: Request) {
           after: brandingAuditSnapshot(settings),
         });
         const branding = await resolveBranding(db);
+        revalidatePublicBranding();
         return NextResponse.json({
           ok: true,
           settings: brandingAuditSnapshot(branding.settings),
@@ -126,6 +128,7 @@ export async function PATCH(request: Request) {
       });
 
       const branding = await resolveBranding(db);
+      revalidatePublicBranding();
       return NextResponse.json({
         ok: true,
         settings: brandingAuditSnapshot(branding.settings),
@@ -175,6 +178,7 @@ export async function PATCH(request: Request) {
     });
 
     const branding = await resolveBranding(db);
+    revalidatePublicBranding();
     return NextResponse.json({
       ok: true,
       settings: brandingAuditSnapshot(branding.settings),

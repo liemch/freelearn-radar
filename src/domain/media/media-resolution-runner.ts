@@ -127,12 +127,93 @@ export async function listCoursesDueForMediaResolution(
   }));
 }
 
+/** Admin single-course resolve — bypasses the feature flag (ops action). */
+export async function resolveCourseMediaById(
+  db: Db,
+  courseId: string,
+): Promise<{
+  imageResolvedUrl: string | null;
+  imageSourceType: string;
+  imageStatus: string;
+  imageFallbackReason: string | null;
+}> {
+  const rows = await db
+    .select({
+      id: courses.id,
+      imageSourceUrl: courses.imageSourceUrl,
+      imageStorageUrl: courses.imageStorageUrl,
+      imagePolicy: courses.imagePolicy,
+      imageOverrideUrl: courses.imageOverrideUrl,
+      providerSlug: providers.slug,
+    })
+    .from(courses)
+    .innerJoin(providers, eq(courses.providerId, providers.id))
+    .where(eq(courses.id, courseId))
+    .limit(1);
+
+  const row = rows[0];
+  if (!row) throw new Error("Course not found");
+
+  // Preserve Admin override presentation; only refresh automatic evidence.
+  if (row.imageOverrideUrl) {
+    return {
+      imageResolvedUrl: row.imageOverrideUrl,
+      imageSourceType: "ADMIN_OVERRIDE",
+      imageStatus: "OK",
+      imageFallbackReason: null,
+    };
+  }
+
+  const categorySlugByCourseId = await mapCourseIdsToPrimaryCategorySlug(db, [
+    courseId,
+  ]);
+
+  const result = await resolveCourseMedia(
+    {
+      imageSourceUrl: row.imageSourceUrl,
+      imageStorageUrl: row.imageStorageUrl,
+      imagePolicy: row.imagePolicy,
+      providerSlug: row.providerSlug,
+      categorySlug: categorySlugByCourseId.get(courseId) ?? null,
+    },
+    { validateRemote: true },
+  );
+
+  await db
+    .update(courses)
+    .set({
+      imageResolvedUrl: result.imageResolvedUrl,
+      imageSourceType: result.imageSourceType,
+      imageStatus: result.imageStatus,
+      imageWidth: result.imageWidth,
+      imageHeight: result.imageHeight,
+      imageHash: result.imageHash,
+      imageFallbackReason: result.imageFallbackReason,
+      imageCheckedAt: result.imageCheckedAt,
+      updatedAt: new Date(),
+    })
+    .where(eq(courses.id, courseId));
+
+  return {
+    imageResolvedUrl: result.imageResolvedUrl,
+    imageSourceType: result.imageSourceType,
+    imageStatus: result.imageStatus,
+    imageFallbackReason: result.imageFallbackReason,
+  };
+}
+
 export async function runMediaResolution(
   db: Db,
-  options?: { limit?: number; concurrency?: number; now?: Date },
+  options?: {
+    limit?: number;
+    concurrency?: number;
+    now?: Date;
+    /** When true, run even if FEATURE_MEDIA_RESOLVER is off (Admin bulk). */
+    force?: boolean;
+  },
 ): Promise<MediaResolutionSummary> {
   const env = getServerEnv();
-  if (env.FEATURE_MEDIA_RESOLVER !== "true") {
+  if (env.FEATURE_MEDIA_RESOLVER !== "true" && !options?.force) {
     return emptySummary({ skippedReason: "FEATURE_MEDIA_RESOLVER_off" });
   }
 

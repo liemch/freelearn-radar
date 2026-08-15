@@ -123,15 +123,24 @@ export default async function TopicTagPage({ params }: TopicPageProps) {
   const affiliateCards = await withDb(
     "topic.affiliate",
     async (db) => {
-      const { resolveAffiliatePlacements, PLACEMENT_KEYS } = await import(
+      const {
+        resolveAffiliatePlacements,
+        resolveCommerceProducts,
+        PLACEMENT_KEYS,
+      } = await import(
         "@/domain/affiliate/resolve-placements"
       );
-      return resolveAffiliatePlacements(db, {
+      const input = {
         placementKey: PLACEMENT_KEYS.TOPIC_LEARNING_RESOURCES,
         locale,
         topicSlug: tag.slug,
         limit: 3,
-      });
+      };
+      const [learning, commerce] = await Promise.all([
+        resolveAffiliatePlacements(db, input),
+        resolveCommerceProducts(db, input),
+      ]);
+      return [...learning, ...commerce].slice(0, 6);
     },
     [],
   );

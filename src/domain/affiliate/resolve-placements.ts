@@ -1,4 +1,5 @@
 import type { Db } from "@/db";
+import { listActiveAffiliateProductsForContext } from "@/db/repositories/affiliate-product-repository";
 import { listEnabledAffiliateOffers } from "@/db/repositories/affiliate-repository";
 import {
   resolveAffiliateDestination,
@@ -6,6 +7,7 @@ import {
   disclosureLabel,
 } from "@/domain/affiliate/affiliate-link-service";
 import { isCommerceGroupRelevant } from "@/domain/affiliate/commerce-relevance";
+import { validateAffiliateProductUrl } from "@/domain/affiliate/affiliate-product";
 import { getServerEnv } from "@/lib/env";
 import { logger } from "@/lib/logger";
 
@@ -24,6 +26,11 @@ export type ResolvedAffiliateCard = {
   href: string;
   disclosure: string;
   productGroup: string | null;
+  productId?: string;
+  merchant?: "SHOPEE" | "LAZADA";
+  imageUrl?: string | null;
+  displayPrice?: string | null;
+  shopName?: string | null;
 };
 
 export function isMonetizationEnabled(): boolean {
@@ -32,6 +39,69 @@ export function isMonetizationEnabled(): boolean {
     return env.FEATURE_MONETIZATION === "true";
   } catch {
     return process.env.FEATURE_MONETIZATION === "true";
+  }
+}
+
+export async function resolveCommerceProducts(
+  db: Db,
+  input: {
+    placementKey: string;
+    locale: string;
+    topicSlug?: string | null;
+    categorySlug?: string | null;
+    courseId?: string | null;
+    courseSlug?: string | null;
+    limit?: number;
+  },
+): Promise<ResolvedAffiliateCard[]> {
+  if (!isCommerceAffiliateEnabled()) return [];
+
+  try {
+    const rows = await listActiveAffiliateProductsForContext(db, input);
+    const cards: ResolvedAffiliateCard[] = [];
+    for (const row of rows) {
+      try {
+        validateAffiliateProductUrl(
+          row.product.destinationUrl,
+          row.product.merchant,
+        );
+      } catch {
+        continue;
+      }
+
+      const query = new URLSearchParams({
+        product: row.product.id,
+        placement: row.context.placementKey,
+        locale: input.locale,
+      });
+      if (input.courseSlug) query.set("course", input.courseSlug);
+      if (input.topicSlug) query.set("topic", input.topicSlug);
+
+      cards.push({
+        title: row.product.title,
+        providerKey:
+          row.provider?.providerKey ?? row.product.merchant.toLowerCase(),
+        providerType: "COMMERCE",
+        campaignKey: row.product.id,
+        productId: row.product.id,
+        placementKey: row.context.placementKey,
+        href: `/go/affiliate?${query.toString()}`,
+        disclosure:
+          input.locale === "vi" ? "Liên kết tiếp thị" : "Affiliate link",
+        productGroup: row.product.productCategory,
+        merchant: row.product.merchant,
+        imageUrl: row.product.imageUrl,
+        displayPrice: row.product.displayPrice,
+        shopName: row.product.shopName,
+      });
+      if (cards.length >= (input.limit ?? 3)) break;
+    }
+    return cards;
+  } catch (error) {
+    logger.warn("affiliate.products.resolve", {
+      error: error instanceof Error ? error.message : "unknown",
+    });
+    return [];
   }
 }
 

@@ -403,26 +403,21 @@ export function CourseForm({
           />
         </div>
 
-        <div className="space-y-2">
-          <Label htmlFor="status">{labels.status}</Label>
-          <select
-            id="status"
-            value={values.status}
-            onChange={(event) => updateField("status", event.target.value)}
-            className="border-input bg-background flex h-9 w-full rounded-md border px-3 text-sm"
-          >
-            {(
-              Object.entries(COURSE_STATUS_LABELS) as [
-                keyof typeof COURSE_STATUS_LABELS,
-                string,
-              ][]
-            ).map(([value, label]) => (
-              <option key={value} value={value}>
-                {label}
+        {mode === "create" ? (
+          <div className="space-y-2">
+            <Label htmlFor="status">{labels.status}</Label>
+            <select
+              id="status"
+              value={values.status}
+              onChange={(event) => updateField("status", event.target.value)}
+              className="border-input bg-background flex h-9 w-full rounded-md border px-3 text-sm"
+            >
+              <option value="DRAFT">
+                {COURSE_STATUS_LABELS.DRAFT}
               </option>
-            ))}
-          </select>
-        </div>
+            </select>
+          </div>
+        ) : null}
       </div>
 
       <div className="space-y-2">

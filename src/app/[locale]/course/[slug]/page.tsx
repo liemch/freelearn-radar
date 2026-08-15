@@ -154,10 +154,14 @@ export default async function CourseDetailPage({ params }: CoursePageProps) {
   const affiliateCards = await withDb(
     "course.affiliate",
     async (db) => {
-      const { resolveAffiliatePlacements, PLACEMENT_KEYS } = await import(
+      const {
+        resolveAffiliatePlacements,
+        resolveCommerceProducts,
+        PLACEMENT_KEYS,
+      } = await import(
         "@/domain/affiliate/resolve-placements"
       );
-      return resolveAffiliatePlacements(db, {
+      const input = {
         placementKey: PLACEMENT_KEYS.COURSE_DETAIL_RELATED_LEARNING,
         locale,
         categorySlug: primaryCategorySlug,
@@ -165,7 +169,12 @@ export default async function CourseDetailPage({ params }: CoursePageProps) {
         courseId: course.id,
         courseSlug: course.slug,
         limit: 3,
-      });
+      };
+      const [learning, commerce] = await Promise.all([
+        resolveAffiliatePlacements(db, input),
+        resolveCommerceProducts(db, input),
+      ]);
+      return [...learning, ...commerce].slice(0, 6);
     },
     [],
   );
@@ -496,9 +505,13 @@ export default async function CourseDetailPage({ params }: CoursePageProps) {
 
               <AffiliateResources
                 heading={
-                  locale === "vi"
-                    ? "Gợi ý học thêm (tiếp thị)"
-                    : "Related learning resources (affiliate)"
+                  affiliateCards.some((card) => card.merchant)
+                    ? locale === "vi"
+                      ? "Góc học tập"
+                      : "Study corner"
+                    : locale === "vi"
+                      ? "Gợi ý học thêm (tiếp thị)"
+                      : "Related learning resources (affiliate)"
                 }
                 cards={affiliateCards}
               />

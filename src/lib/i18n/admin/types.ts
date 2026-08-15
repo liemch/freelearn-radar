@@ -50,6 +50,7 @@ export type AdminDictionary = {
     search: string;
     embeddings: string;
     monetization: string;
+    affiliateProducts: string;
     coupons: string;
     coverage: string;
     mediaQuality: string;
@@ -82,6 +83,9 @@ export type AdminDictionary = {
       categories: string;
       discoveryErrors: string;
       unknownCertificate: string;
+      missingImages: string;
+      brokenImages: string;
+      archivedCourses: string;
     };
     actionRequired: string;
     actionRequiredDescription: string;
@@ -150,6 +154,7 @@ export type AdminDictionary = {
     publish: string;
     unpublish: string;
     archive: string;
+    restore: string;
     markExpired: string;
     saved: string;
     saveFailed: string;
@@ -167,6 +172,17 @@ export type AdminDictionary = {
     levelAdvanced: string;
     levelAllLevels: string;
     levelUnknown: string;
+    imageHeading: string;
+    lifecycleHeading: string;
+    filterActive: string;
+    filterPublished: string;
+    filterDraft: string;
+    filterArchived: string;
+    filterMissingImage: string;
+    filterBrokenImage: string;
+    filterFallbackImage: string;
+    filterAdminImage: string;
+    filterDuplicates: string;
   };
   candidates: {
     heading: string;
@@ -394,6 +410,23 @@ export type AdminDictionary = {
     enabled: string;
     disabled: string;
   };
+  affiliateProducts: {
+    heading: string;
+    description: string;
+    listHeading: string;
+    createHeading: string;
+    empty: string;
+    productFields: string;
+    contextHeading: string;
+    courseSearch: string;
+    noCourse: string;
+    addContext: string;
+    create: string;
+    save: string;
+    saving: string;
+    delete: string;
+    error: string;
+  };
   coupons: {
     heading: string;
     description: string;
@@ -438,9 +471,13 @@ export type AdminDictionary = {
     filterFallback: string;
     filterBlocked: string;
     filterOk: string;
+    filterOfficial: string;
+    filterMetadata: string;
+    filterAdmin: string;
     total: string;
     withThumbnail: string;
     official: string;
+    adminOverride: string;
     missing: string;
     broken: string;
     fallback: string;

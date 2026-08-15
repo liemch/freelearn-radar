@@ -129,6 +129,7 @@ export async function recordAffiliateClick(
   input: {
     providerKey: string;
     campaignId?: string | null;
+    productId?: string | null;
     placementKey: string;
     courseId?: string | null;
     topicSlug?: string | null;
@@ -139,6 +140,7 @@ export async function recordAffiliateClick(
   await db.insert(affiliateClicks).values({
     providerKey: input.providerKey,
     campaignId: input.campaignId ?? null,
+    productId: input.productId ?? null,
     placementKey: input.placementKey,
     courseId: input.courseId ?? null,
     topicSlug: input.topicSlug ?? null,

@@ -176,6 +176,16 @@ export const commerceProductGroupEnum = pgEnum("commerce_product_group", [
   "OTHER_LEARNING_RELATED",
 ]);
 
+export const affiliateMerchantEnum = pgEnum("affiliate_merchant", [
+  "SHOPEE",
+  "LAZADA",
+]);
+
+export const affiliateProductStatusEnum = pgEnum("affiliate_product_status", [
+  "ACTIVE",
+  "INACTIVE",
+]);
+
 /** M21.3/M21.4 — coupon offer lifecycle (discovery ≠ Truth). */
 export const couponOfferStatusEnum = pgEnum("coupon_offer_status", [
   "DISCOVERED",
@@ -219,5 +229,6 @@ export const courseImageSourceTypeEnum = pgEnum("course_image_source_type", [
   "CACHED",
   "CATEGORY_FALLBACK",
   "PROVIDER_FALLBACK",
+  "ADMIN_OVERRIDE",
   "NONE",
 ]);

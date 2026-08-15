@@ -114,6 +114,7 @@ export const affiliateClicks = pgTable(
     campaignId: uuid("campaign_id").references(() => affiliateCampaigns.id, {
       onDelete: "set null",
     }),
+    productId: uuid("product_id"),
     placementKey: text("placement_key").notNull(),
     courseId: uuid("course_id").references(() => courses.id, {
       onDelete: "set null",

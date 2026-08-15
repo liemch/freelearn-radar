@@ -73,6 +73,9 @@ export const courses = pgTable(
       withTimezone: true,
     }),
     imagePolicy: text("image_policy").default("REMOTE_ONLY"),
+    /** Admin presentation override — never overwrites source evidence URLs. */
+    imageOverrideUrl: text("image_override_url"),
+    duplicateOfCourseId: uuid("duplicate_of_course_id"),
     freeDurability: freeDurabilityEnum("free_durability")
       .notNull()
       .default("UNKNOWN"),

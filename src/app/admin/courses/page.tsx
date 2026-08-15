@@ -15,7 +15,12 @@ import { Badge, type BadgeProps } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { getDb } from "@/db";
 import { listCourses } from "@/db/repositories/course-repository";
-import type { CertificateType, CourseStatus } from "@/domain/course/types";
+import type {
+  CertificateType,
+  CourseImageSourceType,
+  CourseImageStatus,
+  CourseStatus,
+} from "@/domain/course/types";
 import {
   getCourseStatusLabel,
   getPriceTypeLabel,
@@ -24,6 +29,7 @@ import { isEligibleForFreeLists } from "@/domain/course/free-durability";
 import { getSession } from "@/lib/auth/guards";
 import { getAdminDictionary } from "@/lib/i18n/admin";
 import { getAdminLocale } from "@/lib/i18n/admin-locale";
+import { cn } from "@/lib/utils";
 
 export const dynamic = "force-dynamic";
 
@@ -32,6 +38,33 @@ const CERTIFICATE_VALUES = new Set<CertificateType>([
   "PAID_CERTIFICATE",
   "NO_CERTIFICATE",
   "UNKNOWN",
+]);
+
+const STATUS_VALUES = new Set<CourseStatus>([
+  "DRAFT",
+  "PUBLISHED",
+  "EXPIRED",
+  "UNAVAILABLE",
+  "ARCHIVED",
+]);
+
+const IMAGE_STATUS_VALUES = new Set<CourseImageStatus>([
+  "OK",
+  "MISSING",
+  "BROKEN",
+  "FALLBACK",
+  "BLOCKED",
+  "PENDING",
+]);
+
+const IMAGE_SOURCE_VALUES = new Set<CourseImageSourceType>([
+  "OFFICIAL",
+  "TRUSTED_METADATA",
+  "CACHED",
+  "CATEGORY_FALLBACK",
+  "PROVIDER_FALLBACK",
+  "ADMIN_OVERRIDE",
+  "NONE",
 ]);
 
 function courseStatusVariant(status: CourseStatus): BadgeProps["variant"] {
@@ -48,14 +81,10 @@ function courseStatusVariant(status: CourseStatus): BadgeProps["variant"] {
   }
 }
 
-function parseCertificate(
+function firstParam(
   raw: string | string[] | undefined,
-): CertificateType | undefined {
-  const value = Array.isArray(raw) ? raw[0] : raw;
-  if (value && CERTIFICATE_VALUES.has(value as CertificateType)) {
-    return value as CertificateType;
-  }
-  return undefined;
+): string | undefined {
+  return Array.isArray(raw) ? raw[0] : raw;
 }
 
 type PageProps = {
@@ -71,7 +100,34 @@ export default async function AdminCoursesPage({ searchParams }: PageProps) {
   const locale = await getAdminLocale();
   const t = getAdminDictionary(locale);
   const params = await searchParams;
-  const certificateType = parseCertificate(params.certificate);
+
+  const certificateRaw = firstParam(params.certificate);
+  const certificateType =
+    certificateRaw && CERTIFICATE_VALUES.has(certificateRaw as CertificateType)
+      ? (certificateRaw as CertificateType)
+      : undefined;
+
+  const statusRaw = firstParam(params.status);
+  const status =
+    statusRaw && STATUS_VALUES.has(statusRaw as CourseStatus)
+      ? (statusRaw as CourseStatus)
+      : undefined;
+
+  const imageStatusRaw = firstParam(params.imageStatus);
+  const imageStatus =
+    imageStatusRaw &&
+    IMAGE_STATUS_VALUES.has(imageStatusRaw as CourseImageStatus)
+      ? (imageStatusRaw as CourseImageStatus)
+      : undefined;
+
+  const imageSourceRaw = firstParam(params.imageSource);
+  const imageSourceType =
+    imageSourceRaw &&
+    IMAGE_SOURCE_VALUES.has(imageSourceRaw as CourseImageSourceType)
+      ? (imageSourceRaw as CourseImageSourceType)
+      : undefined;
+
+  const duplicatesOnly = firstParam(params.duplicates) === "1";
 
   let courses: Awaited<ReturnType<typeof listCourses>> = [];
   let databaseReady = true;
@@ -79,6 +135,11 @@ export default async function AdminCoursesPage({ searchParams }: PageProps) {
   try {
     courses = await listCourses(getDb(), {
       certificateType,
+      status,
+      imageStatus,
+      imageSourceType,
+      duplicatesOnly,
+      excludeArchived: !status && !duplicatesOnly,
       limit: 200,
     });
   } catch {
@@ -89,10 +150,68 @@ export default async function AdminCoursesPage({ searchParams }: PageProps) {
     publish: t.courses.publish,
     unpublish: t.courses.unpublish,
     archive: t.courses.archive,
+    restore: t.courses.restore,
     statusUpdateFailed: t.courses.statusUpdateFailed,
     unableToUpdateStatus: t.courses.unableToUpdateStatus,
     publishBlockedHint: t.courses.publishBlockedHint,
   };
+
+  const filters: Array<{ key: string; label: string; href: string; active: boolean }> = [
+    {
+      key: "default",
+      label: t.courses.filterActive,
+      href: "/admin/courses",
+      active: !status && !imageStatus && !imageSourceType && !duplicatesOnly && !certificateType,
+    },
+    {
+      key: "PUBLISHED",
+      label: t.courses.filterPublished,
+      href: "/admin/courses?status=PUBLISHED",
+      active: status === "PUBLISHED",
+    },
+    {
+      key: "DRAFT",
+      label: t.courses.filterDraft,
+      href: "/admin/courses?status=DRAFT",
+      active: status === "DRAFT",
+    },
+    {
+      key: "ARCHIVED",
+      label: t.courses.filterArchived,
+      href: "/admin/courses?status=ARCHIVED",
+      active: status === "ARCHIVED",
+    },
+    {
+      key: "MISSING",
+      label: t.courses.filterMissingImage,
+      href: "/admin/courses?imageStatus=MISSING",
+      active: imageStatus === "MISSING",
+    },
+    {
+      key: "BROKEN",
+      label: t.courses.filterBrokenImage,
+      href: "/admin/courses?imageStatus=BROKEN",
+      active: imageStatus === "BROKEN",
+    },
+    {
+      key: "FALLBACK",
+      label: t.courses.filterFallbackImage,
+      href: "/admin/courses?imageStatus=FALLBACK",
+      active: imageStatus === "FALLBACK",
+    },
+    {
+      key: "ADMIN",
+      label: t.courses.filterAdminImage,
+      href: "/admin/courses?imageSource=ADMIN_OVERRIDE",
+      active: imageSourceType === "ADMIN_OVERRIDE",
+    },
+    {
+      key: "DUP",
+      label: t.courses.filterDuplicates,
+      href: "/admin/courses?duplicates=1",
+      active: duplicatesOnly,
+    },
+  ];
 
   return (
     <>
@@ -118,6 +237,23 @@ export default async function AdminCoursesPage({ searchParams }: PageProps) {
           </Button>
         }
       />
+
+      <div className="mb-3 flex flex-wrap gap-1.5">
+        {filters.map((item) => (
+          <Link
+            key={item.key}
+            href={item.href}
+            className={cn(
+              "rounded border px-2.5 py-1 text-[0.75rem] transition",
+              item.active
+                ? "border-foreground/30 bg-muted font-medium text-foreground"
+                : "border-border text-muted-foreground hover:bg-muted/50",
+            )}
+          >
+            {item.label}
+          </Link>
+        ))}
+      </div>
 
       <div className="space-y-4">
         {!databaseReady ? (

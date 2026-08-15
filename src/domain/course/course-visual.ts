@@ -8,6 +8,20 @@ export type CourseVisual = {
   toneClass: string;
 };
 
+/** Minimal course fields needed for card/detail presentation. */
+export type CourseVisualSource = Pick<
+  CourseWithProvider,
+  | "id"
+  | "slug"
+  | "title"
+  | "imageOverrideUrl"
+  | "imageResolvedUrl"
+  | "imageStorageUrl"
+  | "imageSourceUrl"
+> & {
+  provider?: { name?: string | null } | null;
+};
+
 const TILE_TONES = [
   "course-tile-1",
   "course-tile-2",
@@ -16,11 +30,6 @@ const TILE_TONES = [
   "course-tile-5",
 ] as const;
 
-/**
- * FNV-1a over a stable course field. Any hash would do; the requirement is that
- * it is pure, so a course does not change appearance between renders or between
- * the server and the client.
- */
 function toneFor(seed: string): string {
   let hash = 0x811c9dc5;
   for (let index = 0; index < seed.length; index += 1) {
@@ -30,16 +39,20 @@ function toneFor(seed: string): string {
   return TILE_TONES[Math.abs(hash) % TILE_TONES.length]!;
 }
 
+function isDisplayableImageUrl(url: string | null | undefined): url is string {
+  if (!url) return false;
+  // Admin uploads are served same-origin; automatic pipeline uses HTTPS.
+  if (url.startsWith("/api/course-media/")) return true;
+  return /^https:\/\//i.test(url);
+}
+
 /**
- * Resolve what a course card should show in its 16:9 slot.
- *
- * A real provider thumbnail wins when one exists. Otherwise the card gets a
- * branded tile — deliberately not artwork, since inventing course imagery would
- * misrepresent the provider. Tones are drawn from one restrained brand-adjacent
- * set so a grid of fallbacks looks curated rather than random.
+ * Presentation priority (M23.1):
+ * ADMIN_OVERRIDE → OFFICIAL/resolved → storage → trusted source → branded tile
  */
-export function getCourseVisual(course: CourseWithProvider): CourseVisual {
+export function getCourseVisual(course: CourseVisualSource): CourseVisual {
   const remote =
+    course.imageOverrideUrl ??
     course.imageResolvedUrl ??
     course.imageStorageUrl ??
     course.imageSourceUrl ??
@@ -48,7 +61,7 @@ export function getCourseVisual(course: CourseWithProvider): CourseVisual {
     course.title.length > 64 ? `${course.title.slice(0, 61)}…` : course.title;
 
   return {
-    src: remote && /^https:\/\//i.test(remote) ? remote : null,
+    src: isDisplayableImageUrl(remote) ? remote : null,
     eyebrow: course.provider?.name ?? "",
     title: shortTitle,
     toneClass: toneFor(course.slug || course.id || course.title),

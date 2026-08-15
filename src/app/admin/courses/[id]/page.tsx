@@ -3,6 +3,8 @@ import { notFound, redirect } from "next/navigation";
 import { AdminPageHeader } from "@/components/admin/admin-page-header";
 import { AdminPanel } from "@/components/admin/admin-panel";
 import { CourseForm } from "@/components/admin/course-form";
+import { CourseImagePanel } from "@/components/admin/course-image-panel";
+import { CourseLifecyclePanel } from "@/components/admin/course-lifecycle-panel";
 import { CourseStatusActions } from "@/components/admin/course-status-actions";
 import { Badge, type BadgeProps } from "@/components/ui/badge";
 import { getDb } from "@/db";
@@ -12,6 +14,7 @@ import {
   getCourseCategoryIds,
 } from "@/db/repositories/course-repository";
 import { listProviders } from "@/db/repositories/provider-repository";
+import { getCourseVisual } from "@/domain/course/course-visual";
 import { getCourseStatusLabel } from "@/domain/course/labels";
 import type { CourseStatus } from "@/domain/course/types";
 import { getSession } from "@/lib/auth/guards";
@@ -107,10 +110,16 @@ export default async function AdminEditCoursePage({
     publish: t.courses.publish,
     unpublish: t.courses.unpublish,
     archive: t.courses.archive,
+    restore: t.courses.restore,
     statusUpdateFailed: t.courses.statusUpdateFailed,
     unableToUpdateStatus: t.courses.unableToUpdateStatus,
     publishBlockedHint: t.courses.publishBlockedHint,
   };
+
+  const visual = getCourseVisual({
+    ...course,
+    provider: providers.find((item) => item.id === course.providerId) ?? null,
+  });
 
   return (
     <>
@@ -135,6 +144,30 @@ export default async function AdminEditCoursePage({
           />
         }
       />
+
+      <AdminPanel title={t.courses.imageHeading} className="mb-4">
+        <CourseImagePanel
+          courseId={course.id}
+          displayUrl={visual.src}
+          imageSourceType={course.imageSourceType}
+          imageStatus={course.imageStatus}
+          imageSourceUrl={course.imageSourceUrl}
+          imageOverrideUrl={course.imageOverrideUrl}
+          imageCheckedAt={course.imageCheckedAt?.toISOString() ?? null}
+          imageFallbackReason={course.imageFallbackReason}
+        />
+      </AdminPanel>
+
+      <AdminPanel title={t.courses.lifecycleHeading} className="mb-4">
+        <CourseLifecyclePanel
+          courseId={course.id}
+          slug={course.slug}
+          title={course.title}
+          status={course.status}
+          duplicateOfCourseId={course.duplicateOfCourseId}
+          canPurge={session.role === "ADMIN"}
+        />
+      </AdminPanel>
 
       <AdminPanel>
         <CourseForm

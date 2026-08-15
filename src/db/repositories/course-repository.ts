@@ -27,7 +27,12 @@ import {
   FREE_LIST_EXCLUDED_PRICE_TYPES,
   isEligibleForFreeLists,
 } from "@/domain/course/free-durability";
-import type { CertificateType, CourseStatus } from "@/domain/course/types";
+import type {
+  CertificateType,
+  CourseImageSourceType,
+  CourseImageStatus,
+  CourseStatus,
+} from "@/domain/course/types";
 import {
   buildLexicalMatchCondition,
   buildLexicalRankExpression,
@@ -267,7 +272,12 @@ export async function listCourses(
   db: Db,
   options?: {
     status?: CourseStatus;
+    /** When true, exclude ARCHIVED from the default management list. */
+    excludeArchived?: boolean;
     certificateType?: CertificateType;
+    imageStatus?: CourseImageStatus;
+    imageSourceType?: CourseImageSourceType;
+    duplicatesOnly?: boolean;
     limit?: number;
   },
 ): Promise<CourseWithProvider[]> {
@@ -275,9 +285,20 @@ export async function listCourses(
 
   if (options?.status) {
     conditions.push(eq(courses.status, options.status));
+  } else if (options?.excludeArchived) {
+    conditions.push(sql`${courses.status} <> 'ARCHIVED'`);
   }
   if (options?.certificateType) {
     conditions.push(eq(courses.certificateType, options.certificateType));
+  }
+  if (options?.imageStatus) {
+    conditions.push(eq(courses.imageStatus, options.imageStatus));
+  }
+  if (options?.imageSourceType) {
+    conditions.push(eq(courses.imageSourceType, options.imageSourceType));
+  }
+  if (options?.duplicatesOnly) {
+    conditions.push(isNotNull(courses.duplicateOfCourseId));
   }
 
   const query = db
