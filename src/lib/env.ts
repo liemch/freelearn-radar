@@ -126,6 +126,44 @@ const baseEnvSchema = z.object({
   FEATURE_MEDIA_RESOLVER: optionalString,
   FEATURE_INTERESTS: optionalString,
   FEATURE_DISCOVERY_UX: optionalString,
+  // M24 object storage (flags default OFF)
+  FEATURE_OBJECT_STORAGE: optionalString,
+  FEATURE_R2_UPLOADS: optionalString,
+  FEATURE_COURSE_IMAGE_CACHE: optionalString,
+  FEATURE_MEDIA_ORPHAN_CLEANUP: optionalString,
+  OBJECT_STORAGE_PROVIDER: z.string().default("r2"),
+  R2_ACCOUNT_ID: optionalString,
+  R2_BUCKET: optionalString,
+  R2_ACCESS_KEY_ID: optionalString,
+  R2_SECRET_ACCESS_KEY: optionalString,
+  R2_PUBLIC_BASE_URL: optionalString,
+  MEDIA_MAX_TOTAL_BYTES: z.coerce
+    .number()
+    .int()
+    .nonnegative()
+    .default(5 * 1024 * 1024 * 1024),
+  MEDIA_DAILY_UPLOAD_BYTES: z.coerce
+    .number()
+    .int()
+    .nonnegative()
+    .default(500 * 1024 * 1024),
+  MEDIA_MAX_ASSET_BYTES: z.coerce
+    .number()
+    .int()
+    .positive()
+    .default(2 * 1024 * 1024),
+  MEDIA_CLEANUP_BATCH_SIZE: z.coerce
+    .number()
+    .int()
+    .positive()
+    .max(500)
+    .default(50),
+  MEDIA_ORPHAN_GRACE_DAYS: z.coerce
+    .number()
+    .int()
+    .positive()
+    .max(365)
+    .default(14),
   COUPON_DISCOVERY_MAX_PAGES_PER_RUN: z.coerce
     .number()
     .int()

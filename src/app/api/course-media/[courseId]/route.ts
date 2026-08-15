@@ -1,6 +1,9 @@
 import { NextResponse } from "next/server";
 
-import { getCourseMediaOverride } from "@/domain/media/course-image-override";
+import {
+  getCourseMediaOverride,
+  resolveCourseOverridePresentationUrl,
+} from "@/domain/media/course-image-override";
 import { withDb } from "@/lib/db-safe";
 
 type RouteContext = { params: Promise<{ courseId: string }> };
@@ -11,6 +14,17 @@ export async function GET(_request: Request, context: RouteContext) {
     return new NextResponse("Not found", { status: 404 });
   }
 
+  const resolved = await withDb(
+    "course-media.resolve",
+    (db) => resolveCourseOverridePresentationUrl(db, courseId),
+    null,
+  );
+
+  // Managed / remote URLs redirect; avoid proxying object storage through the app.
+  if (resolved && /^https:\/\//i.test(resolved)) {
+    return NextResponse.redirect(resolved, 302);
+  }
+
   const asset = await withDb(
     "course-media.get",
     (db) => getCourseMediaOverride(db, courseId),
@@ -18,7 +32,6 @@ export async function GET(_request: Request, context: RouteContext) {
   );
 
   if (!asset?.bytes || !asset.contentType) {
-    // Prefer redirect to remote override when present.
     if (asset?.remoteUrl) {
       return NextResponse.redirect(asset.remoteUrl, 302);
     }

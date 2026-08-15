@@ -1,9 +1,8 @@
-import type { Db } from "@/db";
 import {
   deleteSiteAsset,
   ensureSiteSettings,
-  getSiteAsset,
   getSiteSettings,
+  listSiteAssets,
   updateSiteSettings,
   upsertSiteAsset,
   type SiteSettingsPatch,
@@ -13,7 +12,15 @@ import {
   type SiteAssetKey,
   type SiteSettings,
 } from "@/db/schema/site-branding";
+import { managedAssets } from "@/db/schema/managed-assets";
+import { isObjectStorageEnabled, getObjectStorageProvider } from "@/domain/storage/get-provider";
+import {
+  markAssetUnreferenced,
+  uploadManagedAsset,
+} from "@/domain/storage/managed-asset-service";
 import { getDictionary } from "@/lib/i18n/get-dictionary";
+import { inArray } from "drizzle-orm";
+import type { Db } from "@/db";
 
 export const BRANDING_ALLOWED_MIME = new Set([
   "image/png",
@@ -27,7 +34,7 @@ export const BRANDING_MAX_BYTES: Record<SiteAssetKey, number> = {
   logo: 512 * 1024,
   logo_compact: 256 * 1024,
   favicon: 128 * 1024,
-  hero: 1024 * 1024,
+  hero: 2 * 1024 * 1024,
 };
 
 export type ResolvedHeroCopy = {
@@ -82,20 +89,76 @@ export async function resolveBranding(db: Db): Promise<ResolvedBranding> {
   const settings = await getSiteSettings(db);
   const hero = resolveHeroCopy(settings);
 
-  async function urlFor(key: string | null | undefined): Promise<string | null> {
-    if (!key) return null;
-    const asset = await getSiteAsset(db, key);
-    if (!asset) return null;
-    return assetPublicUrl(key, asset.updatedAt);
+  const managedIds = [
+    settings?.logoManagedAssetId,
+    settings?.logoCompactManagedAssetId,
+    settings?.faviconManagedAssetId,
+    settings?.heroManagedAssetId,
+  ].filter((id): id is string => Boolean(id));
+
+  const managedUrlById = new Map<string, string>();
+  if (managedIds.length > 0) {
+    const rows = await db
+      .select({
+        id: managedAssets.id,
+        storageKey: managedAssets.storageKey,
+        storageProvider: managedAssets.storageProvider,
+        status: managedAssets.status,
+      })
+      .from(managedAssets)
+      .where(inArray(managedAssets.id, managedIds));
+
+    const storage = getObjectStorageProvider();
+    for (const row of rows) {
+      if (row.status !== "ACTIVE") continue;
+      try {
+        managedUrlById.set(row.id, storage.getPublicUrl(row.storageKey));
+      } catch {
+        // Fall through to legacy.
+      }
+    }
+  }
+
+  const legacyKeys = [
+    settings?.logoAssetKey,
+    settings?.logoCompactAssetKey,
+    settings?.faviconAssetKey,
+    settings?.heroAssetKey,
+  ].filter((key): key is string => Boolean(key));
+
+  const legacyByKey = new Map<string, string>();
+  if (legacyKeys.length > 0) {
+    const assets = await listSiteAssets(db);
+    for (const asset of assets) {
+      if (legacyKeys.includes(asset.key)) {
+        legacyByKey.set(asset.key, assetPublicUrl(asset.key, asset.updatedAt));
+      }
+    }
+  }
+
+  function pick(
+    managedId: string | null | undefined,
+    legacyKey: string | null | undefined,
+  ): string | null {
+    if (managedId && managedUrlById.has(managedId)) {
+      return managedUrlById.get(managedId) ?? null;
+    }
+    if (legacyKey && legacyByKey.has(legacyKey)) {
+      return legacyByKey.get(legacyKey) ?? null;
+    }
+    return null;
   }
 
   return {
     settings,
     hero,
-    logoUrl: await urlFor(settings?.logoAssetKey),
-    logoCompactUrl: await urlFor(settings?.logoCompactAssetKey),
-    faviconUrl: await urlFor(settings?.faviconAssetKey),
-    heroImageUrl: await urlFor(settings?.heroAssetKey),
+    logoUrl: pick(settings?.logoManagedAssetId, settings?.logoAssetKey),
+    logoCompactUrl: pick(
+      settings?.logoCompactManagedAssetId,
+      settings?.logoCompactAssetKey,
+    ),
+    faviconUrl: pick(settings?.faviconManagedAssetId, settings?.faviconAssetKey),
+    heroImageUrl: pick(settings?.heroManagedAssetId, settings?.heroAssetKey),
   };
 }
 
@@ -156,6 +219,7 @@ export async function saveBrandingAsset(
     originalFilename?: string | null;
     width?: number | null;
     height?: number | null;
+    createdBy?: string | null;
   },
 ): Promise<{ settings: SiteSettings; url: string }> {
   const check = validateBrandingUpload({
@@ -165,6 +229,50 @@ export async function saveBrandingAsset(
   });
   if (!check.ok) {
     throw new Error(check.error);
+  }
+
+  const managedColumnByKey: Record<SiteAssetKey, keyof SiteSettingsPatch> = {
+    logo: "logoManagedAssetId",
+    logo_compact: "logoCompactManagedAssetId",
+    favicon: "faviconManagedAssetId",
+    hero: "heroManagedAssetId",
+  };
+
+  const legacyColumnByKey: Record<SiteAssetKey, keyof SiteSettingsPatch> = {
+    logo: "logoAssetKey",
+    logo_compact: "logoCompactAssetKey",
+    favicon: "faviconAssetKey",
+    hero: "heroAssetKey",
+  };
+
+  const current = await ensureSiteSettings(db);
+  const previousManagedId = current[managedColumnByKey[input.key] as keyof SiteSettings] as
+    | string
+    | null
+    | undefined;
+
+  if (isObjectStorageEnabled()) {
+    const uploaded = await uploadManagedAsset(db, {
+      assetType: "BRANDING",
+      bytes: input.bytes,
+      claimedMime: input.contentType,
+      entityId: input.key,
+      sourceType: "ADMIN_BRANDING_UPLOAD",
+      createdBy: input.createdBy ?? null,
+      allowDedup: false,
+    });
+
+    const settings = await updateSiteSettings(db, {
+      [managedColumnByKey[input.key]]: uploaded.asset.id,
+      // Keep legacy key cleared so UI prefers managed URL.
+      [legacyColumnByKey[input.key]]: null,
+    });
+
+    if (previousManagedId && previousManagedId !== uploaded.asset.id) {
+      await markAssetUnreferenced(db, previousManagedId);
+    }
+
+    return { settings, url: uploaded.publicUrl };
   }
 
   const asset = await upsertSiteAsset(db, {
@@ -177,15 +285,8 @@ export async function saveBrandingAsset(
     originalFilename: input.originalFilename ?? null,
   });
 
-  const columnByKey: Record<SiteAssetKey, keyof SiteSettingsPatch> = {
-    logo: "logoAssetKey",
-    logo_compact: "logoCompactAssetKey",
-    favicon: "faviconAssetKey",
-    hero: "heroAssetKey",
-  };
-
   const settings = await updateSiteSettings(db, {
-    [columnByKey[input.key]]: input.key,
+    [legacyColumnByKey[input.key]]: input.key,
   });
 
   return {
@@ -200,16 +301,35 @@ export async function clearBrandingAsset(
 ): Promise<SiteSettings> {
   await deleteSiteAsset(db, key);
 
-  const columnByKey: Record<SiteAssetKey, keyof SiteSettingsPatch> = {
+  const managedColumnByKey: Record<SiteAssetKey, keyof SiteSettingsPatch> = {
+    logo: "logoManagedAssetId",
+    logo_compact: "logoCompactManagedAssetId",
+    favicon: "faviconManagedAssetId",
+    hero: "heroManagedAssetId",
+  };
+
+  const legacyColumnByKey: Record<SiteAssetKey, keyof SiteSettingsPatch> = {
     logo: "logoAssetKey",
     logo_compact: "logoCompactAssetKey",
     favicon: "faviconAssetKey",
     hero: "heroAssetKey",
   };
 
-  return updateSiteSettings(db, {
-    [columnByKey[key]]: null,
+  const current = await ensureSiteSettings(db);
+  const previousManagedId = current[
+    managedColumnByKey[key] as keyof SiteSettings
+  ] as string | null | undefined;
+
+  const settings = await updateSiteSettings(db, {
+    [legacyColumnByKey[key]]: null,
+    [managedColumnByKey[key]]: null,
   });
+
+  if (previousManagedId) {
+    await markAssetUnreferenced(db, previousManagedId);
+  }
+
+  return settings;
 }
 
 /** Snapshot safe for audit logs — never includes binary bytes. */
@@ -225,5 +345,9 @@ export function brandingAuditSnapshot(settings: SiteSettings | null) {
     logoCompactAssetKey: settings.logoCompactAssetKey,
     faviconAssetKey: settings.faviconAssetKey,
     heroAssetKey: settings.heroAssetKey,
+    logoManagedAssetId: settings.logoManagedAssetId,
+    logoCompactManagedAssetId: settings.logoCompactManagedAssetId,
+    faviconManagedAssetId: settings.faviconManagedAssetId,
+    heroManagedAssetId: settings.heroManagedAssetId,
   };
 }

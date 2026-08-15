@@ -29,12 +29,21 @@ export async function GET(request: Request) {
     // coupon flag — image quality is independent of coupon discovery.
     const media = await runMediaResolution(db);
 
+    let orphanCleanup = null;
+    if (env.FEATURE_MEDIA_ORPHAN_CLEANUP === "true") {
+      const { runOrphanAssetCleanup } = await import(
+        "@/domain/storage/managed-asset-service"
+      );
+      orphanCleanup = await runOrphanAssetCleanup(db);
+    }
+
     if (env.FEATURE_COUPON_DISCOVERY !== "true") {
       return NextResponse.json({
         ok: true,
         skipped: true,
         reason: "FEATURE_COUPON_DISCOVERY_off",
         media,
+        orphanCleanup,
       });
     }
 
@@ -46,7 +55,7 @@ export async function GET(request: Request) {
       action: "COUPON_RUN",
       entityType: "coupon",
       entityId: "cron",
-      after: { discovery, verification, media },
+      after: { discovery, verification, media, orphanCleanup },
     });
 
     logger.info("cron.coupons", {
@@ -54,6 +63,7 @@ export async function GET(request: Request) {
       discovery,
       verification,
       media,
+      orphanCleanup,
     });
 
     return NextResponse.json({
@@ -61,6 +71,7 @@ export async function GET(request: Request) {
       discovery,
       verification,
       media,
+      orphanCleanup,
     });
   } catch (error) {
     logger.error("cron.coupons", {

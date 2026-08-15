@@ -8,6 +8,7 @@ import {
 } from "drizzle-orm/pg-core";
 
 import { courses } from "@/db/schema/courses";
+import { managedAssets } from "@/db/schema/managed-assets";
 
 const bytea = customType<{ data: Buffer; driverData: Buffer }>({
   dataType() {
@@ -30,6 +31,10 @@ export const courseMediaOverrides = pgTable("course_media_overrides", {
   originalFilename: text("original_filename"),
   width: integer("width"),
   height: integer("height"),
+  /** M24 — object-storage reference; bytea kept for legacy. */
+  managedAssetId: uuid("managed_asset_id").references(() => managedAssets.id, {
+    onDelete: "set null",
+  }),
   updatedAt: timestamp("updated_at", { withTimezone: true })
     .notNull()
     .defaultNow(),

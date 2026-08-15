@@ -75,6 +75,8 @@ export const courses = pgTable(
     imagePolicy: text("image_policy").default("REMOTE_ONLY"),
     /** Admin presentation override — never overwrites source evidence URLs. */
     imageOverrideUrl: text("image_override_url"),
+    /** M24 optional managed cache of fragile remote thumbnails. */
+    imageCacheAssetId: uuid("image_cache_asset_id"),
     duplicateOfCourseId: uuid("duplicate_of_course_id"),
     freeDurability: freeDurabilityEnum("free_durability")
       .notNull()

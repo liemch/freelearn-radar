@@ -15,6 +15,15 @@ import type { Db } from "@/db";
 import { mapCourseIdsToPrimaryCategorySlug } from "@/db/repositories/course-repository";
 import { courses, providers } from "@/db/schema";
 import { resolveCourseMedia } from "@/domain/media/media-resolver";
+import { shouldCacheCourseImage } from "@/domain/storage/cache-policy";
+import {
+  isCourseImageCacheEnabled,
+  isObjectStorageEnabled,
+} from "@/domain/storage/get-provider";
+import {
+  uploadManagedAsset,
+} from "@/domain/storage/managed-asset-service";
+import { fetchCourseImageSafely } from "@/services/images/course-image-service";
 import { getServerEnv } from "@/lib/env";
 import { logger } from "@/lib/logger";
 
@@ -244,6 +253,48 @@ export async function runMediaResolution(
         { validateRemote: true },
       );
 
+      let nextStorageUrl = candidate.imageStorageUrl;
+      let nextCacheAssetId: string | null | undefined;
+
+      if (
+        isCourseImageCacheEnabled() &&
+        isObjectStorageEnabled() &&
+        result.imageStatus === "OK" &&
+        result.imageResolvedUrl
+      ) {
+        const decision = shouldCacheCourseImage({
+          imageSourceType: result.imageSourceType,
+          imagePolicy: candidate.imagePolicy,
+          imageStatus: result.imageStatus,
+          sourceUrl: result.imageResolvedUrl,
+        });
+        if (decision.action === "CACHE") {
+          try {
+            const fetched = await fetchCourseImageSafely(result.imageResolvedUrl);
+            if (fetched.ok) {
+              const uploaded = await uploadManagedAsset(db, {
+                assetType: "COURSE_CACHE",
+                bytes: Buffer.from(fetched.bytes),
+                claimedMime: fetched.contentType,
+                entityId: candidate.id,
+                sourceUrl: result.imageResolvedUrl,
+                sourceType: decision.reason,
+              });
+              nextStorageUrl = uploaded.publicUrl;
+              nextCacheAssetId = uploaded.asset.id;
+            }
+          } catch (cacheError) {
+            logger.warn("media.cache.skip", {
+              courseId: candidate.id,
+              error:
+                cacheError instanceof Error
+                  ? cacheError.message
+                  : "cache_failed",
+            });
+          }
+        }
+      }
+
       await db
         .update(courses)
         .set({
@@ -255,6 +306,10 @@ export async function runMediaResolution(
           imageHash: result.imageHash,
           imageFallbackReason: result.imageFallbackReason,
           imageCheckedAt: result.imageCheckedAt,
+          imageStorageUrl: nextStorageUrl,
+          ...(nextCacheAssetId !== undefined
+            ? { imageCacheAssetId: nextCacheAssetId }
+            : {}),
           updatedAt: new Date(),
         })
         .where(eq(courses.id, candidate.id));

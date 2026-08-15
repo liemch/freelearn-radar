@@ -69,6 +69,7 @@ export async function PATCH(request: Request, context: RouteContext) {
         contentType: file.type || "application/octet-stream",
         bytes,
         originalFilename: file.name,
+        createdBy: session.userId,
       });
       await writeAuditLog(db, {
         actorType: "USER",

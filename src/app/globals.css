@@ -101,8 +101,9 @@
   --admin-nav-active: oklch(0.37 0.065 175);
   --admin-nav-border: oklch(0.33 0.05 175);
 
-  --font-body: "Manrope", ui-sans-serif, system-ui, sans-serif;
-  --font-display: "Fraunces", ui-serif, Georgia, serif;
+  --font-body: var(--font-manrope), "Manrope", ui-sans-serif, system-ui,
+    sans-serif;
+  --font-display: var(--font-fraunces), "Fraunces", ui-serif, Georgia, serif;
 }
 
 @layer base {

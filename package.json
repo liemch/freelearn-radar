@@ -34,6 +34,7 @@
     "verify:flags-on": "tsx scripts/verify/06-flags-on.ts"
   },
   "dependencies": {
+    "@aws-sdk/client-s3": "^3.1111.0",
     "@neondatabase/serverless": "^0.10.4",
     "@radix-ui/react-slot": "^1.2.3",
     "bcryptjs": "^3.0.2",

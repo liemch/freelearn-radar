@@ -21,6 +21,10 @@ export type SiteSettingsPatch = Partial<{
   logoCompactAssetKey: string | null;
   faviconAssetKey: string | null;
   heroAssetKey: string | null;
+  logoManagedAssetId: string | null;
+  logoCompactManagedAssetId: string | null;
+  faviconManagedAssetId: string | null;
+  heroManagedAssetId: string | null;
 }>;
 
 export async function getSiteSettings(db: Db): Promise<SiteSettings | null> {
@@ -67,6 +71,10 @@ export async function updateSiteSettings(
     throw new Error("site_settings update returned no row");
   }
   return row;
+}
+
+export async function listSiteAssets(db: Db): Promise<SiteAsset[]> {
+  return db.select().from(siteAssets);
 }
 
 export async function getSiteAsset(

@@ -25,6 +25,7 @@ export const affiliateProducts = pgTable(
     destinationUrl: text("destination_url").notNull(),
     merchantProductId: text("merchant_product_id"),
     imageUrl: text("image_url"),
+    managedAssetId: uuid("managed_asset_id"),
     shortDescription: text("short_description"),
     productCategory: commerceProductGroupEnum("product_category").notNull(),
     displayPrice: text("display_price"),

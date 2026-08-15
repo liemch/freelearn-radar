@@ -19,6 +19,7 @@ import {
   Tags,
   Ticket,
   Users,
+  HardDrive,
   X,
 } from "lucide-react";
 import Link from "next/link";
@@ -45,6 +46,7 @@ export type AdminNavIcon =
   | "coupons"
   | "coverage"
   | "mediaQuality"
+  | "mediaStorage"
   | "branding";
 
 export type AdminNavItem = {
@@ -78,6 +80,7 @@ const ICONS: Record<AdminNavIcon, typeof LayoutDashboard> = {
   coupons: Ticket,
   coverage: PieChart,
   mediaQuality: Image,
+  mediaStorage: HardDrive,
   branding: Palette,
 };
 

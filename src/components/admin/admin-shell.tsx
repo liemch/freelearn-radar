@@ -69,6 +69,11 @@ export function AdminShell({ session, locale, children }: AdminShellProps) {
       icon: "mediaQuality",
     },
     {
+      href: "/admin/media-storage",
+      label: t.nav.mediaStorage,
+      icon: "mediaStorage",
+    },
+    {
       href: "/admin/branding",
       label: t.nav.branding,
       icon: "branding",

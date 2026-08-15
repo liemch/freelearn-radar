@@ -1,7 +1,7 @@
 import { Skeleton } from "@/components/ui/skeleton";
 
 type PublicPageLoadingProps = {
-  variant?: "catalog" | "detail" | "generic";
+  variant?: "catalog" | "detail" | "generic" | "home";
 };
 
 function HeaderSkeleton() {
@@ -34,6 +34,47 @@ function CourseCardSkeleton() {
         </div>
       </div>
     </div>
+  );
+}
+
+function HomeSkeleton() {
+  return (
+    <main className="flex min-h-screen flex-col">
+      <div className="border-b border-border/60 bg-card/40">
+        <div className="mx-auto grid max-w-7xl gap-8 px-4 py-12 sm:px-6 lg:grid-cols-[minmax(0,1.1fr)_minmax(0,0.9fr)] lg:px-8 lg:py-16">
+          <div className="space-y-5">
+            <Skeleton className="h-4 w-40" />
+            <Skeleton className="h-12 w-full max-w-xl" />
+            <Skeleton className="h-12 w-4/5 max-w-lg" />
+            <Skeleton className="h-5 w-full max-w-md" />
+            <Skeleton className="mt-4 h-12 w-full max-w-xl rounded-lg" />
+            <div className="flex flex-wrap gap-2 pt-2">
+              <Skeleton className="h-8 w-20 rounded-full" />
+              <Skeleton className="h-8 w-16 rounded-full" />
+              <Skeleton className="h-8 w-28 rounded-full" />
+            </div>
+          </div>
+          <Skeleton className="hidden aspect-[4/3] w-full rounded-2xl lg:block" />
+        </div>
+      </div>
+      <div className="border-b border-border/50">
+        <div className="mx-auto flex max-w-7xl gap-6 overflow-hidden px-4 py-4 sm:px-6 lg:px-8">
+          <Skeleton className="h-5 w-28" />
+          <Skeleton className="h-5 w-24" />
+          <Skeleton className="h-5 w-32" />
+        </div>
+      </div>
+      <div className="mx-auto w-full max-w-7xl space-y-10 px-4 py-10 sm:px-6 lg:px-8">
+        <div className="space-y-4">
+          <Skeleton className="h-8 w-56" />
+          <div className="grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
+            {Array.from({ length: 3 }).map((_, index) => (
+              <CourseCardSkeleton key={index} />
+            ))}
+          </div>
+        </div>
+      </div>
+    </main>
   );
 }
 
@@ -99,7 +140,9 @@ export function PublicPageLoading({
     <div aria-busy="true" aria-live="polite" role="status">
       <span className="sr-only">Đang tải trang</span>
       <HeaderSkeleton />
-      {variant === "catalog" ? (
+      {variant === "home" ? (
+        <HomeSkeleton />
+      ) : variant === "catalog" ? (
         <CatalogSkeleton />
       ) : variant === "detail" ? (
         <DetailSkeleton />

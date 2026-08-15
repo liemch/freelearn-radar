@@ -2,10 +2,8 @@ import type { Locale } from "@/lib/i18n/config";
 import { getDictionary } from "@/lib/i18n/get-dictionary";
 import { localePath } from "@/lib/i18n/path";
 import { listTopicSlugs } from "@/domain/discovery/topic-landings";
-import { shouldSkipBrandingDb } from "@/domain/branding/build-guard";
-import { resolveBranding } from "@/domain/branding/site-branding";
+import { getResolvedBranding } from "@/domain/branding/get-resolved-branding";
 import { getServerEnv } from "@/lib/env";
-import { withDb } from "@/lib/db-safe";
 
 import { BrandLogo } from "@/components/brand/brand-logo";
 import { SiteHeaderClient } from "@/components/public/site-header-client";
@@ -36,9 +34,7 @@ export async function SiteHeader({ locale }: SiteHeaderProps) {
   const learningPaths = learningPathsEnabled();
   const firstTopic = listTopicSlugs()[0] ?? "ai";
 
-  const branding = shouldSkipBrandingDb()
-    ? null
-    : await withDb("header.branding", (db) => resolveBranding(db), null);
+  const branding = await getResolvedBranding();
 
   const hero = branding?.hero ?? {
     searchPlaceholder: dict.hero.searchPlaceholder,

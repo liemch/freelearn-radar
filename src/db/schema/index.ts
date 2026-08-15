@@ -26,3 +26,4 @@ export * from "@/db/schema/coupon";
 export * from "@/db/schema/discovery-category-stats";
 export * from "@/db/schema/site-branding";
 export * from "@/db/schema/course-media-overrides";
+export * from "@/db/schema/managed-assets";

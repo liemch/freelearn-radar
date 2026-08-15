@@ -113,6 +113,13 @@
       "when": 1724745600000,
       "tag": "0015_m23_media_lifecycle_affiliate",
       "breakpoints": true
+    },
+    {
+      "idx": 16,
+      "version": "7",
+      "when": 1724832000000,
+      "tag": "0016_m24_managed_assets",
+      "breakpoints": true
     }
   ]
 }

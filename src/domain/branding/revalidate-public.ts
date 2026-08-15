@@ -1,12 +1,13 @@
-import { revalidatePath } from "next/cache";
+import { revalidatePath, revalidateTag } from "next/cache";
 
+import { SITE_BRANDING_CACHE_TAG } from "@/domain/branding/get-resolved-branding";
 import { listTopicSlugs } from "@/domain/discovery/topic-landings";
 
 /**
- * Smallest post-M22 fix for stale SSG branding: after Admin uploads/edits,
- * revalidate public shells that may have baked default logos at build time.
+ * After Admin branding mutations: bust tagged cache + ISR shells.
  */
 export function revalidatePublicBranding(): void {
+  revalidateTag(SITE_BRANDING_CACHE_TAG);
   revalidatePath("/", "layout");
   revalidatePath("/vi");
   revalidatePath("/en");

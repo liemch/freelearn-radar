@@ -3,6 +3,7 @@ import {
   pgTable,
   text,
   timestamp,
+  uuid,
   customType,
 } from "drizzle-orm/pg-core";
 
@@ -28,6 +29,11 @@ export const siteSettings = pgTable("site_settings", {
   logoCompactAssetKey: text("logo_compact_asset_key"),
   faviconAssetKey: text("favicon_asset_key"),
   heroAssetKey: text("hero_asset_key"),
+  /** M24 managed-storage refs (preferred over legacy site_assets keys). */
+  logoManagedAssetId: uuid("logo_managed_asset_id"),
+  logoCompactManagedAssetId: uuid("logo_compact_managed_asset_id"),
+  faviconManagedAssetId: uuid("favicon_managed_asset_id"),
+  heroManagedAssetId: uuid("hero_managed_asset_id"),
   updatedAt: timestamp("updated_at", { withTimezone: true })
     .notNull()
     .defaultNow(),

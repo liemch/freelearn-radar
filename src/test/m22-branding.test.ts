@@ -29,6 +29,10 @@ describe("M22.0 site branding", () => {
       logoCompactAssetKey: null,
       faviconAssetKey: null,
       heroAssetKey: null,
+      logoManagedAssetId: null,
+      logoCompactManagedAssetId: null,
+      faviconManagedAssetId: null,
+      heroManagedAssetId: null,
       updatedAt: new Date(),
     } satisfies SiteSettings;
 

@@ -19,12 +19,10 @@ import {
   getCatalogTrustSignals,
   listPublishedCoursesWithProvider,
   mapCourseIdsToCategorySlugs,
-  queryCatalog,
 } from "@/db/repositories/course-repository";
 import { listActive100OffOffers } from "@/db/repositories/coupon-repository";
 import { listProviders } from "@/db/repositories/provider-repository";
-import { shouldSkipBrandingDb } from "@/domain/branding/build-guard";
-import { resolveBranding } from "@/domain/branding/site-branding";
+import { getResolvedBranding } from "@/domain/branding/get-resolved-branding";
 import { isEligibleForFreeLists } from "@/domain/course/free-durability";
 import { queryDailyFreeDeals } from "@/domain/discovery/daily-free";
 import { currentBestPath } from "@/domain/discovery/monthly-collection";
@@ -74,13 +72,7 @@ export async function generateMetadata({
     /* optional in build */
   }
 
-  const branding = shouldSkipBrandingDb()
-    ? null
-    : await withDb(
-        "home.metadata.branding",
-        (db) => resolveBranding(db),
-        null,
-      );
+  const branding = await getResolvedBranding();
 
   const title =
     locale === "vi"
@@ -128,12 +120,13 @@ export default async function HomePage({ params }: HomePageProps) {
     },
   ];
 
+  // M25: drop duplicate catalog queries — free-cert / short sections are
+  // derived from the published list already loaded for ranking sections.
+  // Branding uses request+tag cache (getResolvedBranding), not a 9th withDb.
   const [
     published,
     categories,
     providers,
-    freeCert,
-    shortCourses,
     trust,
     dailyFree,
     activeOffers,
@@ -146,28 +139,6 @@ export default async function HomePage({ params }: HomePageProps) {
     ),
     withDb("home.categories", (db) => listCategories(db), []),
     withDb("home.providers", (db) => listProviders(db), []),
-    withDb(
-      "home.freeCert",
-      (db) =>
-        queryCatalog(db, {
-          certificateType: "FREE_CERTIFICATE",
-          sort: "recommended",
-          page: 1,
-          pageSize: 6,
-        }),
-      { items: [], total: 0, page: 1, pageSize: 6, totalPages: 1 },
-    ),
-    withDb(
-      "home.short",
-      (db) =>
-        queryCatalog(db, {
-          durationMaxMinutes: 60,
-          sort: "shortest",
-          page: 1,
-          pageSize: 6,
-        }),
-      { items: [], total: 0, page: 1, pageSize: 6, totalPages: 1 },
-    ),
     withDb("home.trust", (db) => getCatalogTrustSignals(db), {
       publishedCount: 0,
       lastVerifiedAt: null,
@@ -178,9 +149,7 @@ export default async function HomePage({ params }: HomePageProps) {
       [],
     ),
     withDb("home.activeOffers", (db) => listActive100OffOffers(db, 48), []),
-    shouldSkipBrandingDb()
-      ? Promise.resolve(null)
-      : withDb("home.branding", (db) => resolveBranding(db), null),
+    getResolvedBranding(),
   ]);
 
   const categoryBySlug = new Map(
@@ -215,6 +184,18 @@ export default async function HomePage({ params }: HomePageProps) {
     .filter(
       (course) =>
         course.priceType === "FREE_FULL" || course.priceType === "FREE_AUDIT",
+    )
+    .slice(0, 6);
+  const freeCertCourses = ranked
+    .filter((course) => course.certificateType === "FREE_CERTIFICATE")
+    .slice(0, 6);
+  const shortCourses = [...published]
+    .filter(
+      (course) =>
+        course.durationMinutes != null && course.durationMinutes <= 60,
+    )
+    .sort(
+      (a, b) => (a.durationMinutes ?? 0) - (b.durationMinutes ?? 0),
     )
     .slice(0, 6);
   const recentlyVerified = [...freeEligible]
@@ -360,23 +341,23 @@ export default async function HomePage({ params }: HomePageProps) {
             />
           ) : null}
 
-          {freeCert.items.length > 0 ? (
+          {freeCertCourses.length > 0 ? (
             <CourseSection
               locale={locale}
               title={dict.sections.freeCertificates}
               subtitle={dict.sections.freeCertificatesSub}
-              courses={freeCert.items}
+              courses={freeCertCourses}
               viewAllHref={localePath(locale, "/free-certificate-courses")}
               viewAllLabel={dict.sections.viewAll}
             />
           ) : null}
 
-          {shortCourses.items.length > 0 ? (
+          {shortCourses.length > 0 ? (
             <CourseSection
               locale={locale}
               title={dict.sections.shortCourses}
               subtitle={dict.sections.shortCoursesSub}
-              courses={shortCourses.items}
+              courses={shortCourses}
               viewAllHref={localePath(locale, "/collections/under-1-hour")}
               viewAllLabel={dict.sections.viewAll}
             />

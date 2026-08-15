@@ -54,6 +54,7 @@ export type AdminDictionary = {
     coupons: string;
     coverage: string;
     mediaQuality: string;
+    mediaStorage: string;
     branding: string;
   };
   login: {
@@ -486,6 +487,29 @@ export type AdminDictionary = {
     course: string;
     status: string;
     sourceType: string;
+  };
+  mediaStorage: {
+    heading: string;
+    description: string;
+    storageOn: string;
+    storageOff: string;
+    totalAssets: string;
+    totalBytes: string;
+    typeBranding: string;
+    typeCourseOverride: string;
+    typeCourseCache: string;
+    typeAffiliate: string;
+    orphans: string;
+    failed: string;
+    filterAll: string;
+    filterOrphan: string;
+    filterFailed: string;
+    listTitle: string;
+    empty: string;
+    colType: string;
+    colStatus: string;
+    colSize: string;
+    colKey: string;
   };
   branding: {
     heading: string;

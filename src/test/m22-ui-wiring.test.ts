@@ -37,7 +37,7 @@ describe("M22.0 UI refresh wiring", () => {
 
   it("resolves header logo from branding with BrandMark fallback", () => {
     const header = read("src/components/public/site-header.tsx");
-    expect(header).toContain("resolveBranding");
+    expect(header).toContain("getResolvedBranding");
     expect(header).toContain("BrandLogo");
   });
 
