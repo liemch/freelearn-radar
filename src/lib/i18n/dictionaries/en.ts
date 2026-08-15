@@ -31,6 +31,8 @@ export const en: Dictionary = {
     lastChecked: "Last checked",
     transparency: "Free status, stated plainly",
     transparencyHint: "Audit-only and paid-certificate courses are labelled, never hidden",
+    activeCoupons: "active 100% coupons",
+    activeCouponsHint: "Verified offers still within their expiry window",
   },
   sections: {
     freeThisWeek: "Free this week",
@@ -57,6 +59,14 @@ export const en: Dictionary = {
     forYouSub: "Soft suggestions from topics you pick — never overrides search",
     quickDomains: "Popular domains",
     quickDomainsSub: "Pick a domain to start browsing",
+    browseDomains: "Browse by domain",
+    browseDomainsSub: "Real taxonomy categories from Radar",
+    providersOnRadar: "Platforms with courses on Radar",
+    providersOnRadarSub: "Sources currently contributing eligible free courses",
+    needHelpTitle: "Can't find the right course?",
+    needHelpDescription:
+      "Search by topic, or open the full catalog to filter by platform and free type.",
+    needHelpAction: "Search courses",
   },
   interests: {
     title: "Topics I care about",
@@ -224,6 +234,8 @@ export const en: Dictionary = {
     continuesOn: (provider) =>
       `Continues on ${provider}. FreeLearn Radar does not host lessons. Free status is not guaranteed.`,
     viewCourseOn: (provider) => `View course on ${provider}`,
+    startFreeLearning: "Start learning free",
+    claimFreeCourse: "Claim free course",
     moreFrom: (provider) => `More from ${provider}`,
     monthlyBest: "Monthly best",
     fallbackSummary: "Curated free course.",

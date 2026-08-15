@@ -31,7 +31,7 @@ export function CourseGrid({
   return (
     <div
       className={cn(
-        "grid grid-cols-[repeat(auto-fill,minmax(min(17rem,100%),1fr))] gap-4",
+        "grid grid-cols-[repeat(auto-fill,minmax(min(16.5rem,100%),1fr))] gap-4 sm:gap-5",
         className,
       )}
     >

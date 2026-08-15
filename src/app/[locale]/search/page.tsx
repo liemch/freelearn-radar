@@ -261,11 +261,11 @@ export default async function SearchPage({
       <LocaleHtmlLang locale={locale} />
       <SiteHeader locale={locale} />
       <PageShell className="space-y-6 py-7 sm:space-y-8 sm:py-10">
-        <div className="space-y-2">
-          <h1 className="font-display text-[1.75rem] font-semibold tracking-tight sm:text-3xl">
+        <div className="space-y-3 rounded-2xl border border-border/60 bg-surface/80 px-4 py-5 sm:px-6 sm:py-6">
+          <h1 className="font-display text-[1.75rem] font-semibold tracking-tight sm:text-4xl">
             {dict.search.title}
           </h1>
-          <p className="text-[0.9375rem] text-muted-foreground sm:text-base">
+          <p className="max-w-2xl text-[0.9375rem] text-muted-foreground sm:text-base">
             {dict.search.description}
           </p>
           <p className="text-sm text-muted-foreground">

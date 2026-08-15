@@ -10,6 +10,7 @@ import {
   CircleDollarSign,
   ListFilter,
   Menu,
+  Palette,
   PieChart,
   Radar,
   Search,
@@ -41,7 +42,8 @@ export type AdminNavIcon =
   | "monetization"
   | "coupons"
   | "coverage"
-  | "mediaQuality";
+  | "mediaQuality"
+  | "branding";
 
 export type AdminNavItem = {
   href: string;
@@ -73,6 +75,7 @@ const ICONS: Record<AdminNavIcon, typeof LayoutDashboard> = {
   coupons: Ticket,
   coverage: PieChart,
   mediaQuality: Image,
+  branding: Palette,
 };
 
 /**

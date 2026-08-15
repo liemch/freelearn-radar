@@ -23,3 +23,4 @@ export * from "@/db/schema/course-embeddings";
 export * from "@/db/schema/affiliate";
 export * from "@/db/schema/coupon";
 export * from "@/db/schema/discovery-category-stats";
+export * from "@/db/schema/site-branding";

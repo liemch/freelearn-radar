@@ -63,6 +63,11 @@ export function AdminShell({ session, locale, children }: AdminShellProps) {
       label: t.nav.mediaQuality,
       icon: "mediaQuality",
     },
+    {
+      href: "/admin/branding",
+      label: t.nav.branding,
+      icon: "branding",
+    },
   ];
 
   const navLabels: AdminNavLabels = {

@@ -234,6 +234,14 @@ export default async function CourseDetailPage({ params }: CoursePageProps) {
   const homeUrl = `${appUrl}${localePath(locale, "/")}`;
   const providerUrl = `${appUrl}${localePath(locale, `/provider/${course.provider.slug}`)}`;
 
+  const primaryCtaLabel =
+    course.priceType === "FREE_FULL" || course.priceType === "FREE_AUDIT"
+      ? dict.courseDetail.startFreeLearning
+      : course.priceType === "FREE_WITH_COUPON" ||
+          course.priceType === "TEMPORARILY_FREE"
+        ? dict.courseDetail.claimFreeCourse
+        : dict.courseDetail.viewCourseOn(course.provider.name);
+
   return (
     <main className="min-h-screen bg-background">
       <LocaleHtmlLang locale={locale} />
@@ -314,11 +322,12 @@ export default async function CourseDetailPage({ params }: CoursePageProps) {
               </div>
             </header>
 
-            <aside className="order-2 h-fit overflow-hidden rounded-xl border border-border bg-card shadow-sm lg:sticky lg:top-20 lg:col-start-2 lg:row-span-2 lg:self-start">
+            <aside className="order-2 h-fit overflow-hidden rounded-2xl border border-border/70 bg-card shadow-card lg:sticky lg:top-20 lg:col-start-2 lg:row-span-2 lg:self-start">
               {/*
                 The visual sits in the action panel rather than above the h1:
                 it belongs with "view this course", and putting it there keeps
-                the page's first landmark the course title.
+                the page's first landmark the course title. No fake play button —
+                only the course image from the media pipeline.
               */}
               <CourseCardVisual
                 src={visual.src}
@@ -336,12 +345,12 @@ export default async function CourseDetailPage({ params }: CoursePageProps) {
               </p>
               <Button
                 asChild
-                className="h-11 w-full sm:h-10"
+                className="h-12 w-full rounded-xl text-base sm:h-11"
                 size="lg"
                 variant={inactive ? "outline" : "default"}
               >
                 <a href={`/course/${course.slug}/go`}>
-                  {dict.courseDetail.viewCourseOn(course.provider.name)}
+                  {primaryCtaLabel}
                 </a>
               </Button>
               {disclosureNearCta ? (

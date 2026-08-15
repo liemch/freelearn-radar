@@ -1042,6 +1042,41 @@ WHERE c."offer_url" = keep."offer_url"
 CREATE UNIQUE INDEX IF NOT EXISTS "coupon_candidates_offer_url_uidx"
   ON "coupon_candidates" ("offer_url");
 
+-- ========== MIGRATION 0014_m22_site_branding ==========
+-- M22.0 — Admin-managed site branding (singleton settings + small binary assets).
+-- Assets are intentionally small (logos/hero) and stored in Postgres so branding
+-- works without a separate object-storage credential. Course media stays on the
+-- existing remote-URL pipeline.
+
+CREATE TABLE IF NOT EXISTS "site_settings" (
+  "id" text PRIMARY KEY DEFAULT 'default',
+  "hero_eyebrow" text,
+  "hero_title" text,
+  "hero_description" text,
+  "search_placeholder" text,
+  "hero_image_alt" text,
+  "logo_asset_key" text,
+  "logo_compact_asset_key" text,
+  "favicon_asset_key" text,
+  "hero_asset_key" text,
+  "updated_at" timestamp with time zone DEFAULT now() NOT NULL
+);
+
+INSERT INTO "site_settings" ("id")
+VALUES ('default')
+ON CONFLICT ("id") DO NOTHING;
+
+CREATE TABLE IF NOT EXISTS "site_assets" (
+  "key" text PRIMARY KEY,
+  "content_type" text NOT NULL,
+  "bytes" bytea NOT NULL,
+  "byte_length" integer NOT NULL,
+  "width" integer,
+  "height" integer,
+  "original_filename" text,
+  "updated_at" timestamp with time zone DEFAULT now() NOT NULL
+);
+
 -- ========== DRIZZLE MIGRATION TRACKING ==========
 CREATE SCHEMA IF NOT EXISTS "drizzle";
 CREATE TABLE IF NOT EXISTS "drizzle"."__drizzle_migrations" (
@@ -1091,6 +1126,9 @@ WHERE NOT EXISTS (SELECT 1 FROM "drizzle"."__drizzle_migrations" WHERE hash = 'a
 INSERT INTO "drizzle"."__drizzle_migrations" ("hash", "created_at")
 SELECT 'e2091585b7e446dd3970557508b6ae81d352cbdabdb47b12107c827b96b70451', 1724572800000
 WHERE NOT EXISTS (SELECT 1 FROM "drizzle"."__drizzle_migrations" WHERE hash = 'e2091585b7e446dd3970557508b6ae81d352cbdabdb47b12107c827b96b70451');
+INSERT INTO "drizzle"."__drizzle_migrations" ("hash", "created_at")
+SELECT '87382410761e3ecf36c73951431156eab204e46883586aca9fac73ec3cc97510', 1724659200000
+WHERE NOT EXISTS (SELECT 1 FROM "drizzle"."__drizzle_migrations" WHERE hash = '87382410761e3ecf36c73951431156eab204e46883586aca9fac73ec3cc97510');
 
 -- ========== SEED: providers ==========
 INSERT INTO "providers" ("name", "slug", "domain") VALUES

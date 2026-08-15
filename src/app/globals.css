@@ -47,28 +47,30 @@
 }
 
 :root {
-  --radius: 0.625rem;
-  /* M18.2: neutral foundation, brand teal as accent only */
-  --background: oklch(0.985 0.002 260);
-  --foreground: oklch(0.2 0.02 260);
+  /* M22.0: slightly roomier cards; emerald primary closer to product reference */
+  --radius: 0.875rem;
+  --background: oklch(0.99 0.002 160);
+  --foreground: oklch(0.22 0.02 160);
   --card: oklch(1 0 0);
-  --card-foreground: oklch(0.2 0.02 260);
+  --card-foreground: oklch(0.22 0.02 160);
   --popover: oklch(1 0 0);
-  --popover-foreground: oklch(0.2 0.02 260);
-  --primary: oklch(0.45 0.1 175);
-  --primary-foreground: oklch(0.99 0.005 175);
-  --secondary: oklch(0.96 0.005 260);
-  --secondary-foreground: oklch(0.28 0.02 260);
-  --muted: oklch(0.965 0.004 260);
-  --muted-foreground: oklch(0.5 0.015 260);
-  --accent: oklch(0.955 0.012 175);
-  --accent-foreground: oklch(0.28 0.03 175);
+  --popover-foreground: oklch(0.22 0.02 160);
+  --primary: oklch(0.55 0.13 160);
+  --primary-foreground: oklch(0.99 0.005 160);
+  --secondary: oklch(0.965 0.008 160);
+  --secondary-foreground: oklch(0.28 0.03 160);
+  --muted: oklch(0.97 0.006 160);
+  --muted-foreground: oklch(0.48 0.02 160);
+  --accent: oklch(0.95 0.03 160);
+  --accent-foreground: oklch(0.3 0.06 160);
   --destructive: oklch(0.55 0.2 25);
-  --border: oklch(0.91 0.006 260);
-  --input: oklch(0.91 0.006 260);
-  --ring: oklch(0.5 0.09 175);
-  --surface: oklch(0.975 0.004 260);
-  --surface-muted: oklch(0.955 0.006 260);
+  --border: oklch(0.91 0.01 160);
+  --input: oklch(0.91 0.01 160);
+  --ring: oklch(0.55 0.12 160);
+  --surface: oklch(0.985 0.006 160);
+  --surface-muted: oklch(0.96 0.01 160);
+  --shadow-card: 0 1px 2px oklch(0.3 0.02 160 / 0.04),
+    0 8px 24px oklch(0.3 0.02 160 / 0.06);
 
   /*
    * Status semantics, shared by public badges and the admin console so a
@@ -199,6 +201,14 @@
   }
   .text-pretty {
     text-wrap: pretty;
+  }
+
+  .shadow-card {
+    box-shadow: var(--shadow-card);
+  }
+
+  .page-gutter {
+    @apply mx-auto w-full max-w-6xl px-4 sm:px-6;
   }
 }
 

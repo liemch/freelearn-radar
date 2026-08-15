@@ -36,6 +36,8 @@ export type Dictionary = {
     lastChecked: string;
     transparency: string;
     transparencyHint: string;
+    activeCoupons: string;
+    activeCouponsHint: string;
   };
   sections: {
     freeThisWeek: string;
@@ -62,6 +64,13 @@ export type Dictionary = {
     forYouSub: string;
     quickDomains: string;
     quickDomainsSub: string;
+    browseDomains: string;
+    browseDomainsSub: string;
+    providersOnRadar: string;
+    providersOnRadarSub: string;
+    needHelpTitle: string;
+    needHelpDescription: string;
+    needHelpAction: string;
   };
   interests: {
     title: string;
@@ -215,6 +224,10 @@ export type Dictionary = {
     viewCourseHeading: string;
     continuesOn: (provider: string) => string;
     viewCourseOn: (provider: string) => string;
+    /** Truth-aware primary CTA when access is fully free. */
+    startFreeLearning: string;
+    /** CTA when a verified 100% coupon is the path. */
+    claimFreeCourse: string;
     moreFrom: (provider: string) => string;
     monthlyBest: string;
     fallbackSummary: string;

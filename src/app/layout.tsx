@@ -1,22 +1,35 @@
 import type { Metadata } from "next";
 import NextTopLoader from "nextjs-toploader";
 
+import { shouldSkipBrandingDb } from "@/domain/branding/build-guard";
+import { resolveBranding } from "@/domain/branding/site-branding";
+import { withDb } from "@/lib/db-safe";
 import { defaultLocale } from "@/lib/i18n/config";
 
 import "./globals.css";
 
-export const metadata: Metadata = {
-  title: {
-    default: "FreeLearn Radar",
-    template: "%s | FreeLearn Radar",
-  },
-  // Vietnamese-only product (M20.14 §116.2 covers system-generated SEO metadata).
-  description:
-    "Tìm khóa học trực tuyến miễn phí từ các nền tảng uy tín — được kiểm chứng và cập nhật mỗi ngày.",
-  metadataBase: new URL(
-    process.env.APP_URL || "http://localhost:3000",
-  ),
-};
+export async function generateMetadata(): Promise<Metadata> {
+  const branding = shouldSkipBrandingDb()
+    ? null
+    : await withDb("root.branding", (db) => resolveBranding(db), null);
+
+  return {
+    title: {
+      default: "FreeLearn Radar",
+      template: "%s | FreeLearn Radar",
+    },
+    description:
+      branding?.hero.description ??
+      "Tìm khóa học trực tuyến miễn phí từ các nền tảng uy tín — được kiểm chứng và cập nhật mỗi ngày.",
+    metadataBase: new URL(process.env.APP_URL || "http://localhost:3000"),
+    icons: branding?.faviconUrl
+      ? {
+          icon: [{ url: branding.faviconUrl }],
+          shortcut: branding.faviconUrl,
+        }
+      : undefined,
+  };
+}
 
 export default function RootLayout({
   children,

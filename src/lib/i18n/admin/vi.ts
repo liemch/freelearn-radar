@@ -54,6 +54,7 @@ export const adminVi: AdminDictionary = {
     coupons: "Coupon",
     coverage: "Phủ danh mục",
     mediaQuality: "Chất lượng ảnh",
+    branding: "Cấu hình giao diện",
   },
   login: {
     heading: "Đăng nhập quản trị",
@@ -470,5 +471,35 @@ export const adminVi: AdminDictionary = {
     course: "Khóa học",
     status: "Trạng thái ảnh",
     sourceType: "Nguồn ảnh",
+  },
+  branding: {
+    heading: "Cấu hình giao diện",
+    description:
+      "Quản lý logo, favicon và nội dung hero trang chủ. Thiết kế layout vẫn do frontend quyết định.",
+    brandHeading: "Thương hiệu",
+    brandDescription:
+      "Ảnh thương hiệu nhỏ, lưu trong Radar. Thiếu ảnh sẽ dùng logo mặc định.",
+    homeHeading: "Trang chủ",
+    homeDescription:
+      "Chỉ các chuỗi hero có giá trị vận hành. Không inject HTML/CSS/JS.",
+    logo: "Logo chính",
+    logoCompact: "Logo thu gọn",
+    favicon: "Favicon (biểu tượng tab)",
+    heroImage: "Ảnh Hero / Banner",
+    upload: "Tải ảnh lên",
+    replace: "Thay ảnh",
+    restoreDefault: "Khôi phục mặc định",
+    removeImage: "Xóa ảnh",
+    heroEyebrow: "Nhãn hero",
+    heroTitle: "Tiêu đề hero",
+    heroDescription: "Mô tả hero",
+    searchPlaceholder: "Placeholder ô tìm kiếm",
+    heroImageAlt: "Alt text ảnh hero",
+    saved: "Đã lưu",
+    saveFailed: "Không lưu được",
+    uploadFailed: "Không tải ảnh lên được",
+    previewMissing: "Chưa có ảnh",
+    usingDefault: "đang dùng mặc định",
+    readOnly: "Chỉ ADMIN mới được chỉnh cấu hình giao diện.",
   },
 };

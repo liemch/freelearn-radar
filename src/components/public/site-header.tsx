@@ -2,9 +2,12 @@ import type { Locale } from "@/lib/i18n/config";
 import { getDictionary } from "@/lib/i18n/get-dictionary";
 import { localePath } from "@/lib/i18n/path";
 import { listTopicSlugs } from "@/domain/discovery/topic-landings";
+import { shouldSkipBrandingDb } from "@/domain/branding/build-guard";
+import { resolveBranding } from "@/domain/branding/site-branding";
 import { getServerEnv } from "@/lib/env";
+import { withDb } from "@/lib/db-safe";
 
-import { BrandMark } from "@/components/brand/brand-mark";
+import { BrandLogo } from "@/components/brand/brand-logo";
 import { SiteHeaderClient } from "@/components/public/site-header-client";
 
 type SiteHeaderProps = {
@@ -27,11 +30,19 @@ function learningPathsEnabled(): boolean {
   }
 }
 
-export function SiteHeader({ locale }: SiteHeaderProps) {
+export async function SiteHeader({ locale }: SiteHeaderProps) {
   const dict = getDictionary(locale);
   const discoveryUx = discoveryUxEnabled(locale);
   const learningPaths = learningPathsEnabled();
   const firstTopic = listTopicSlugs()[0] ?? "ai";
+
+  const branding = shouldSkipBrandingDb()
+    ? null
+    : await withDb("header.branding", (db) => resolveBranding(db), null);
+
+  const hero = branding?.hero ?? {
+    searchPlaceholder: dict.hero.searchPlaceholder,
+  };
 
   const links = discoveryUx
     ? [
@@ -84,12 +95,22 @@ export function SiteHeader({ locale }: SiteHeaderProps) {
       languageLabel={dict.language.switchLabel}
       menuOpenLabel={dict.nav.menu}
       menuCloseLabel={dict.nav.close}
+      searchPlaceholder={hero.searchPlaceholder}
+      searchButtonLabel={dict.hero.searchButton}
+      showHotBadge={discoveryUx}
+      hotBadgeLabel="HOT"
       brand={
         <>
-          <BrandMark className="size-6 shrink-0 text-primary sm:size-7" />
-          <span className="truncate font-display text-base font-semibold tracking-tight sm:text-lg">
-            FreeLearn Radar
-          </span>
+          <BrandLogo
+            logoUrl={branding?.logoUrl}
+            compactUrl={branding?.logoCompactUrl}
+            title="FreeLearn Radar"
+          />
+          {!branding?.logoUrl && !branding?.logoCompactUrl ? (
+            <span className="truncate font-display text-base font-semibold tracking-tight sm:text-lg">
+              FreeLearn Radar
+            </span>
+          ) : null}
         </>
       }
     />

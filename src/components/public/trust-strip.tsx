@@ -1,4 +1,4 @@
-import { BadgeCheck, CalendarCheck, Eye, Layers } from "lucide-react";
+import { BadgeCheck, CalendarCheck, Layers, Ticket } from "lucide-react";
 
 import type { Locale } from "@/lib/i18n/config";
 import { getDictionary } from "@/lib/i18n/get-dictionary";
@@ -9,20 +9,19 @@ type TrustStripProps = {
   publishedCount: number;
   providerCount: number;
   lastVerifiedAt: Date | null;
+  /** Verified ACTIVE_100_OFF offers currently eligible — omit when 0. */
+  activeCouponCount?: number;
 };
 
 /**
- * Four proof points under the hero.
- *
- * Each numeric item renders only when the application can supply a real figure,
- * so a fresh deployment with an empty catalogue shows fewer items rather than
- * inventing plausible ones. The strip disappears entirely when nothing is known.
+ * Trust metrics under the hero. Every figure is real; empty metrics are omitted.
  */
 export function TrustStrip({
   locale,
   publishedCount,
   providerCount,
   lastVerifiedAt,
+  activeCouponCount = 0,
 }: TrustStripProps) {
   const dict = getDictionary(locale);
 
@@ -51,10 +50,18 @@ export function TrustStrip({
     });
   }
 
+  if (activeCouponCount > 0) {
+    items.push({
+      Icon: Ticket,
+      value: activeCouponCount.toLocaleString(
+        locale === "vi" ? "vi-VN" : "en-US",
+      ),
+      label: dict.trust.activeCoupons,
+      hint: dict.trust.activeCouponsHint,
+    });
+  }
+
   if (lastVerifiedAt) {
-    // `verificationAgeLabel` returns a complete phrase ("Checked today"), so it
-    // is the emphasised line on its own; pairing it with a noun label read as
-    // two sentences colliding.
     items.push({
       Icon: CalendarCheck,
       value: "",
@@ -67,28 +74,28 @@ export function TrustStrip({
     return null;
   }
 
-  items.push({
-    Icon: Eye,
-    value: "",
-    label: dict.trust.transparency,
-    hint: dict.trust.transparencyHint,
-  });
-
   return (
-    <section className="border-b border-border/50 bg-card">
-      <div className="mx-auto grid w-full max-w-6xl gap-x-6 gap-y-4 px-4 py-4 sm:grid-cols-2 sm:px-6 lg:grid-cols-4">
+    <section className="border-b border-border/50 bg-card/80">
+      <div className="page-gutter grid gap-3 py-5 sm:grid-cols-2 lg:grid-cols-4">
         {items.map((item) => (
-          <div key={item.label} className="flex items-start gap-2.5">
+          <div
+            key={`${item.label}-${item.value}`}
+            className="flex items-start gap-3 rounded-2xl border border-border/60 bg-background/70 px-4 py-3 shadow-sm"
+          >
             <item.Icon
-              className="mt-0.5 size-4 shrink-0 text-primary"
+              className="mt-0.5 size-5 shrink-0 text-primary"
               aria-hidden="true"
             />
             <div className="min-w-0">
               <p className="text-sm leading-snug">
                 {item.value ? (
-                  <span className="font-semibold">{item.value} </span>
+                  <span className="font-semibold tabular-nums">{item.value} </span>
                 ) : null}
-                <span className={item.value ? "text-muted-foreground" : "font-semibold"}>
+                <span
+                  className={
+                    item.value ? "text-muted-foreground" : "font-semibold"
+                  }
+                >
                   {item.label}
                 </span>
               </p>

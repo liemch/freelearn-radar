@@ -31,9 +31,7 @@ type CourseCardProps = {
 /**
  * Scan order: visual → title → provider → truth badges → effort → freshness.
  *
- * The whole card is one link: the title anchor is stretched over the card, and
- * the provider link is lifted above it. That keeps a single tab stop per card
- * while leaving the provider reachable — nesting two anchors would not.
+ * Answers quickly: what / where / what kind of free / when verified.
  */
 export function CourseCard({ course, locale, priority }: CourseCardProps) {
   const dict = getDictionary(locale);
@@ -57,7 +55,7 @@ export function CourseCard({ course, locale, priority }: CourseCardProps) {
   );
 
   return (
-    <article className="group relative flex h-full flex-col overflow-hidden rounded-xl border border-border/70 bg-card transition hover:border-primary/40 hover:shadow-md focus-within:border-primary/40 motion-reduce:transition-none">
+    <article className="group relative flex h-full flex-col overflow-hidden rounded-2xl border border-border/70 bg-card shadow-sm transition hover:-translate-y-0.5 hover:border-primary/35 hover:shadow-card focus-within:border-primary/40 motion-reduce:transform-none motion-reduce:transition-none">
       <div className="relative">
         <CourseCardVisual
           src={visual.src}
@@ -66,11 +64,6 @@ export function CourseCard({ course, locale, priority }: CourseCardProps) {
           toneClass={visual.toneClass}
           priority={priority}
         />
-        {/*
-          Only over a real thumbnail, where nothing else identifies the source.
-          The fallback tile already carries the provider name, and stacking a
-          pill on top of it said the same thing twice.
-        */}
         {visual.src && course.provider?.name ? (
           <span className="absolute left-3 top-3 rounded-md bg-background/92 px-2 py-1 text-[0.6875rem] font-semibold text-foreground shadow-sm backdrop-blur-sm">
             {course.provider.name}
@@ -78,7 +71,7 @@ export function CourseCard({ course, locale, priority }: CourseCardProps) {
         ) : null}
       </div>
 
-      <div className="flex flex-1 flex-col p-4">
+      <div className="flex flex-1 flex-col gap-2.5 p-4">
         <h3 className="text-[0.9375rem] font-semibold leading-snug tracking-tight">
           <LocalizedLink
             href={courseHref}
@@ -88,7 +81,7 @@ export function CourseCard({ course, locale, priority }: CourseCardProps) {
           </LocalizedLink>
         </h3>
 
-        <p className="mt-1 text-xs text-muted-foreground">
+        <p className="text-xs text-muted-foreground">
           {course.provider?.slug ? (
             <LocalizedLink
               href={localePath(locale, `/provider/${course.provider.slug}`)}
@@ -101,7 +94,7 @@ export function CourseCard({ course, locale, priority }: CourseCardProps) {
           )}
         </p>
 
-        <div className="mt-3 flex flex-wrap items-center gap-1.5">
+        <div className="flex flex-wrap items-center gap-1.5">
           {badgeSlots.includes("price") ? (
             <FreeStatusBadge
               priceType={course.priceType}
@@ -117,7 +110,7 @@ export function CourseCard({ course, locale, priority }: CourseCardProps) {
           ) : null}
         </div>
 
-        <p className="mt-3 text-xs text-muted-foreground">
+        <p className="text-xs text-muted-foreground">
           <span>
             {course.level === "UNKNOWN"
               ? dict.course.levelUnknown
@@ -132,8 +125,8 @@ export function CourseCard({ course, locale, priority }: CourseCardProps) {
         <p
           className={
             stale
-              ? "mt-auto pt-3 text-xs font-medium text-warning-foreground"
-              : "mt-auto pt-3 text-xs text-muted-foreground"
+              ? "mt-auto pt-1 text-xs font-medium text-warning-foreground"
+              : "mt-auto pt-1 text-xs text-muted-foreground"
           }
         >
           {stale ? `${dict.course.staleVerification} · ${freshness}` : freshness}

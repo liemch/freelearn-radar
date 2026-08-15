@@ -53,6 +53,7 @@ export type AdminDictionary = {
     coupons: string;
     coverage: string;
     mediaQuality: string;
+    branding: string;
   };
   login: {
     heading: string;
@@ -448,5 +449,32 @@ export type AdminDictionary = {
     course: string;
     status: string;
     sourceType: string;
+  };
+  branding: {
+    heading: string;
+    description: string;
+    brandHeading: string;
+    brandDescription: string;
+    homeHeading: string;
+    homeDescription: string;
+    logo: string;
+    logoCompact: string;
+    favicon: string;
+    heroImage: string;
+    upload: string;
+    replace: string;
+    restoreDefault: string;
+    removeImage: string;
+    heroEyebrow: string;
+    heroTitle: string;
+    heroDescription: string;
+    searchPlaceholder: string;
+    heroImageAlt: string;
+    saved: string;
+    saveFailed: string;
+    uploadFailed: string;
+    previewMissing: string;
+    usingDefault: string;
+    readOnly: string;
   };
 };

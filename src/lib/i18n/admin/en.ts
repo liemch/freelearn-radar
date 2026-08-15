@@ -54,6 +54,7 @@ export const adminEn: AdminDictionary = {
     coupons: "Coupons",
     coverage: "Coverage",
     mediaQuality: "Media quality",
+    branding: "Interface config",
   },
   login: {
     heading: "Admin Sign In",
@@ -465,5 +466,35 @@ export const adminEn: AdminDictionary = {
     course: "Course",
     status: "Image status",
     sourceType: "Image source",
+  },
+  branding: {
+    heading: "Interface configuration",
+    description:
+      "Manage logo, favicon, and homepage hero copy. Layout remains frontend-owned.",
+    brandHeading: "Brand",
+    brandDescription:
+      "Small brand assets stored in Radar. Missing assets fall back to the default mark.",
+    homeHeading: "Homepage",
+    homeDescription:
+      "Only operator-useful hero strings. No HTML/CSS/JS injection.",
+    logo: "Primary logo",
+    logoCompact: "Compact logo",
+    favicon: "Favicon",
+    heroImage: "Hero / banner image",
+    upload: "Upload image",
+    replace: "Replace image",
+    restoreDefault: "Restore default",
+    removeImage: "Remove image",
+    heroEyebrow: "Hero eyebrow",
+    heroTitle: "Hero title",
+    heroDescription: "Hero description",
+    searchPlaceholder: "Search placeholder",
+    heroImageAlt: "Hero image alt text",
+    saved: "Saved",
+    saveFailed: "Could not save",
+    uploadFailed: "Could not upload image",
+    previewMissing: "No image yet",
+    usingDefault: "using default",
+    readOnly: "Only ADMIN can edit interface configuration.",
   },
 };

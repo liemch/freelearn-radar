@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 
+import { CategoryDiscovery } from "@/components/public/category-discovery";
 import { CourseSection } from "@/components/public/course-section";
 import { EmptyState } from "@/components/public/empty-state";
 import { ForYouSection } from "@/components/public/for-you-section";
@@ -9,6 +10,7 @@ import { HomeHero } from "@/components/public/home-hero";
 import { LocaleHtmlLang } from "@/components/public/locale-html-lang";
 import { SiteFooter } from "@/components/public/site-footer";
 import { SiteHeader } from "@/components/public/site-header";
+import { SmartDiscoveryCta } from "@/components/public/smart-discovery-cta";
 import { TrustStrip } from "@/components/public/trust-strip";
 import { PageShell, PageStack } from "@/components/layout/page-shell";
 import { Button } from "@/components/ui/button";
@@ -19,7 +21,10 @@ import {
   mapCourseIdsToCategorySlugs,
   queryCatalog,
 } from "@/db/repositories/course-repository";
+import { listActive100OffOffers } from "@/db/repositories/coupon-repository";
 import { listProviders } from "@/db/repositories/provider-repository";
+import { shouldSkipBrandingDb } from "@/domain/branding/build-guard";
+import { resolveBranding } from "@/domain/branding/site-branding";
 import { isEligibleForFreeLists } from "@/domain/course/free-durability";
 import { queryDailyFreeDeals } from "@/domain/discovery/daily-free";
 import { currentBestPath } from "@/domain/discovery/monthly-collection";
@@ -69,6 +74,14 @@ export async function generateMetadata({
     /* optional in build */
   }
 
+  const branding = shouldSkipBrandingDb()
+    ? null
+    : await withDb(
+        "home.metadata.branding",
+        (db) => resolveBranding(db),
+        null,
+      );
+
   const title =
     locale === "vi"
       ? "FreeLearn Radar — Khóa học miễn phí đáng học"
@@ -76,11 +89,11 @@ export async function generateMetadata({
 
   return {
     title,
-    description: dict.hero.subhead,
+    description: branding?.hero.description ?? dict.hero.subhead,
     alternates: buildLocaleAlternates(appUrl, locale, "/"),
     openGraph: {
       title: "FreeLearn Radar",
-      description: dict.hero.subhead,
+      description: branding?.hero.description ?? dict.hero.subhead,
       url: path,
       type: "website",
     },
@@ -123,6 +136,8 @@ export default async function HomePage({ params }: HomePageProps) {
     shortCourses,
     trust,
     dailyFree,
+    activeOffers,
+    branding,
   ] = await Promise.all([
     withDb(
       "home.published",
@@ -162,17 +177,35 @@ export default async function HomePage({ params }: HomePageProps) {
       (db) => queryDailyFreeDeals(db, { limit: 6 }),
       [],
     ),
+    withDb("home.activeOffers", (db) => listActive100OffOffers(db, 48), []),
+    shouldSkipBrandingDb()
+      ? Promise.resolve(null)
+      : withDb("home.branding", (db) => resolveBranding(db), null),
   ]);
 
   const categoryBySlug = new Map(
     categories.map((category) => [category.slug, category]),
   );
-  const quickDomains = HOMEPAGE_QUICK_DOMAIN_SLUGS.map((slug) => {
+  const domainCategories = HOMEPAGE_QUICK_DOMAIN_SLUGS.map((slug) => {
     const category = categoryBySlug.get(slug);
     return category
-      ? { slug, name: category.name, href: localePath(locale, `/category/${slug}`) }
+      ? {
+          slug,
+          name: category.name,
+          href: localePath(locale, `/category/${slug}`),
+        }
       : null;
   }).filter((item): item is NonNullable<typeof item> => item !== null);
+
+  // Prefer curated domain slugs; fall back to first categories in taxonomy.
+  const discoveryCategories =
+    domainCategories.length > 0
+      ? domainCategories
+      : categories.slice(0, 8).map((category) => ({
+          slug: category.slug,
+          name: category.name,
+          href: localePath(locale, `/category/${category.slug}`),
+        }));
 
   const freeEligible = published.filter((course) =>
     isEligibleForFreeLists(course.priceType),
@@ -208,20 +241,36 @@ export default async function HomePage({ params }: HomePageProps) {
   const hasCourses = published.length > 0;
   const dailyFreeCourses = dailyFree.map((item) => item.course);
 
+  const hero = {
+    eyebrow: branding?.hero.eyebrow ?? dict.hero.eyebrow,
+    headline: branding?.hero.title ?? dict.hero.headline,
+    subhead: branding?.hero.description ?? dict.hero.subhead,
+    searchPlaceholder:
+      branding?.hero.searchPlaceholder ?? dict.hero.searchPlaceholder,
+    searchButton: dict.hero.searchButton,
+    topicShortcuts: dict.hero.topicShortcuts,
+  };
+
   return (
     <main className="flex min-h-screen flex-col">
       <LocaleHtmlLang locale={locale} />
       <SiteHeader locale={locale} />
-      <HomeHero hero={dict.hero} topics={topics} />
+      <HomeHero
+        hero={hero}
+        topics={topics}
+        heroImageUrl={branding?.heroImageUrl}
+        heroImageAlt={branding?.hero.heroImageAlt}
+      />
       <TrustStrip
         locale={locale}
         publishedCount={trust.publishedCount}
         providerCount={providers.length}
         lastVerifiedAt={trust.lastVerifiedAt}
+        activeCouponCount={activeOffers.length}
       />
 
       <PageShell>
-        <PageStack className="gap-8 sm:gap-10">
+        <PageStack className="gap-10 sm:gap-12">
           {!hasCourses ? (
             <EmptyState
               title={dict.empty.catalogTitle}
@@ -235,35 +284,18 @@ export default async function HomePage({ params }: HomePageProps) {
             />
           ) : null}
 
-          {discoveryUx && quickDomains.length > 0 ? (
-            <section className="space-y-3">
-              <div>
-                <h2 className="text-xl font-semibold tracking-tight sm:text-2xl">
-                  {dict.sections.quickDomains}
-                </h2>
-                <p className="mt-1 text-sm text-muted-foreground">
-                  {dict.sections.quickDomainsSub}
-                </p>
-              </div>
-              <ul className="flex flex-wrap gap-2">
-                {quickDomains.map((domain) => (
-                  <li key={domain.slug}>
-                    <Link
-                      href={domain.href}
-                      className="inline-flex min-h-10 items-center rounded-full border border-border bg-card px-3 py-1.5 text-sm font-medium transition hover:border-primary/40 hover:bg-accent hover:text-accent-foreground"
-                    >
-                      {domain.name}
-                    </Link>
-                  </li>
-                ))}
-              </ul>
-            </section>
+          {discoveryCategories.length > 0 ? (
+            <CategoryDiscovery
+              title={dict.sections.browseDomains}
+              subtitle={dict.sections.browseDomainsSub}
+              categories={discoveryCategories}
+            />
           ) : null}
 
           {dailyFreeCourses.length > 0 ? (
             <CourseSection
               locale={locale}
-              title={dict.sections.dailyFree}
+              title={`${dict.sections.dailyFree} 🔥`}
               subtitle={dict.sections.dailyFreeSub}
               courses={dailyFreeCourses}
               viewAllHref={localePath(locale, "/mien-phi-hom-nay")}
@@ -316,30 +348,6 @@ export default async function HomePage({ params }: HomePageProps) {
             />
           ) : null}
 
-          {categories.length > 0 ? (
-            <section className="space-y-3">
-              <h2 className="text-xl font-semibold tracking-tight sm:text-2xl">
-                {dict.sections.browseTopic}
-              </h2>
-              <ul className="grid grid-cols-2 gap-2 sm:grid-cols-3 lg:grid-cols-4">
-                {categories.map((category) => (
-                  <li key={category.id}>
-                    <Link
-                      href={localePath(locale, `/category/${category.slug}`)}
-                      className="flex h-full items-center gap-2 rounded-lg border border-border bg-card px-3 py-2.5 text-sm font-medium transition hover:border-primary/40 hover:bg-accent hover:text-accent-foreground"
-                    >
-                      <span
-                        aria-hidden="true"
-                        className="size-1.5 shrink-0 rounded-full bg-primary/60"
-                      />
-                      <span className="min-w-0 truncate">{category.name}</span>
-                    </Link>
-                  </li>
-                ))}
-              </ul>
-            </section>
-          ) : null}
-
           {!discoveryUx && ranked.slice(0, 6).length > 0 ? (
             <CourseSection
               locale={locale}
@@ -374,17 +382,33 @@ export default async function HomePage({ params }: HomePageProps) {
             />
           ) : null}
 
+          <SmartDiscoveryCta
+            title={dict.sections.needHelpTitle}
+            description={dict.sections.needHelpDescription}
+            primaryHref={localePath(locale, "/search")}
+            primaryLabel={dict.sections.needHelpAction}
+            secondaryHref={
+              discoveryCategories[0]?.href ?? localePath(locale, "/search")
+            }
+            secondaryLabel={dict.sections.browseDomains}
+          />
+
           {providers.length > 0 ? (
             <section className="space-y-3 border-t border-border/50 pt-8">
-              <h2 className="text-xl font-semibold tracking-tight sm:text-2xl">
-                {dict.sections.providers}
-              </h2>
-              <div className="flex flex-wrap gap-x-4 gap-y-2">
-                {providers.slice(0, 8).map((provider) => (
+              <div>
+                <h2 className="text-xl font-semibold tracking-tight sm:text-2xl">
+                  {dict.sections.providersOnRadar}
+                </h2>
+                <p className="mt-1 text-sm text-muted-foreground">
+                  {dict.sections.providersOnRadarSub}
+                </p>
+              </div>
+              <div className="flex flex-wrap gap-2">
+                {providers.slice(0, 10).map((provider) => (
                   <Link
                     key={provider.id}
                     href={localePath(locale, `/provider/${provider.slug}`)}
-                    className="text-sm font-medium text-foreground underline-offset-4 hover:text-primary hover:underline"
+                    className="inline-flex min-h-10 items-center rounded-full border border-border bg-card px-3.5 py-1.5 text-sm font-medium transition hover:border-primary/40 hover:bg-accent"
                   >
                     {provider.name}
                   </Link>
