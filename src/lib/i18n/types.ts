@@ -189,6 +189,7 @@ export type Dictionary = {
     dailyFreeEmptyDescription: string;
     dailyFreeCta: string;
     coupon100Badge: string;
+    couponUnverifiedBadge: string;
     limitedFreeBadge: string;
   };
   courseDetail: {
@@ -239,6 +240,7 @@ export type Dictionary = {
     collectionNotFound: string;
     topicNotFound: string;
     trackerNotFound: string;
+    courseUnavailable: string;
     certificatesTitle: string;
   };
   a11y: {

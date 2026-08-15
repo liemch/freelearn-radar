@@ -99,6 +99,14 @@ const baseEnvSchema = z.object({
     .int()
     .positive()
     .default(30),
+  /**
+   * Minimum cosine similarity for a semantic hit (plan §85, §89.5). Deliberately
+   * has no default: §89.5 requires the floor to be derived from the labelled
+   * evaluation set, and inventing a number here would fabricate a gate. While it
+   * is unset, the semantic path stays disabled rather than returning whatever
+   * the top-K happens to be.
+   */
+  RELEVANCE_FLOOR: optionalString,
   NL_INTENT_DAILY_CALLS: z.coerce.number().int().positive().default(2000),
   NL_INTENT_PER_IP_HOURLY: z.coerce.number().int().positive().default(20),
   NL_INTENT_MAX_QUERY_CHARS: z.coerce.number().int().positive().default(512),
@@ -154,6 +162,8 @@ const baseEnvSchema = z.object({
     .positive()
     .max(16)
     .default(4),
+  MEDIA_RESOLVE_LIMIT: z.coerce.number().int().positive().max(500).default(40),
+  MEDIA_RECHECK_HOURS: z.coerce.number().int().positive().max(720).default(168),
   EMAIL_DRY_RUN: z.string().default("true"),
   RESEND_API_KEY: optionalString,
   EMAIL_FROM: optionalString,

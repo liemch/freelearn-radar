@@ -82,7 +82,7 @@ export default async function SearchPage({
     }
   }
 
-  const filters = buildCatalogQuery(urlParams);
+  let filters = buildCatalogQuery(urlParams);
   const searchStartedAt = Date.now();
   let retrievalMode: "LEXICAL" | "SEMANTIC" | "HYBRID" = "LEXICAL";
   let degraded = false;
@@ -90,6 +90,26 @@ export default async function SearchPage({
   let lexicalWouldBeZero: boolean | null = null;
   let topScore: number | null = null;
   let rankingConfigVersion = LEXICAL_RANKING_CONFIG_VERSION;
+
+  // Natural-language constraints ("dưới 3 giờ", "cho người mới") are extracted
+  // deterministically before retrieval so they filter rather than being matched
+  // as keywords. Flag-gated and OFF by default; failure keeps the raw query.
+  try {
+    if (
+      getServerEnv().FEATURE_NL_COURSE_FINDER === "true" &&
+      filters.q?.trim()
+    ) {
+      const { parseIntentDeterministic, applyNlIntentToFilters } = await import(
+        "@/domain/search/nl-intent"
+      );
+      filters = applyNlIntentToFilters(
+        filters,
+        parseIntentDeterministic(filters.q),
+      );
+    }
+  } catch {
+    // Intent parsing is an optimisation, never a precondition for search.
+  }
 
   let catalog = await withDb(
     "search.catalog",
@@ -118,7 +138,11 @@ export default async function SearchPage({
         },
         null,
       );
-      if (hybrid) {
+      if (!hybrid) {
+        // The semantic path was expected and did not run. Recording this as a
+        // healthy search would understate the §85 degraded rate.
+        degraded = true;
+      } else {
         retrievalMode = hybrid.retrievalMode;
         degraded = hybrid.degraded;
         unmetIntent = hybrid.unmetIntent;
@@ -127,20 +151,43 @@ export default async function SearchPage({
         rankingConfigVersion = (
           await import("@/config/search-ranking")
         ).SEARCH_RANKING_CONFIG_VERSION;
+
         if (hybrid.courseIds.length > 0) {
-          const idSet = new Set(hybrid.courseIds);
-          const reordered = [
-            ...catalog.items.filter((c) => idSet.has(c.id)),
-            ...catalog.items.filter((c) => !idSet.has(c.id)),
-          ];
-          // Prefer hybrid order when lexical also returned hits.
-          catalog = {
-            ...catalog,
-            items:
-              reordered.length > 0
-                ? reordered.slice(0, catalog.pageSize)
-                : catalog.items,
-          };
+          // Fusion can promote courses the lexical page never contained — the
+          // whole point of semantic rescue — so results are hydrated from the
+          // fused ids rather than reordering the lexical slice. `pageIds` is
+          // already the slice for the requested page, and `courseIds` is the
+          // full ranked set, so pagination describes the fused result set
+          // rather than the lexical one.
+          const { listEligibleCoursesByIds } = await import(
+            "@/db/repositories/course-repository"
+          );
+          const fusedItems = hybrid.pageIds.length
+            ? await withDb(
+                "search.hydrate_fused",
+                (db) => listEligibleCoursesByIds(db, hybrid.pageIds),
+                [],
+              )
+            : [];
+
+          // An empty page slice means the requested page is past the end of the
+          // fused set, which is still a valid hybrid answer. Only fall back to
+          // the lexical catalog when hydration itself came back empty for ids
+          // we did ask for, since that indicates a failed read.
+          const hydrationFailed =
+            hybrid.pageIds.length > 0 && fusedItems.length === 0;
+
+          if (!hydrationFailed) {
+            const total = hybrid.courseIds.length;
+            catalog = {
+              ...catalog,
+              items: fusedItems,
+              total,
+              totalPages: Math.max(1, Math.ceil(total / catalog.pageSize)),
+            };
+          } else {
+            degraded = true;
+          }
         } else if (hybrid.unmetIntent) {
           catalog = {
             ...catalog,
@@ -152,7 +199,9 @@ export default async function SearchPage({
       }
     }
   } catch {
-    // Flag/env/hybrid failures must not break search — stay lexical.
+    // Flag/env/hybrid failures must not break search — stay lexical, but the
+    // request did run degraded.
+    degraded = true;
   }
 
   const [providers, categories] = await Promise.all([

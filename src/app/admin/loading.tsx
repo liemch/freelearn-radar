@@ -3,7 +3,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 export default function AdminLoading() {
   return (
     <div aria-busy role="status">
-      <span className="sr-only">Loading</span>
+      <span className="sr-only">Đang tải</span>
       <div className="mb-4 space-y-2">
         <Skeleton className="h-5 w-48" />
         <Skeleton className="h-3.5 w-72" />

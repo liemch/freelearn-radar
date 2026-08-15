@@ -3,6 +3,8 @@
  * Storage is mockable — no live Vercel Blob credentials required in CI.
  */
 
+import { validateSafeFetchUrl } from "@/lib/safe-fetch-url";
+
 export type ImagePolicy = "STORE_COPY" | "REMOTE_ONLY" | "NO_EXTERNAL_IMAGE";
 
 export type CourseImageMetadata = {
@@ -38,14 +40,8 @@ export class MemoryCourseImageStorage implements CourseImageStorage {
   }
 }
 
-const BLOCKED_HOSTS = new Set([
-  "localhost",
-  "127.0.0.1",
-  "0.0.0.0",
-  "[::1]",
-]);
-
 const MAX_IMAGE_BYTES = 2 * 1024 * 1024;
+const MAX_IMAGE_REDIRECTS = 3;
 const ALLOWED_TYPES = new Set([
   "image/jpeg",
   "image/png",
@@ -53,33 +49,33 @@ const ALLOWED_TYPES = new Set([
   "image/gif",
 ]);
 
+/**
+ * External image URLs are untrusted input, so this shares the single SSRF
+ * validator with the HTML fetch path rather than keeping a second, weaker set
+ * of host rules. `validateSafeFetchUrl` covers private and reserved IPv4/IPv6
+ * ranges, obfuscated IP literals, credentials in URL, and metadata endpoints.
+ */
 export function validateImageUrl(raw: string): URL | null {
-  try {
-    const url = new URL(raw);
-    if (url.protocol !== "https:" && url.protocol !== "http:") {
-      return null;
-    }
-    if (url.protocol === "http:" && !url.hostname.endsWith(".local")) {
-      // Prefer HTTPS in production paths
-    }
-    const host = url.hostname.toLowerCase();
-    if (BLOCKED_HOSTS.has(host)) {
-      return null;
-    }
-    if (
-      host.startsWith("10.") ||
-      host.startsWith("192.168.") ||
-      host.startsWith("172.16.") ||
-      host === "169.254.169.254"
-    ) {
-      return null;
-    }
-    return url;
-  } catch {
-    return null;
-  }
+  const result = validateSafeFetchUrl(raw);
+  return result.ok ? result.url : null;
 }
 
+function isRedirectStatus(status: number): boolean {
+  return (
+    status === 301 ||
+    status === 302 ||
+    status === 303 ||
+    status === 307 ||
+    status === 308
+  );
+}
+
+/**
+ * Fetches an image with manual redirect handling: every hop is re-validated
+ * before it is requested, so a trusted host cannot bounce the fetch onto an
+ * internal address. Automatic `redirect: "follow"` would issue those requests
+ * before any check could run.
+ */
 export async function fetchCourseImageSafely(
   rawUrl: string,
   fetchImpl: typeof fetch = fetch,
@@ -90,50 +86,78 @@ export async function fetchCourseImageSafely(
     return { ok: false, reason: "invalid_url" };
   }
 
-  const controller = new AbortController();
-  const timer = setTimeout(() => controller.abort(), timeoutMs);
+  let current = parsed.toString();
 
-  try {
-    const response = await fetchImpl(parsed.toString(), {
-      signal: controller.signal,
-      redirect: "follow",
-      headers: { Accept: "image/*" },
-    });
+  for (let hop = 0; hop <= MAX_IMAGE_REDIRECTS; hop += 1) {
+    const controller = new AbortController();
+    const timer = setTimeout(() => controller.abort(), timeoutMs);
 
-    if (!response.ok) {
-      return { ok: false, reason: `http_${response.status}` };
+    try {
+      const response = await fetchImpl(current, {
+        signal: controller.signal,
+        redirect: "manual",
+        headers: { Accept: "image/*" },
+      });
+
+      if (isRedirectStatus(response.status)) {
+        if (hop === MAX_IMAGE_REDIRECTS) {
+          return { ok: false, reason: "too_many_redirects" };
+        }
+        const location = response.headers.get("location");
+        if (!location) {
+          return { ok: false, reason: "redirect_missing_location" };
+        }
+        let next: URL;
+        try {
+          next = new URL(location, current);
+        } catch {
+          return { ok: false, reason: "redirect_blocked" };
+        }
+        if (!validateImageUrl(next.toString())) {
+          return { ok: false, reason: "redirect_blocked" };
+        }
+        current = next.toString();
+        continue;
+      }
+
+      if (!response.ok) {
+        return { ok: false, reason: `http_${response.status}` };
+      }
+
+      const contentType = (response.headers.get("content-type") ?? "")
+        .split(";")[0]
+        .trim()
+        .toLowerCase();
+      if (!ALLOWED_TYPES.has(contentType)) {
+        return { ok: false, reason: "invalid_content_type" };
+      }
+
+      // Reject on the declared length before buffering when the server is
+      // honest about it; the post-read check still covers a lying header.
+      const declaredLength = Number(response.headers.get("content-length"));
+      if (Number.isFinite(declaredLength) && declaredLength > MAX_IMAGE_BYTES) {
+        return { ok: false, reason: "too_large" };
+      }
+
+      const buffer = new Uint8Array(await response.arrayBuffer());
+      if (buffer.byteLength > MAX_IMAGE_BYTES) {
+        return { ok: false, reason: "too_large" };
+      }
+
+      return {
+        ok: true,
+        contentType,
+        bytes: buffer,
+        finalUrl: current,
+      };
+    } catch {
+      return { ok: false, reason: "fetch_failed" };
+    } finally {
+      clearTimeout(timer);
     }
-
-    const finalUrl = response.url;
-    const finalParsed = validateImageUrl(finalUrl);
-    if (!finalParsed) {
-      return { ok: false, reason: "redirect_blocked" };
-    }
-
-    const contentType = (response.headers.get("content-type") ?? "")
-      .split(";")[0]
-      .trim()
-      .toLowerCase();
-    if (!ALLOWED_TYPES.has(contentType)) {
-      return { ok: false, reason: "invalid_content_type" };
-    }
-
-    const buffer = new Uint8Array(await response.arrayBuffer());
-    if (buffer.byteLength > MAX_IMAGE_BYTES) {
-      return { ok: false, reason: "too_large" };
-    }
-
-    return {
-      ok: true,
-      contentType,
-      bytes: buffer,
-      finalUrl,
-    };
-  } catch {
-    return { ok: false, reason: "fetch_failed" };
-  } finally {
-    clearTimeout(timer);
   }
+
+  return { ok: false, reason: "too_many_redirects" };
 }
 
 export async function ingestCourseImage(params: {

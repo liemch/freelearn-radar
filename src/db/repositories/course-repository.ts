@@ -350,6 +350,46 @@ export async function listPublishedCoursesWithProvider(
   }));
 }
 
+/**
+ * Loads courses for an ordered id list, dropping anything Truth excludes.
+ * Retrieval (lexical, semantic, fusion) decides order; this decides who is
+ * allowed on the page at all, so eligibility cannot be skipped by a caller
+ * that forgets to filter (§90.2).
+ */
+export async function listEligibleCoursesByIds(
+  db: Db,
+  ids: string[],
+): Promise<CourseWithProvider[]> {
+  if (ids.length === 0) return [];
+
+  const rows = await db
+    .select({
+      course: courses,
+      provider: providers,
+    })
+    .from(courses)
+    .innerJoin(providers, eq(courses.providerId, providers.id))
+    .where(
+      and(
+        inArray(courses.id, ids),
+        eq(courses.status, "PUBLISHED"),
+        notInArray(courses.priceType, [...FREE_LIST_EXCLUDED_PRICE_TYPES]),
+      ),
+    );
+
+  const byId = new Map<string, CourseWithProvider>();
+  for (const row of rows) {
+    byId.set(row.course.id, { ...row.course, provider: row.provider });
+  }
+
+  const ordered: CourseWithProvider[] = [];
+  for (const id of ids) {
+    const course = byId.get(id);
+    if (course) ordered.push(course);
+  }
+  return ordered;
+}
+
 export async function listBestCourses(
   db: Db,
   limit = 8,
@@ -625,7 +665,15 @@ export async function listRelatedCoursesFor(
     .from(courses)
     .innerJoin(providers, eq(courses.providerId, providers.id))
     .leftJoin(courseCategories, eq(courseCategories.courseId, courses.id))
-    .where(and(eq(courses.status, "PUBLISHED"), sql`${courses.id} <> ${source.id}`))
+    .where(
+      and(
+        eq(courses.status, "PUBLISHED"),
+        // Related courses render inside a free-course surface, so §66.4
+        // eligibility applies here exactly as it does to the catalog.
+        notInArray(courses.priceType, [...FREE_LIST_EXCLUDED_PRICE_TYPES]),
+        sql`${courses.id} <> ${source.id}`,
+      ),
+    )
     .orderBy(desc(courses.qualityScore))
     .limit(poolLimit * 3);
 
@@ -677,7 +725,13 @@ export async function listSimilarCoursesFor(
     .from(courses)
     .innerJoin(providers, eq(courses.providerId, providers.id))
     .leftJoin(courseCategories, eq(courseCategories.courseId, courses.id))
-    .where(and(eq(courses.status, "PUBLISHED"), sql`${courses.id} <> ${source.id}`))
+    .where(
+      and(
+        eq(courses.status, "PUBLISHED"),
+        notInArray(courses.priceType, [...FREE_LIST_EXCLUDED_PRICE_TYPES]),
+        sql`${courses.id} <> ${source.id}`,
+      ),
+    )
     .orderBy(desc(courses.qualityScore))
     .limit(poolLimit * 3);
 

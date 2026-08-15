@@ -19,8 +19,12 @@ export function isValidHttpUrl(value: string): boolean {
     if (url.protocol !== "http:" && url.protocol !== "https:") {
       return false;
     }
-    // Block credentials-in-URL and empty hosts
     if (!url.hostname || url.hostname.includes(" ")) {
+      return false;
+    }
+    // `https://udemy.com@evil.com/` navigates to evil.com while reading as a
+    // trusted host, so userinfo is rejected outright.
+    if (url.username || url.password) {
       return false;
     }
     return true;

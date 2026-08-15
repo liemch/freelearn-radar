@@ -12,17 +12,35 @@ import {
 } from "@/domain/affiliate/resolve-placements";
 import { trackProductEvent } from "@/domain/analytics/product-events";
 import { logger } from "@/lib/logger";
-import { defaultLocale, isLocale, LOCALE_COOKIE } from "@/lib/i18n/config";
+import {
+  defaultLocale,
+  isLocale,
+  LOCALE_COOKIE,
+  type Locale,
+} from "@/lib/i18n/config";
+
+/**
+ * Both the cookie and the query parameter are attacker-controllable, so neither
+ * may reach a redirect target unvalidated: `?locale=/evil.com` would otherwise
+ * resolve `/${locale}` to `//evil.com` and leave the origin.
+ */
+function resolveSafeLocale(request: NextRequest): Locale {
+  const cookie = request.cookies.get(LOCALE_COOKIE)?.value;
+  if (cookie && isLocale(cookie)) {
+    return cookie;
+  }
+  const param = request.nextUrl.searchParams.get("locale");
+  if (param && isLocale(param)) {
+    return param;
+  }
+  return defaultLocale;
+}
 
 /**
  * Affiliate outbound hop. Tracking failure never blocks a valid redirect.
  */
 export async function GET(request: NextRequest) {
-  const localeCookie = request.cookies.get(LOCALE_COOKIE)?.value;
-  const locale =
-    (localeCookie && isLocale(localeCookie) ? localeCookie : null) ||
-    request.nextUrl.searchParams.get("locale") ||
-    defaultLocale;
+  const locale = resolveSafeLocale(request);
 
   if (!isMonetizationEnabled()) {
     return NextResponse.redirect(new URL(`/${locale}`, request.url));
@@ -81,7 +99,7 @@ export async function GET(request: NextRequest) {
         placementKey,
         courseId,
         topicSlug,
-        locale: typeof locale === "string" ? locale : defaultLocale,
+        locale,
         destinationHost: new URL(destination).hostname,
       });
     } catch (error) {

@@ -15,16 +15,24 @@ type DailyFreeCardProps = {
   priority?: boolean;
 };
 
+/**
+ * The verified "Coupon 100%" label means the offer was checked against the
+ * provider. A catalog row carrying `FREE_WITH_COUPON` has no offer-level
+ * verification behind it, so it gets a weaker label instead of borrowing this
+ * one (§120: only verified 100% off may claim "Coupon 100%").
+ */
 function offerBadge(
-  offerStatus: DailyFreeItem["offerStatus"],
-  couponLabel: string,
-  limitedLabel: string,
-): { label: string; variant: "warning" | "brand" } | null {
-  if (offerStatus === "ACTIVE_100_OFF" || offerStatus === "FREE_WITH_COUPON") {
-    return { label: couponLabel, variant: "warning" };
+  item: Pick<DailyFreeItem, "offerStatus" | "couponVerified">,
+  labels: { coupon: string; couponUnverified: string; limited: string },
+): { label: string; variant: "warning" | "brand" | "neutral" } | null {
+  if (item.offerStatus === "ACTIVE_100_OFF" && item.couponVerified) {
+    return { label: labels.coupon, variant: "warning" };
   }
-  if (offerStatus === "TEMPORARILY_FREE") {
-    return { label: limitedLabel, variant: "brand" };
+  if (item.offerStatus === "FREE_WITH_COUPON") {
+    return { label: labels.couponUnverified, variant: "neutral" };
+  }
+  if (item.offerStatus === "TEMPORARILY_FREE") {
+    return { label: labels.limited, variant: "brand" };
   }
   return null;
 }
@@ -43,16 +51,17 @@ export function DailyFreeCard({
   const { course } = item;
   const visual = getCourseVisual(course);
   const courseHref = localePath(locale, `/course/${course.slug}`);
-  const badge = offerBadge(
-    item.offerStatus,
-    dict.pages.coupon100Badge,
-    dict.pages.limitedFreeBadge,
-  );
+  const badge = offerBadge(item, {
+    coupon: dict.pages.coupon100Badge,
+    couponUnverified: dict.pages.couponUnverifiedBadge,
+    limited: dict.pages.limitedFreeBadge,
+  });
   const freshness =
     locale === "vi"
       ? formatVerificationFreshnessVi(item.verifiedAt ?? course.lastVerifiedAt)
       : null;
-  const showCouponCta = item.offerStatus === "ACTIVE_100_OFF";
+  const showCouponCta =
+    item.offerStatus === "ACTIVE_100_OFF" && item.couponVerified;
 
   return (
     <article className="group relative flex h-full flex-col overflow-hidden rounded-xl border border-border/70 bg-card transition hover:border-primary/40 hover:shadow-md focus-within:border-primary/40 motion-reduce:transition-none">

@@ -1,4 +1,5 @@
 import type { CourseWithProvider } from "@/db/repositories/course-repository";
+import { isEligibleForFreeLists } from "@/domain/course/free-durability";
 import { estimateTrustStateForCourse } from "@/domain/ranking/ranking";
 
 export type RelatedCourseInput = CourseWithProvider & {
@@ -25,6 +26,8 @@ export function selectRelatedCourses(
   const scored = candidates
     .filter((course) => course.id !== source.id)
     .filter((course) => course.status === "PUBLISHED")
+    // Truth decides eligibility, ranking only decides order (§90.2).
+    .filter((course) => isEligibleForFreeLists(course.priceType))
     .map((course) => {
       const trust = estimateTrustStateForCourse(
         { ...course, providerName: course.provider?.name },

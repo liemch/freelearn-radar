@@ -141,13 +141,21 @@ describe("locale precedence helpers", () => {
     expect(localePath("en", "/search")).toBe("/en/search");
   });
 
-  it("hreflang alternates cover en, vi, and x-default", () => {
+  // M20.14 §116.8: the product is Vietnamese-only, so only the Vietnamese URL
+  // is advertised. Emitting an `en` hreflang kept asking crawlers to index
+  // English duplicates of a UI that no longer exists.
+  it("advertises only the Vietnamese URL as canonical and hreflang", () => {
     const alt = buildLocaleAlternates("https://example.com", "vi", "/search");
     expect(alt.canonical).toBe("/vi/search");
     expect(alt.languages).toEqual({
-      en: "https://example.com/en/search",
       vi: "https://example.com/vi/search",
-      "x-default": "https://example.com/en/search",
+      "x-default": "https://example.com/vi/search",
     });
+  });
+
+  it("keeps the Vietnamese canonical even when rendered on an /en route", () => {
+    const alt = buildLocaleAlternates("https://example.com", "en", "/search");
+    expect(alt.canonical).toBe("/vi/search");
+    expect(alt.languages).not.toHaveProperty("en");
   });
 });

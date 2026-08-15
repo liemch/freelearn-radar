@@ -13,6 +13,13 @@ import { getServerEnv } from "@/lib/env";
 import { resolveLocaleParam } from "@/lib/i18n/page";
 import { AffiliateResources } from "@/components/public/affiliate-resources";
 
+/**
+ * The feature gate has to be evaluated per request. Prerendering this page bakes
+ * the build-time flag value into static HTML, which turns the kill switch into a
+ * redeploy (§77 rule 32, and the <15-minute rollback §98.3 asks for).
+ */
+export const dynamic = "force-dynamic";
+
 type PathPageProps = {
   params: Promise<{ locale: string }>;
   searchParams: Promise<Record<string, string | string[] | undefined>>;

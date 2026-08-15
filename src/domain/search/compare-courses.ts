@@ -41,6 +41,14 @@ export type CourseComparison = {
 };
 
 /** Parse `compare=id1,id2,id3` (or `ids=`) from a query-string value. */
+const UUID_RE =
+  /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+
+/** Distinguishes a course id from a slug so compare can accept either form. */
+export function isUuid(value: string): boolean {
+  return UUID_RE.test(value);
+}
+
 export function parseCompareIds(
   raw: string | string[] | null | undefined,
 ): string[] {

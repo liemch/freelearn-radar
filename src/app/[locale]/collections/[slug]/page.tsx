@@ -60,8 +60,14 @@ export async function generateMetadata({
   }
 
   return {
-    title: `${bucketLabel} Free Courses | FreeLearn Radar`,
-    description: `Deterministic collection of free courses lasting up to ${bucket.maxMinutes} minutes.`,
+    title:
+      locale === "vi"
+        ? `Khóa học miễn phí — ${bucketLabel} | FreeLearn Radar`
+        : `${bucketLabel} Free Courses | FreeLearn Radar`,
+    description:
+      locale === "vi"
+        ? `Tuyển chọn khóa học miễn phí có thời lượng tối đa ${bucket.maxMinutes} phút.`
+        : `Deterministic collection of free courses lasting up to ${bucket.maxMinutes} minutes.`,
     alternates: buildLocaleAlternates(
       appUrl,
       locale,

@@ -64,15 +64,16 @@ export async function generateMetadata({
     null,
   );
 
-  if (!course) {
+  // DRAFT and ARCHIVED courses are not publicly viewable — the page below calls
+  // notFound() for them — so their titles must not leak through metadata either.
+  if (!course || course.status === "DRAFT" || course.status === "ARCHIVED") {
     return { title: dict.meta.courseNotFound, robots: { index: false, follow: false } };
   }
 
   if (course.status !== "PUBLISHED") {
     return {
       title: `${course.title} | FreeLearn Radar`,
-      description:
-        "This course or free offer may no longer be available on FreeLearn Radar.",
+      description: dict.meta.courseUnavailable,
       robots: { index: false, follow: true },
     };
   }

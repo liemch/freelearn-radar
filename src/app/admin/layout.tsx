@@ -5,7 +5,7 @@ import { getSession } from "@/lib/auth/guards";
 import { getAdminLocale } from "@/lib/i18n/admin-locale";
 
 export const metadata: Metadata = {
-  title: "Admin | FreeLearn Radar",
+  title: "Quản trị | FreeLearn Radar",
   robots: {
     index: false,
     follow: false,

@@ -59,15 +59,21 @@ export async function generateMetadata({
 
   return {
     title: category
-      ? `${category.name} Free Courses | FreeLearn Radar`
+      ? locale === "vi"
+        ? `Khóa học ${category.name} miễn phí | FreeLearn Radar`
+        : `${category.name} Free Courses | FreeLearn Radar`
       : dict.meta.categoryNotFound,
     description: category?.description ?? undefined,
     alternates: category
       ? buildLocaleAlternates(appUrl, locale, `/category/${category.slug}`)
       : undefined,
-    robots: hasFilters
-      ? { index: false, follow: true }
-      : { index: true, follow: true },
+    // A missing category still renders with HTTP 200 (a `loading.tsx` boundary
+    // above `notFound()` prevents Next from setting 404), so it must be noindex
+    // or every bogus /category/<slug> becomes an indexable thin page (§103).
+    robots:
+      !category || hasFilters
+        ? { index: false, follow: true }
+        : { index: true, follow: true },
     openGraph: category
       ? {
           title: `${category.name} free courses`,

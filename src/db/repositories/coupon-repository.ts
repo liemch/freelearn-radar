@@ -1,4 +1,15 @@
-import { and, asc, desc, eq, inArray, sql } from "drizzle-orm";
+import {
+  and,
+  asc,
+  desc,
+  eq,
+  gt,
+  inArray,
+  isNull,
+  lte,
+  or,
+  sql,
+} from "drizzle-orm";
 
 import type { Db } from "@/db";
 import {
@@ -56,12 +67,21 @@ export async function upsertCouponSource(
   return created!;
 }
 
+/**
+ * Returns null when the offer_url already exists. Discovery runs concurrently
+ * and retries after timeout, so a duplicate is an expected outcome resolved by
+ * the unique index rather than an error.
+ */
 export async function insertCouponCandidate(
   db: Db,
   input: NewCouponCandidate,
-): Promise<CouponCandidate> {
-  const [row] = await db.insert(couponCandidates).values(input).returning();
-  return row!;
+): Promise<CouponCandidate | null> {
+  const rows = await db
+    .insert(couponCandidates)
+    .values(input)
+    .onConflictDoNothing({ target: couponCandidates.offerUrl })
+    .returning();
+  return rows[0] ?? null;
 }
 
 export async function listCouponCandidates(
@@ -140,7 +160,16 @@ export async function listCourseOffers(
     .limit(limit);
 }
 
-export async function listActive100OffOffers(db: Db, limit = 48) {
+/**
+ * Public 100%-off offers. An offer past its recorded expiry is no longer an
+ * active deal even if re-verification has not run yet (§126.4), so expiry is a
+ * publication gate here and not only a recheck scheduling input.
+ */
+export async function listActive100OffOffers(
+  db: Db,
+  limit = 48,
+  now: Date = new Date(),
+) {
   return db
     .select({
       offer: courseOffers,
@@ -149,8 +178,22 @@ export async function listActive100OffOffers(db: Db, limit = 48) {
     })
     .from(courseOffers)
     .leftJoin(courses, eq(courseOffers.courseId, courses.id))
-    .leftJoin(providers, eq(courseOffers.providerId, providers.id))
-    .where(eq(courseOffers.status, "ACTIVE_100_OFF"))
+    // Resolve the provider through the offer when it has one and through the
+    // course otherwise. Joining on the offer column alone meant a null
+    // provider_id silently removed a verified offer from the public surface.
+    .leftJoin(
+      providers,
+      sql`${providers.id} = coalesce(${courseOffers.providerId}, ${courses.providerId})`,
+    )
+    .where(
+      and(
+        eq(courseOffers.status, "ACTIVE_100_OFF"),
+        // Typed operators, not a raw sql template: postgres-js rejects a bare
+        // JS Date as a template parameter, which made this query throw on every
+        // request while `withDb` rendered it as "no deals today".
+        or(isNull(courseOffers.expiresAt), gt(courseOffers.expiresAt, now)),
+      ),
+    )
     .orderBy(desc(courseOffers.verifiedAt))
     .limit(limit);
 }
@@ -168,8 +211,15 @@ export async function listOffersDueForRecheck(db: Db, limit = 25) {
           "UNKNOWN",
           "DISCOVERED",
           "VERIFYING",
+          // BLOCKED is transient — a rate limit or a captcha, not a verdict on
+          // the coupon. Excluding it stranded the offer permanently even though
+          // nextCouponRecheckAt already computes a 48h backoff for it.
+          "BLOCKED",
         ]),
-        sql`(${courseOffers.nextRecheckAt} IS NULL OR ${courseOffers.nextRecheckAt} <= ${now})`,
+        or(
+          isNull(courseOffers.nextRecheckAt),
+          lte(courseOffers.nextRecheckAt, now),
+        ),
       ),
     )
     .orderBy(asc(courseOffers.nextRecheckAt))

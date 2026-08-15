@@ -553,6 +553,52 @@ const SEED_DISCOVERY_QUERIES = [
     category: "office-productivity",
     query: "site:academy.hubspot.com service OR CRM free",
   },
+  // M21.2 coverage floor. Interleaved selection caps any category's share of a
+  // run, but a category seeded with zero or one query still cannot be
+  // discovered against. These raise the floor for the thinnest domains so the
+  // budget has something to spend there. `design` had no live query at all
+  // after its earlier Udemy seed was retired for returning paid pages, so this
+  // approaches it through coupon offers and a Vietnamese phrasing instead.
+  {
+    provider: "udemy",
+    category: "design",
+    query: 'site:udemy.com/course "graphic design" OR canva OR figma coupon OR "100% off"',
+  },
+  {
+    provider: "udemy",
+    category: "design",
+    query: 'site:udemy.com/course "thiết kế" OR "đồ họa" miễn phí OR coupon',
+  },
+  {
+    provider: "udemy",
+    category: "finance",
+    query: 'site:udemy.com/course "tài chính cá nhân" OR "đầu tư" miễn phí OR coupon',
+  },
+  {
+    provider: "udemy",
+    category: "career",
+    query: 'site:udemy.com/course "phỏng vấn" OR "kỹ năng xin việc" miễn phí OR coupon',
+  },
+  {
+    provider: "udemy",
+    category: "lifestyle-health",
+    query: 'site:udemy.com/course "sức khỏe" OR "thiền" OR "dinh dưỡng" miễn phí OR coupon',
+  },
+  {
+    provider: "coursera",
+    category: "education",
+    query: 'site:coursera.org/learn teaching OR learning "audit for free"',
+  },
+  {
+    provider: "coursera",
+    category: "science-engineering",
+    query: 'site:coursera.org/learn science OR engineering OR mathematics "audit for free"',
+  },
+  {
+    provider: "coursera",
+    category: "humanities",
+    query: 'site:coursera.org/learn psychology OR history OR sociology "audit for free"',
+  },
 ] as const;
 
 /**

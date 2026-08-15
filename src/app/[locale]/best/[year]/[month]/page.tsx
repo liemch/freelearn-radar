@@ -47,7 +47,14 @@ export async function generateMetadata({
   const locale = await resolveLocaleParam(params);
   const { year, month } = await params;
   const monthNumber = Number(month);
-  const title = `Best Free Online Courses — ${monthName(monthNumber)} ${year}`;
+  const period =
+    locale === "vi"
+      ? `tháng ${monthNumber}/${year}`
+      : `${monthName(monthNumber)} ${year}`;
+  const title =
+    locale === "vi"
+      ? `Khóa học miễn phí tốt nhất — ${period}`
+      : `Best Free Online Courses — ${period}`;
   const path = localePath(locale, `/best/${year}/${month}`);
 
   let appUrl = "http://localhost:3000";
@@ -59,11 +66,17 @@ export async function generateMetadata({
 
   return {
     title: `${title} | FreeLearn Radar`,
-    description: `Curated best free online courses for ${monthName(monthNumber)} ${year}, ranked by quality, trust, and freshness.`,
+    description:
+      locale === "vi"
+        ? `Khóa học miễn phí đáng học nhất ${period}, xếp theo chất lượng, độ tin cậy và thời điểm kiểm chứng.`
+        : `Curated best free online courses for ${period}, ranked by quality, trust, and freshness.`,
     alternates: buildLocaleAlternates(appUrl, locale, `/best/${year}/${month}`),
     openGraph: {
       title,
-      description: `Top free courses curated for ${monthName(monthNumber)} ${year}.`,
+      description:
+        locale === "vi"
+          ? `Khóa học miễn phí nổi bật ${period}.`
+          : `Top free courses curated for ${period}.`,
       url: path,
       type: "website",
     },

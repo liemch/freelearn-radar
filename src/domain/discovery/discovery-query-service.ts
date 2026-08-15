@@ -8,6 +8,55 @@ import {
 import { writeAuditLog } from "@/domain/admin/audit-log";
 import { getServerEnv } from "@/lib/env";
 
+/**
+ * M21.2 discovery coverage budget.
+ *
+ * Ordering due queries globally makes each category's share of a run equal to
+ * its share of seeded queries, which is how Tech ends up dominating discovery
+ * even when the taxonomy looks broad (§124.1). Interleaving one query per
+ * category per round caps any single category's share of a run at
+ * `1 / categoryCount`, so a thinly seeded domain still gets picked up.
+ *
+ * This deliberately does not enforce equal course counts — §124.2 asks only
+ * that important categories are not starved.
+ */
+export function interleaveByCategory<T extends { category: string | null }>(
+  queries: T[],
+  limit: number,
+): T[] {
+  if (limit <= 0) return [];
+
+  const buckets = new Map<string, T[]>();
+  for (const query of queries) {
+    const key = query.category ?? "__uncategorized__";
+    const bucket = buckets.get(key);
+    if (bucket) bucket.push(query);
+    else buckets.set(key, [query]);
+  }
+
+  // Insertion order follows the incoming ordering (least-recently-run first),
+  // so the category whose queries are most overdue still leads each round.
+  const order = [...buckets.keys()];
+  const selected: T[] = [];
+  let round = 0;
+
+  while (selected.length < limit) {
+    let tookAny = false;
+    for (const key of order) {
+      const bucket = buckets.get(key)!;
+      const candidate = bucket[round];
+      if (!candidate) continue;
+      selected.push(candidate);
+      tookAny = true;
+      if (selected.length >= limit) break;
+    }
+    if (!tookAny) break;
+    round += 1;
+  }
+
+  return selected;
+}
+
 export async function listDueDiscoveryQueries(
   db: Db,
   limit?: number,
@@ -40,7 +89,9 @@ export async function listDueDiscoveryQueries(
     conditions.push(eq(discoveryQueries.category, scope.category));
   }
 
-  return db
+  // Over-fetch so the interleave has candidates from thin categories to draw
+  // on; a single category's queries would otherwise fill the whole window.
+  const pool = await db
     .select()
     .from(discoveryQueries)
     .where(and(...conditions))
@@ -48,7 +99,14 @@ export async function listDueDiscoveryQueries(
       sql`${discoveryQueries.lastRunAt} ASC NULLS FIRST`,
       asc(discoveryQueries.successCount),
     )
-    .limit(queryLimit);
+    .limit(Math.max(queryLimit * 4, queryLimit));
+
+  // An explicit category scope is already the operator's chosen budget.
+  if (scope?.category) {
+    return pool.slice(0, queryLimit);
+  }
+
+  return interleaveByCategory(pool, queryLimit);
 }
 
 export async function markDiscoveryQuerySuccess(

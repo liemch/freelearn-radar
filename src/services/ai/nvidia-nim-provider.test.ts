@@ -72,7 +72,8 @@ describe("AI prompt safety", () => {
   });
 
   it("reports which fields failed validation", () => {
-    const { summary_vi: _omitted, ...incomplete } = validAnalysis;
+    const incomplete = { ...validAnalysis };
+    delete (incomplete as Partial<typeof validAnalysis>).summary_vi;
 
     expect(() => parseCourseAnalysisJson(JSON.stringify(incomplete))).toThrow(
       /schema[\s\S]*summary_vi/,

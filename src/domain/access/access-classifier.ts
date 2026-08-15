@@ -127,7 +127,15 @@ export function classifyAccessFromText(params: {
   if (/audit/.test(text)) {
     return { access: "FREE_AUDIT", certificate };
   }
-  if (/free|miễn phí/.test(text) && !/trial|preview|coupon/.test(text)) {
+  // FREE_FULL needs wording that actually claims the whole course is free.
+  // A bare "free", and "enroll for free" in particular, is not that claim
+  // (§11, §127.2) — Coursera's own enrolment copy says it while only the audit
+  // track is free. Anything weaker falls through to UNKNOWN.
+  if (
+    /100%\s*(free|miễn phí)|full course.*(free|miễn phí)|free forever|completely free|toàn bộ.*miễn phí|miễn phí toàn bộ|miễn phí vĩnh viễn/.test(
+      text,
+    )
+  ) {
     return { access: "FREE_FULL", certificate };
   }
   if (/\$|paid|trả phí|buy now/.test(text)) {

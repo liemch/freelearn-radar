@@ -27,7 +27,11 @@
     "replay:events": "tsx scripts/replay-events.ts",
     "search:baseline": "tsx scripts/search-baseline.ts",
     "search:benchmark": "tsx scripts/search-benchmark.ts",
-    "search:intent-sample": "tsx scripts/search-intent-sample.ts"
+    "search:intent-sample": "tsx scripts/search-intent-sample.ts",
+    "verify:db": "tsx scripts/verify/01-migrations.ts && tsx scripts/verify/02-search.ts && tsx scripts/verify/03-coupon.ts && tsx scripts/verify/04-media-access-discovery.ts",
+    "verify:pg-server": "tsx scripts/verify/pg-server.ts",
+    "verify:http": "tsx scripts/verify/05-http.ts",
+    "verify:flags-on": "tsx scripts/verify/06-flags-on.ts"
   },
   "dependencies": {
     "@neondatabase/serverless": "^0.10.4",
@@ -47,6 +51,9 @@
     "zod": "^4.0.17"
   },
   "devDependencies": {
+    "@electric-sql/pglite": "^0.5.5",
+    "@electric-sql/pglite-pgvector": "^0.0.6",
+    "@electric-sql/pglite-socket": "^0.2.8",
     "@eslint/eslintrc": "^3.3.1",
     "@tailwindcss/postcss": "^4.1.11",
     "@types/bcryptjs": "^2.4.6",

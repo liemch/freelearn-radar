@@ -4,13 +4,15 @@ import { SiteFooter } from "@/components/public/site-footer";
 import { SiteHeader } from "@/components/public/site-header";
 import { PageShell } from "@/components/layout/page-shell";
 import { Button } from "@/components/ui/button";
+import { defaultLocale } from "@/lib/i18n/config";
 import { getDictionary } from "@/lib/i18n/get-dictionary";
-import { getPreferredLocale } from "@/lib/i18n/server-locale";
 
-export default async function NotFound() {
-  // Root-level 404 has no locale param; the middleware-managed preference
-  // cookie is the only locale signal available here.
-  const locale = await getPreferredLocale();
+export default function NotFound() {
+  // Must stay free of request-time APIs. Reading `cookies()` here made the
+  // not-found boundary dynamic, and Next.js then served every `notFound()` with
+  // HTTP 200 — a site-wide soft 404. The product is Vietnamese-only (M20.14), so
+  // there is no locale to negotiate anyway.
+  const locale = defaultLocale;
   const dict = getDictionary(locale);
 
   return (

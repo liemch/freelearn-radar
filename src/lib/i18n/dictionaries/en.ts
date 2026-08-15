@@ -196,6 +196,7 @@ export const en: Dictionary = {
       "We're still verifying coupons and limited offers. Check back soon or browse lasting free courses.",
     dailyFreeCta: "Get this free course",
     coupon100Badge: "Coupon 100%",
+    couponUnverifiedBadge: "Coupon required · not re-verified",
     limitedFreeBadge: "Limited free",
   },
   courseDetail: {
@@ -250,6 +251,8 @@ export const en: Dictionary = {
     collectionNotFound: "Collection not found",
     topicNotFound: "Topic not found",
     trackerNotFound: "Tracker not found",
+    courseUnavailable:
+      "This course or free offer may no longer be available on FreeLearn Radar.",
     certificatesTitle: "Free Certificate Courses",
   },
   a11y: {

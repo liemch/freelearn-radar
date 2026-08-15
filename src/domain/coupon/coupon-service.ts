@@ -140,6 +140,8 @@ export type CouponVerificationEvidence = {
   couponRejected: boolean;
   /** Offer past stated expiry. */
   pastExpiry: boolean;
+  /** Recorded offer expiry, when the source or a previous fetch supplied one. */
+  expiresAt?: Date | null;
 };
 
 /**
@@ -148,9 +150,15 @@ export type CouponVerificationEvidence = {
  */
 export function resolveCouponVerificationStatus(
   evidence: CouponVerificationEvidence,
+  now: Date = new Date(),
 ): CouponOfferStatus {
   if (evidence.blocked) return "BLOCKED";
   if (!evidence.officialFetchOk) return "UNKNOWN";
+  // A recorded expiry in the past is authoritative on its own: the clock does
+  // not need the provider page to also say "ended" before an offer is over.
+  if (evidence.expiresAt && evidence.expiresAt.getTime() <= now.getTime()) {
+    return "EXPIRED";
+  }
   if (evidence.pastExpiry) return "EXPIRED";
   if (evidence.couponRejected) return "INVALID";
 

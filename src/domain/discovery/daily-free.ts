@@ -20,6 +20,12 @@ export type DailyFreeItem = {
   couponCode: string | null;
   verifiedAt: Date | null;
   categorySlug: string | null;
+  /**
+   * True only when an offer row was verified 100% off against the provider.
+   * The fallback branch below has no offer-level verification, so it must not
+   * borrow the verified "Coupon 100%" label (§120).
+   */
+  couponVerified: boolean;
 };
 
 function formatRelativeVi(from: Date, now = new Date()): string {
@@ -45,10 +51,11 @@ export function formatVerificationFreshnessVi(
 
 export async function queryDailyFreeDeals(
   db: Db,
-  options?: { limit?: number },
+  options?: { limit?: number; now?: Date },
 ): Promise<DailyFreeItem[]> {
   const limit = options?.limit ?? 48;
-  const activeOffers = await listActive100OffOffers(db, limit);
+  const now = options?.now ?? new Date();
+  const activeOffers = await listActive100OffOffers(db, limit, now);
   const fromOffers: DailyFreeItem[] = [];
 
   for (const row of activeOffers) {
@@ -56,6 +63,14 @@ export async function queryDailyFreeDeals(
     if (!row.provider) continue;
     if (!isEligibleForFreeLists(row.course.priceType)) continue;
     if (!isPublicCoupon100Off(row.offer.status)) continue;
+    // Re-assert expiry here: the repository filters it, but an expired coupon
+    // reaching a public surface is severe enough to check twice.
+    if (
+      row.offer.expiresAt &&
+      row.offer.expiresAt.getTime() <= now.getTime()
+    ) {
+      continue;
+    }
 
     const course: CourseWithProvider = {
       ...row.course,
@@ -69,6 +84,7 @@ export async function queryDailyFreeDeals(
       couponCode: row.offer.couponCode,
       verifiedAt: row.offer.verifiedAt,
       categorySlug: null,
+      couponVerified: true,
     });
   }
 
@@ -81,7 +97,13 @@ export async function queryDailyFreeDeals(
     published.filter(
       (c) =>
         isEligibleForFreeLists(c.priceType) &&
-        isDailyFreeEligibleAccess(c.priceType),
+        isDailyFreeEligibleAccess(c.priceType) &&
+        // A FREE_WITH_COUPON course reaches this branch precisely because it has
+        // no live verified offer — its coupon may have expired, been withdrawn,
+        // or never been checked. §126.4 removes an expired coupon from this
+        // surface rather than relabelling it, and there is no evidence here to
+        // distinguish "coupon still works" from "coupon is gone".
+        c.priceType !== "FREE_WITH_COUPON",
     ),
   );
 
@@ -91,15 +113,12 @@ export async function queryDailyFreeDeals(
     fromOffers.push({
       course,
       offerStatus:
-        course.priceType === "TEMPORARILY_FREE"
-          ? "TEMPORARILY_FREE"
-          : course.priceType === "FREE_WITH_COUPON"
-            ? "FREE_WITH_COUPON"
-            : null,
+        course.priceType === "TEMPORARILY_FREE" ? "TEMPORARILY_FREE" : null,
       offerUrl: course.outboundUrl,
       couponCode: null,
       verifiedAt: course.lastVerifiedAt,
       categorySlug: null,
+      couponVerified: false,
     });
     if (fromOffers.length >= limit) break;
   }

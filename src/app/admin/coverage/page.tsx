@@ -9,6 +9,7 @@ import {
   AdminTh,
   AdminTr,
 } from "@/components/admin/admin-table";
+import { listCategories } from "@/db/repositories/category-repository";
 import { listDiscoveryCategoryStats } from "@/db/repositories/coupon-repository";
 import { withDb } from "@/lib/db-safe";
 import { getSession } from "@/lib/auth/guards";
@@ -17,12 +18,28 @@ import { getAdminLocale } from "@/lib/i18n/admin-locale";
 
 export const dynamic = "force-dynamic";
 
+type CoverageRow = {
+  id: string;
+  categorySlug: string;
+  queriesRun: number;
+  candidatesFound: number;
+  verifiedCount: number;
+  publishedCount: number;
+  zeroCandidateRuns: number;
+  lastDiscoveredAt: Date | null;
+};
+
+/**
+ * A category that has never been discovered against is the most severe
+ * starvation case, so `queriesRun === 0` counts as starved. Reading it as
+ * "healthy" hid exactly the categories this page exists to surface.
+ */
 function isStarved(row: {
   publishedCount: number;
   zeroCandidateRuns: number;
   queriesRun: number;
 }): boolean {
-  if (row.queriesRun === 0) return false;
+  if (row.queriesRun === 0) return true;
   return row.publishedCount <= 2 || row.zeroCandidateRuns >= 3;
 }
 
@@ -33,16 +50,37 @@ export default async function AdminCoveragePage() {
   const locale = await getAdminLocale();
   const t = getAdminDictionary(locale);
 
-  const stats = await withDb(
-    "admin.coverage.stats",
-    (db) => listDiscoveryCategoryStats(db),
-    [],
-  );
+  const [stats, allCategories] = await Promise.all([
+    withDb("admin.coverage.stats", (db) => listDiscoveryCategoryStats(db), []),
+    withDb("admin.coverage.categories", (db) => listCategories(db), []),
+  ]);
 
-  const sorted = [...stats].sort((a, b) => {
-    const aScore = a.zeroCandidateRuns * 10 - a.publishedCount;
-    const bScore = b.zeroCandidateRuns * 10 - b.publishedCount;
-    return bScore - aScore;
+  // Stats rows only exist once a category has been discovered against, so the
+  // known taxonomy is unioned in with explicit zeros. Otherwise a never-run
+  // category is simply absent from the table.
+  const byslug = new Map<string, CoverageRow>(
+    stats.map((row) => [row.categorySlug, row] as const),
+  );
+  for (const category of allCategories) {
+    if (byslug.has(category.slug)) continue;
+    byslug.set(category.slug, {
+      id: `unseen:${category.slug}`,
+      categorySlug: category.slug,
+      queriesRun: 0,
+      candidatesFound: 0,
+      verifiedCount: 0,
+      publishedCount: 0,
+      zeroCandidateRuns: 0,
+      lastDiscoveredAt: null,
+    });
+  }
+
+  const sorted = [...byslug.values()].sort((a, b) => {
+    const score = (row: CoverageRow) =>
+      (row.queriesRun === 0 ? 1000 : 0) +
+      row.zeroCandidateRuns * 10 -
+      row.publishedCount;
+    return score(b) - score(a);
   });
 
   return (

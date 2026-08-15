@@ -7,11 +7,15 @@ import {
   reciprocalRankFusion,
   type FusedHit,
 } from "@/domain/search/fusion";
-import { searchSemantic } from "@/domain/search/semantic";
+import { readRelevanceFloor, searchSemantic } from "@/domain/search/semantic";
 import { getServerEnv } from "@/lib/env";
+import { logger } from "@/lib/logger";
 
 export type HybridSearchResult = {
+  /** Full ordered eligible result set (bounded by top-K), not a single page. */
   courseIds: string[];
+  /** The slice for `filters.page`, so pagination stays coherent. */
+  pageIds: string[];
   fused: FusedHit[];
   retrievalMode: "LEXICAL" | "SEMANTIC" | "HYBRID";
   degraded: boolean;
@@ -21,6 +25,17 @@ export type HybridSearchResult = {
   latencyMs: number;
   topScore: number | null;
 };
+
+/**
+ * `courseIds` is the whole ranked set, so the page slice is derived here rather
+ * than by the caller. Slicing from 0 regardless of `page` would serve page 1's
+ * results under every page number.
+ */
+function pageSlice(ids: string[], page: number, pageSize: number): string[] {
+  const safePage = Number.isFinite(page) && page > 0 ? Math.floor(page) : 1;
+  const start = (safePage - 1) * pageSize;
+  return ids.slice(start, start + pageSize);
+}
 
 /**
  * Hybrid retrieval: lexical + semantic → RRF → truth filter.
@@ -34,11 +49,27 @@ export async function searchHybrid(
   const env = getServerEnv();
   const started = Date.now();
   const pageSize = options?.pageSize ?? filters.pageSize ?? 12;
+  const page = filters.page ?? 1;
   const q = filters.q?.trim() ?? "";
 
   const hybridOn = env.FEATURE_HYBRID_SEARCH === "true";
-  const semanticOn =
+  const flagsWantSemantic =
     env.FEATURE_SEMANTIC_SEARCH === "true" || hybridOn;
+
+  // §89.5 makes the relevance floor a precondition for semantic retrieval, not
+  // a later refinement: without it, a query with no good match still returns
+  // top-K by cosine and the honest empty state never happens. An uncalibrated
+  // floor therefore keeps the semantic path off instead of shipping weak
+  // matches, and the caller records the request as degraded.
+  const floor = readRelevanceFloor(env.RELEVANCE_FLOOR);
+  const semanticOn = flagsWantSemantic && floor.calibrated;
+
+  if (flagsWantSemantic && !floor.calibrated) {
+    logger.warn("search.semantic.uncalibrated", {
+      status: "degraded",
+      reason: "RELEVANCE_FLOOR_unset",
+    });
+  }
 
   const lexical = await queryCatalog(db, {
     ...filters,
@@ -53,8 +84,10 @@ export async function searchHybrid(
   const lexicalWouldBeZero = Boolean(q) && lexical.items.length === 0;
 
   if (!q || !semanticOn) {
+    const lexicalIds = lexical.items.map((i) => i.id);
     return {
-      courseIds: lexical.items.slice(0, pageSize).map((i) => i.id),
+      courseIds: lexicalIds,
+      pageIds: pageSlice(lexicalIds, page, pageSize),
       fused: lexicalHits.map((h) => ({
         id: h.id,
         score: 1 / (searchRankingConfig.rrfK + h.rank),
@@ -63,7 +96,9 @@ export async function searchHybrid(
         semanticRank: null,
       })),
       retrievalMode: "LEXICAL",
-      degraded: false,
+      // A query that wanted semantic retrieval and did not get it is degraded,
+      // whatever the reason. Reporting false would hide it from the §85 rate.
+      degraded: Boolean(q) && flagsWantSemantic && !semanticOn,
       lexicalWouldBeZero,
       unmetIntent: lexicalWouldBeZero,
       cacheHit: false,
@@ -83,6 +118,7 @@ export async function searchHybrid(
       searchSemantic(db, q, {
         topK: searchRankingConfig.vectorTopK,
         timeoutMs: env.EMBEDDING_QUERY_TIMEOUT_MS,
+        floor,
       }),
       new Promise<null>((resolve) =>
         setTimeout(() => resolve(null), env.EMBEDDING_QUERY_TIMEOUT_MS),
@@ -113,8 +149,10 @@ export async function searchHybrid(
           reason: searchRankingConfig.reasonCodes.SEMANTIC_MATCH,
         },
       ]);
+      const semanticIds = fused.map((h) => h.id);
       return {
-        courseIds: fused.slice(0, pageSize).map((h) => h.id),
+        courseIds: semanticIds,
+        pageIds: pageSlice(semanticIds, page, pageSize),
         fused,
         retrievalMode: "SEMANTIC",
         degraded: false,
@@ -126,8 +164,10 @@ export async function searchHybrid(
       };
     }
 
+    const fallbackIds = lexical.items.map((i) => i.id);
     return {
-      courseIds: lexical.items.slice(0, pageSize).map((i) => i.id),
+      courseIds: fallbackIds,
+      pageIds: pageSlice(fallbackIds, page, pageSize),
       fused: lexicalHits.map((h) => ({
         id: h.id,
         score: 1 / (searchRankingConfig.rrfK + h.rank),
@@ -160,26 +200,26 @@ export async function searchHybrid(
     },
   ]);
 
-  // Truth filter: drop ids that are not free-eligible (defense in depth).
+  // Truth filter: drop ids known to be ineligible (defense in depth — the
+  // lexical and semantic queries already exclude them, and hydration filters
+  // again). Ids absent from the lexical page are semantic-only finds and are
+  // kept in fused order; eligibility for those is enforced at hydration.
+  const priceTypeById = new Map(
+    lexical.items.map((item) => [item.id, item.priceType] as const),
+  );
   const eligibleIds: string[] = [];
+  const seen = new Set<string>();
   for (const hit of fused) {
-    const item = lexical.items.find((c) => c.id === hit.id);
-    if (item && !isEligibleForFreeLists(item.priceType)) continue;
+    if (seen.has(hit.id)) continue;
+    const priceType = priceTypeById.get(hit.id);
+    if (priceType && !isEligibleForFreeLists(priceType)) continue;
+    seen.add(hit.id);
     eligibleIds.push(hit.id);
-    if (eligibleIds.length >= pageSize) break;
-  }
-
-  // If fusion produced ids not in the lexical page, keep them (semantic-only finds).
-  if (eligibleIds.length < pageSize) {
-    for (const hit of fused) {
-      if (eligibleIds.includes(hit.id)) continue;
-      eligibleIds.push(hit.id);
-      if (eligibleIds.length >= pageSize) break;
-    }
   }
 
   return {
     courseIds: eligibleIds,
+    pageIds: pageSlice(eligibleIds, page, pageSize),
     fused,
     retrievalMode: "HYBRID",
     degraded: false,

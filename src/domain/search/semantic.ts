@@ -27,6 +27,32 @@ export type SemanticSearchResult = {
   latencyMs: number;
 };
 
+export type RelevanceFloor =
+  | { calibrated: true; minCosine: number }
+  | { calibrated: false };
+
+/**
+ * Reads the §89.5 relevance floor.
+ *
+ * Returning top-K by cosine with no minimum means a query with no good match
+ * still yields 50 "hits" — the best of a bad set — which then survive fusion
+ * and make `unmet_intent` read false. That is the "lấp trang bằng match yếu"
+ * outcome §89.5 forbids and the reason §20 exists.
+ *
+ * The plan requires the threshold to come from the labelled evaluation set, so
+ * an unset value is reported as uncalibrated rather than defaulted.
+ */
+export function readRelevanceFloor(raw: string | undefined): RelevanceFloor {
+  const trimmed = (raw ?? "").trim();
+  if (!trimmed) return { calibrated: false };
+
+  const parsed = Number(trimmed);
+  if (!Number.isFinite(parsed) || parsed < 0 || parsed > 1) {
+    return { calibrated: false };
+  }
+  return { calibrated: true, minCosine: parsed };
+}
+
 /**
  * Brute-force cosine over OK embeddings for the active model/version.
  * Never mixes versions. Truth-filters ineligible price types.
@@ -38,6 +64,7 @@ export async function searchSemantic(
     topK?: number;
     provider?: EmbeddingProvider | null;
     timeoutMs?: number;
+    floor?: RelevanceFloor;
   },
 ): Promise<SemanticSearchResult> {
   const env = getServerEnv();
@@ -131,14 +158,18 @@ export async function searchSemantic(
       ),
     );
 
+  const floor = options?.floor ?? readRelevanceFloor(env.RELEVANCE_FLOOR);
+  const minCosine = floor.calibrated ? floor.minCosine : null;
+
   const scored: SemanticHit[] = [];
   for (const row of rows) {
     if (!row.embedding) continue;
     if (!isEligibleForFreeLists(row.priceType)) continue;
-    scored.push({
-      courseId: row.courseId,
-      score: cosineSimilarity(queryVector, row.embedding),
-    });
+    // A dimension mismatch scores 0 rather than throwing, so a stale vector
+    // from a superseded model cannot crash the request — it just cannot rank.
+    const score = cosineSimilarity(queryVector, row.embedding);
+    if (minCosine !== null && score < minCosine) continue;
+    scored.push({ courseId: row.courseId, score });
   }
 
   scored.sort((a, b) => b.score - a.score || a.courseId.localeCompare(b.courseId));

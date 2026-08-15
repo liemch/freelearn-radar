@@ -261,6 +261,19 @@ export async function approveCandidate(db: Db, input: ApproveCandidateInput) {
         imageSourceUrl: candidate.sourceImageUrl ?? null,
         imageLastVerifiedAt: candidate.sourceImageUrl ? now : null,
         imagePolicy: "REMOTE_ONLY",
+        // Deterministic, no-network seed state so the media pass has something
+        // truthful to refine. Approval runs in a transaction and must not make
+        // an outbound image request; PENDING means "URL accepted, not yet
+        // fetched", never "verified official artwork".
+        ...(candidate.sourceImageUrl
+          ? ({
+              imageSourceType: "TRUSTED_METADATA",
+              imageStatus: "PENDING",
+            } as const)
+          : ({
+              imageSourceType: "NONE",
+              imageStatus: "MISSING",
+            } as const)),
       });
 
       await setCourseCategories(txDb, created.id, matchedCategoryIds);
@@ -348,6 +361,29 @@ export async function approveCandidate(db: Db, input: ApproveCandidateInput) {
       await enqueueCourseEmbedding(db, course.id);
     } catch (error) {
       logger.warn("embedding.enqueue_on_approve", {
+        courseId: course.id,
+        error: error instanceof Error ? error.message : "unknown",
+      });
+    }
+
+    // Best-effort coverage accounting — must not fail approval. Without this the
+    // verified/published columns on §133.3 stay at zero and the candidate →
+    // publish conversion per category is unmeasurable.
+    try {
+      const primaryCategorySlug = categories.find(
+        (category) => category.id === matchedCategoryIds[0],
+      )?.slug;
+      if (primaryCategorySlug) {
+        const { bumpDiscoveryCategoryStats } = await import(
+          "@/db/repositories/coupon-repository"
+        );
+        await bumpDiscoveryCategoryStats(db, primaryCategorySlug, {
+          verifiedCount: 1,
+          publishedCount: 1,
+        });
+      }
+    } catch (error) {
+      logger.warn("coverage.bump_on_approve", {
         courseId: course.id,
         error: error instanceof Error ? error.message : "unknown",
       });

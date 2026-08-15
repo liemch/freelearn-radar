@@ -4,6 +4,7 @@ import { getDb } from "@/db";
 import { writeAuditLog } from "@/domain/admin/audit-log";
 import { runCouponDiscovery } from "@/domain/coupon/coupon-discovery-runner";
 import { runCouponVerification } from "@/domain/coupon/coupon-verification-runner";
+import { runMediaResolution } from "@/domain/media/media-resolution-runner";
 import { verifyCronAuth } from "@/lib/cron-auth";
 import { getServerEnv } from "@/lib/env";
 import { logger } from "@/lib/logger";
@@ -22,15 +23,21 @@ export async function GET(request: Request) {
   }
 
   try {
+    const db = getDb();
+
+    // Media resolution has its own kill switch and must not be gated by the
+    // coupon flag — image quality is independent of coupon discovery.
+    const media = await runMediaResolution(db);
+
     if (env.FEATURE_COUPON_DISCOVERY !== "true") {
       return NextResponse.json({
         ok: true,
         skipped: true,
         reason: "FEATURE_COUPON_DISCOVERY_off",
+        media,
       });
     }
 
-    const db = getDb();
     const discovery = await runCouponDiscovery(db);
     const verification = await runCouponVerification(db);
 
@@ -39,19 +46,21 @@ export async function GET(request: Request) {
       action: "COUPON_RUN",
       entityType: "coupon",
       entityId: "cron",
-      after: { discovery, verification },
+      after: { discovery, verification, media },
     });
 
     logger.info("cron.coupons", {
       status: "success",
       discovery,
       verification,
+      media,
     });
 
     return NextResponse.json({
       ok: true,
       discovery,
       verification,
+      media,
     });
   } catch (error) {
     logger.error("cron.coupons", {

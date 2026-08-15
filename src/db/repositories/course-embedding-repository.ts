@@ -1,4 +1,4 @@
-import { and, eq, inArray, sql } from "drizzle-orm";
+import { and, eq, gt, inArray, sql } from "drizzle-orm";
 
 import type { Db } from "@/db";
 import {
@@ -6,6 +6,7 @@ import {
   queryEmbeddingCache,
   type CourseEmbedding,
 } from "@/db/schema";
+import { getServerEnv } from "@/lib/env";
 
 export async function findCourseEmbedding(
   db: Db,
@@ -173,12 +174,22 @@ export async function findOkEmbeddingsForCourses(
     );
 }
 
+/**
+ * Cache reads honour `QUERY_EMBEDDING_CACHE_TTL_DAYS` (§89.3). Without the TTL
+ * a vector cached under a superseded model config would be served indefinitely.
+ */
 export async function getCachedQueryEmbedding(
   db: Db,
   queryHash: string,
   model: string,
   version: string,
+  options?: { ttlDays?: number; now?: Date },
 ): Promise<number[] | null> {
+  const now = options?.now ?? new Date();
+  const ttlDays =
+    options?.ttlDays ?? getServerEnv().QUERY_EMBEDDING_CACHE_TTL_DAYS;
+  const cutoff = new Date(now.getTime() - ttlDays * 24 * 60 * 60 * 1000);
+
   const rows = await db
     .select()
     .from(queryEmbeddingCache)
@@ -187,6 +198,9 @@ export async function getCachedQueryEmbedding(
         eq(queryEmbeddingCache.queryHash, queryHash),
         eq(queryEmbeddingCache.embeddingModel, model),
         eq(queryEmbeddingCache.embeddingVersion, version),
+        // Typed operator: a JS Date inside a raw sql template is rejected by
+        // postgres-js, which would make every cache read throw.
+        gt(queryEmbeddingCache.createdAt, cutoff),
       ),
     )
     .limit(1);
@@ -232,6 +246,9 @@ export async function putCachedQueryEmbedding(
       .set({
         embedding: input.embedding,
         lastUsedAt: new Date(),
+        // Refreshing the vector restarts its TTL; otherwise a re-written row
+        // would immediately read as expired again.
+        createdAt: new Date(),
       })
       .where(eq(queryEmbeddingCache.id, existing[0].id));
     return;

@@ -214,9 +214,13 @@ export function resetNlIntentQuota(): void {
 }
 
 /**
- * Flag-gated parse. The AI path is a stub for MVP: it consumes quota and
- * returns the deterministic parse, so enabling the flag later cannot change
- * result shape (plan §92.2 fallback contract).
+ * Flag-gated parse.
+ *
+ * There is no AI intent call in this release: the `AI_STUB` source means quota
+ * was accounted for and the deterministic parse was returned unchanged. Keeping
+ * the shape stable means adding a real AI path later cannot change the result
+ * contract (§92.2). Treat a non-`DETERMINISTIC` source as "metered", not as
+ * evidence that a model ran.
  */
 export async function parseIntentWithOptionalAi(
   query: string,
@@ -236,4 +240,42 @@ export async function parseIntentWithOptionalAi(
   }
 
   return { intent: deterministic, source: "AI_STUB", rateLimited: false };
+}
+
+/**
+ * Narrows catalog filters with constraints the query stated in prose, so
+ * "python cho người mới dưới 3 giờ có chứng chỉ" actually filters instead of
+ * being matched as one long keyword string.
+ *
+ * Intent only ever *narrows*: an explicit UI filter always wins, and no
+ * inferred constraint may widen eligibility, because Truth — not intent —
+ * decides what is allowed to appear (§90.2).
+ */
+export function applyNlIntentToFilters<
+  T extends {
+    level?: string;
+    language?: string;
+    certificateType?: string;
+    durationMaxMinutes?: number | null;
+  },
+>(filters: T, intent: NlIntent): T {
+  const next: T = { ...filters };
+
+  if (!next.level && intent.level) {
+    next.level = intent.level;
+  }
+  if (
+    next.durationMaxMinutes == null &&
+    intent.maxDurationMinutes !== undefined
+  ) {
+    next.durationMaxMinutes = intent.maxDurationMinutes;
+  }
+  if (!next.language && intent.language === "vi") {
+    // Only the explicit "tiếng Việt" ask narrows language. An English-language
+    // hint must not be applied, or a Vietnamese query would stop retrieving
+    // international courses (§116.6).
+    next.language = "Vietnamese";
+  }
+
+  return next;
 }

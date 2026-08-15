@@ -197,6 +197,7 @@ export const vi: Dictionary = {
       "Chúng tôi đang xác minh coupon và ưu đãi có hạn. Quay lại sau hoặc xem khóa miễn phí lâu dài.",
     dailyFreeCta: "Nhận khóa học miễn phí",
     coupon100Badge: "Giảm 100% bằng coupon",
+    couponUnverifiedBadge: "Cần coupon · chưa xác minh lại",
     limitedFreeBadge: "Miễn phí có hạn",
   },
   courseDetail: {
@@ -251,6 +252,8 @@ export const vi: Dictionary = {
     collectionNotFound: "Không tìm thấy bộ sưu tập",
     topicNotFound: "Không tìm thấy chủ đề",
     trackerNotFound: "Không tìm thấy tracker",
+    courseUnavailable:
+      "Khóa học hoặc ưu đãi miễn phí này có thể không còn khả dụng trên FreeLearn Radar.",
     certificatesTitle: "Khóa học có chứng chỉ miễn phí",
   },
   a11y: {

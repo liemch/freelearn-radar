@@ -157,7 +157,7 @@ export async function runCouponDiscovery(
             continue;
           }
 
-          await insertCouponCandidate(db, {
+          const inserted = await insertCouponCandidate(db, {
             sourceId: source.id,
             providerSlug: normalized.providerSlug,
             canonicalUrl: normalized.canonicalUrl,
@@ -171,6 +171,12 @@ export async function runCouponDiscovery(
             status: "DISCOVERED",
             lastError: null,
           });
+          if (!inserted) {
+            // Lost the race against a concurrent run; the offer_url unique
+            // index settled it, and a duplicate is not an error.
+            summary.duplicatesSkipped += 1;
+            continue;
+          }
           summary.candidatesInserted += 1;
           insertedForSource += 1;
         }

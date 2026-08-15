@@ -16,6 +16,14 @@ import { resolveLocaleParam } from "@/lib/i18n/page";
 import { localePath } from "@/lib/i18n/path";
 import { buildLocaleAlternates } from "@/lib/i18n/seo";
 
+/**
+ * The feature gate has to be evaluated per request — see the note on the
+ * learning-path page. A prerendered gate is a redeploy, not a kill switch. This
+ * page also renders live price events, which should never be served from a
+ * build-time snapshot.
+ */
+export const dynamic = "force-dynamic";
+
 type TrackerPageProps = {
   params: Promise<{ locale: string }>;
 };

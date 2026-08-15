@@ -1,6 +1,8 @@
 import type { Metadata } from "next";
 import NextTopLoader from "nextjs-toploader";
 
+import { defaultLocale } from "@/lib/i18n/config";
+
 import "./globals.css";
 
 export const metadata: Metadata = {
@@ -8,8 +10,9 @@ export const metadata: Metadata = {
     default: "FreeLearn Radar",
     template: "%s | FreeLearn Radar",
   },
+  // Vietnamese-only product (M20.14 §116.2 covers system-generated SEO metadata).
   description:
-    "Discover the best free online courses from top learning platforms — curated and verified in one place.",
+    "Tìm khóa học trực tuyến miễn phí từ các nền tảng uy tín — được kiểm chứng và cập nhật mỗi ngày.",
   metadataBase: new URL(
     process.env.APP_URL || "http://localhost:3000",
   ),
@@ -21,7 +24,10 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="en">
+    // Vietnamese is the only product UI language (M20.14), so the server-rendered
+    // document declares it. `LocaleHtmlLang` only ever narrows this for the legacy
+    // /en routes after hydration — crawlers and screen readers read this value.
+    <html lang={defaultLocale}>
       <head>
         <link rel="preconnect" href="https://fonts.googleapis.com" />
         <link

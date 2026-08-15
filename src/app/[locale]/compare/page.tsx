@@ -6,10 +6,14 @@ import { LocalizedLink } from "@/components/public/localized-link";
 import { SiteFooter } from "@/components/public/site-footer";
 import { SiteHeader } from "@/components/public/site-header";
 import { PageShell } from "@/components/layout/page-shell";
-import { findCourseById } from "@/db/repositories/course-repository";
+import {
+  findCourseById,
+  findCourseBySlug,
+} from "@/db/repositories/course-repository";
 import { findProviderById } from "@/db/repositories/provider-repository";
 import {
   buildCourseComparison,
+  isUuid,
   parseCompareIds,
   type ComparableCourse,
   type ComparisonRowKey,
@@ -25,6 +29,12 @@ import { withDb } from "@/lib/db-safe";
 import { getServerEnv } from "@/lib/env";
 import type { Locale } from "@/lib/i18n/config";
 import { resolveLocaleParam } from "@/lib/i18n/page";
+
+/**
+ * The feature gate has to be evaluated per request — see the note on the
+ * learning-path page. A prerendered gate is a redeploy, not a kill switch.
+ */
+export const dynamic = "force-dynamic";
 
 type ComparePageProps = {
   params: Promise<{ locale: string }>;
@@ -78,7 +88,11 @@ export default async function ComparePage({
     async (db) => {
       const items: ComparableCourse[] = [];
       for (const id of ids) {
-        const course = await findCourseById(db, id);
+        // §94.3 describes the shareable form as `?compare=slug-a,slug-b`, so a
+        // slug has to resolve. Ids stay supported for links already in the wild.
+        const course = isUuid(id)
+          ? await findCourseById(db, id)
+          : await findCourseBySlug(db, id);
         if (!course || course.status !== "PUBLISHED") continue;
         const provider = await findProviderById(db, course.providerId);
         items.push({

@@ -11,6 +11,7 @@ import {
   upsertCourseOffer,
 } from "@/db/repositories/coupon-repository";
 import { findCourseByCanonicalUrl } from "@/db/repositories/course-repository";
+import { findProviderBySlug } from "@/db/repositories/provider-repository";
 import type { CourseOffer } from "@/db/schema";
 import {
   nextCouponRecheckAt,
@@ -149,14 +150,22 @@ export function evidenceFromOfficialFetch(input: {
       priceAfterDiscount = 0;
       discountPercent = 100;
     }
-  } else if (
-    free.priceType === "PAID" ||
-    free.matchedSignals.some((s) => /\$\d/.test(s))
-  ) {
+  } else {
+    // A partial discount is evidence too. Without extracting it the offer fell
+    // through to UNKNOWN, so ACTIVE_DISCOUNTED was effectively unreachable and
+    // the recheck cadence used the wrong backoff. 100 is excluded here because
+    // the branch above owns that case and requires stronger signals for it.
+    const percentMatch = body.match(/\b([1-9]\d?)\s*%\s*off\b/i);
+    if (percentMatch) {
+      const percent = Number(percentMatch[1]);
+      if (percent > 0 && percent < 100) {
+        discountPercent = percent;
+      }
+    }
+
     const priceMatch = body.match(/\$\s*([1-9]\d*(?:\.\d{1,2})?)/);
     if (priceMatch) {
       priceAfterDiscount = Number(priceMatch[1]);
-      discountPercent = null;
     }
   }
 
@@ -184,6 +193,7 @@ function bumpStatusCount(
 
 async function verifyOfferUrl(
   offerUrl: string,
+  expiresAt: Date | null = null,
 ): Promise<{
   status: CouponOfferStatus;
   lastError: string | null;
@@ -207,7 +217,7 @@ async function verifyOfferUrl(
         },
   );
 
-  const status = resolveCouponVerificationStatus(evidence);
+  const status = resolveCouponVerificationStatus({ ...evidence, expiresAt });
   return {
     status,
     lastError: evidence.lastError,
@@ -224,7 +234,7 @@ async function applyOfferVerification(
   offer: CourseOffer,
   summary: CouponVerificationSummary,
 ) {
-  const result = await verifyOfferUrl(offer.offerUrl);
+  const result = await verifyOfferUrl(offer.offerUrl, offer.expiresAt);
   const now = new Date();
   await updateCourseOfferStatus(db, offer.id, {
     status: result.status,
@@ -278,8 +288,18 @@ export async function runCouponVerification(
         ? await findCourseByCanonicalUrl(db, candidate.canonicalUrl)
         : null;
 
+      // provider_id must be populated, not just provider_slug: the public
+      // daily-free query joins providers through it, and a null there silently
+      // drops the offer from the surface. Prefer the resolved course's provider,
+      // fall back to the slug the candidate carried.
+      const providerId =
+        course?.providerId ??
+        (await findProviderBySlug(db, candidate.providerSlug))?.id ??
+        null;
+
       const offer = await upsertCourseOffer(db, {
         courseId: course?.id ?? null,
+        providerId,
         providerSlug: candidate.providerSlug,
         canonicalUrl: candidate.canonicalUrl,
         offerUrl: candidate.offerUrl,
@@ -293,7 +313,10 @@ export async function runCouponVerification(
         lastError: null,
       });
 
-      const result = await verifyOfferUrl(candidate.offerUrl);
+      const result = await verifyOfferUrl(
+        candidate.offerUrl,
+        candidate.sourceExpiresAt,
+      );
       const now = new Date();
 
       await updateCourseOfferStatus(db, offer.id, {

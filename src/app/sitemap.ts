@@ -5,13 +5,18 @@ import { listPublishedCourses } from "@/db/repositories/course-repository";
 import { listProviders } from "@/db/repositories/provider-repository";
 import { DURATION_BUCKETS } from "@/domain/course/catalog-query";
 import { listTopicSlugs } from "@/domain/discovery/topic-landings";
-import { locales } from "@/lib/i18n/config";
+import { defaultLocale } from "@/lib/i18n/config";
 import { localePath } from "@/lib/i18n/path";
 import { getServerEnv } from "@/lib/env";
 import { withDb } from "@/lib/db-safe";
 
+/**
+ * M20.14: Vietnamese-only sitemap. `/en/*` routes still resolve for already
+ * indexed links, but submitting them would keep asking crawlers to index
+ * duplicates of a product that no longer has an English UI (§116.8).
+ */
 function localizedUrls(appUrl: string, path: string): string[] {
-  return locales.map((locale) => `${appUrl}${localePath(locale, path)}`);
+  return [`${appUrl}${localePath(defaultLocale, path)}`];
 }
 
 export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
@@ -49,6 +54,7 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   const staticPaths = [
     "/",
     "/search",
+    "/mien-phi-hom-nay",
     "/free-certificate-courses",
     ...Object.values(DURATION_BUCKETS).map((bucket) => `/collections/${bucket.slug}`),
     ...listTopicSlugs().map((topic) => `/free-courses/${topic}`),

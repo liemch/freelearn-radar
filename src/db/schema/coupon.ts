@@ -121,6 +121,9 @@ export const couponCandidates = pgTable(
     ),
     index("coupon_candidates_canonical_url_idx").on(table.canonicalUrl),
     index("coupon_candidates_coupon_code_idx").on(table.couponCode),
+    // Two discovery runs (or a cron retry) must not be able to insert the same
+    // offer twice; the DB enforces this rather than the application check alone.
+    uniqueIndex("coupon_candidates_offer_url_uidx").on(table.offerUrl),
   ],
 );
 

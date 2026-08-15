@@ -16,26 +16,140 @@ describe("course image security", () => {
     expect(validateImageUrl("http://169.254.169.254/latest/meta-data")).toBeNull();
   });
 
+  it.each([
+    // Ranges the earlier prefix-matching validator let through.
+    ["http://172.17.0.1/x.png", "172.17 is inside 172.16.0.0/12"],
+    ["http://172.31.255.254/x.png", "top of the 172.16.0.0/12 range"],
+    ["http://127.0.0.2/x.png", "loopback beyond 127.0.0.1"],
+    ["http://169.254.1.1/x.png", "link-local beyond the metadata IP"],
+    ["http://100.64.0.1/x.png", "CGNAT 100.64.0.0/10"],
+    ["http://10.1.2.3/x.png", "private 10/8"],
+    ["http://192.168.10.5/x.png", "private 192.168/16"],
+    ["http://[::1]/x.png", "IPv6 loopback"],
+    ["http://[fd00::1]/x.png", "IPv6 unique local"],
+    ["http://[fe80::1]/x.png", "IPv6 link-local"],
+    ["http://2130706433/x.png", "decimal-encoded 127.0.0.1"],
+    ["http://metadata.google.internal/x.png", "cloud metadata host"],
+    ["http://foo.localhost/x.png", "localhost subdomain"],
+    ["https://user:pass@cdn.example.com/x.png", "credentials in URL"],
+    ["data:image/png;base64,AAAA", "data scheme"],
+  ])("rejects %s (%s)", (url) => {
+    expect(validateImageUrl(url)).toBeNull();
+  });
+
   it("accepts public https URLs", () => {
     const url = validateImageUrl("https://cdn.example.com/course.jpg");
     expect(url?.hostname).toBe("cdn.example.com");
   });
 
-  it("blocks redirect to private host", async () => {
-    const fetchImpl = vi.fn(async () => ({
-      ok: true,
-      url: "http://127.0.0.1/evil.png",
-      headers: new Headers({ "content-type": "image/png" }),
-      arrayBuffer: async () => new Uint8Array([1, 2, 3]).buffer,
-    })) as unknown as typeof fetch;
+  it("blocks a redirect to a private host before requesting it", async () => {
+    const requested: string[] = [];
+    const fetchImpl = vi.fn(async (input: string | URL | Request) => {
+      requested.push(String(input));
+      return {
+        ok: false,
+        status: 302,
+        url: String(input),
+        headers: new Headers({ location: "http://127.0.0.1/evil.png" }),
+        arrayBuffer: async () => new Uint8Array().buffer,
+      };
+    }) as unknown as typeof fetch;
 
     const result = await fetchCourseImageSafely(
       "https://cdn.example.com/safe.png",
       fetchImpl,
     );
+
     expect(result.ok).toBe(false);
     if (!result.ok) {
       expect(result.reason).toBe("redirect_blocked");
+    }
+    // Redirects are followed manually so the private hop is never requested.
+    expect(requested).toEqual(["https://cdn.example.com/safe.png"]);
+  });
+
+  it("stops a redirect loop instead of following it forever", async () => {
+    let calls = 0;
+    const fetchImpl = vi.fn(async (input: string | URL | Request) => {
+      calls += 1;
+      const current = String(input);
+      return {
+        ok: false,
+        status: 302,
+        url: current,
+        headers: new Headers({
+          location:
+            current === "https://cdn.example.com/a.png"
+              ? "https://cdn.example.com/b.png"
+              : "https://cdn.example.com/a.png",
+        }),
+        arrayBuffer: async () => new Uint8Array().buffer,
+      };
+    }) as unknown as typeof fetch;
+
+    const result = await fetchCourseImageSafely(
+      "https://cdn.example.com/a.png",
+      fetchImpl,
+    );
+
+    expect(result.ok).toBe(false);
+    if (!result.ok) {
+      expect(result.reason).toBe("too_many_redirects");
+    }
+    expect(calls).toBeLessThanOrEqual(4);
+  });
+
+  it("follows a safe redirect and reports the final hop", async () => {
+    const fetchImpl = vi.fn(async (input: string | URL | Request) => {
+      const current = String(input);
+      if (current === "https://cdn.example.com/start.png") {
+        return {
+          ok: false,
+          status: 301,
+          url: current,
+          headers: new Headers({ location: "https://img.example.org/final.png" }),
+          arrayBuffer: async () => new Uint8Array().buffer,
+        };
+      }
+      return {
+        ok: true,
+        status: 200,
+        url: current,
+        headers: new Headers({ "content-type": "image/png" }),
+        arrayBuffer: async () => new Uint8Array([1, 2, 3]).buffer,
+      };
+    }) as unknown as typeof fetch;
+
+    const result = await fetchCourseImageSafely(
+      "https://cdn.example.com/start.png",
+      fetchImpl,
+    );
+
+    expect(result.ok).toBe(true);
+    if (result.ok) {
+      expect(result.finalUrl).toBe("https://img.example.org/final.png");
+    }
+  });
+
+  it("rejects an oversized payload declared by content-length", async () => {
+    const fetchImpl = vi.fn(async () => ({
+      ok: true,
+      status: 200,
+      url: "https://cdn.example.com/big.png",
+      headers: new Headers({
+        "content-type": "image/png",
+        "content-length": String(5 * 1024 * 1024),
+      }),
+      arrayBuffer: async () => new Uint8Array([1]).buffer,
+    })) as unknown as typeof fetch;
+
+    const result = await fetchCourseImageSafely(
+      "https://cdn.example.com/big.png",
+      fetchImpl,
+    );
+    expect(result.ok).toBe(false);
+    if (!result.ok) {
+      expect(result.reason).toBe("too_large");
     }
   });
 
