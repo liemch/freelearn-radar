@@ -35,7 +35,11 @@ import { buildLocaleAlternates } from "@/lib/i18n/seo";
 import { withDb } from "@/lib/db-safe";
 import { getServerEnv } from "@/lib/env";
 
-export const dynamic = "force-dynamic";
+// M25/perf: the homepage is a read-only catalog surface, so cache the rendered
+// result and re-render at most every few minutes instead of re-running 6–7 DB
+// queries on every visit. Newly published courses appear within the window;
+// Admin branding changes still bust instantly via revalidateTag.
+export const revalidate = 300;
 
 type HomePageProps = {
   params: Promise<{ locale: string }>;

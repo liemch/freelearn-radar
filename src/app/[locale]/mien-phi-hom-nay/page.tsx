@@ -20,7 +20,9 @@ import { resolveLocaleParam } from "@/lib/i18n/page";
 import { localePath } from "@/lib/i18n/path";
 import { buildLocaleAlternates } from "@/lib/i18n/seo";
 
-export const dynamic = "force-dynamic";
+// Read-only daily deals surface — cache and refresh periodically instead of
+// hitting the DB on every navigation (deals rotate at most daily).
+export const revalidate = 300;
 
 type DailyFreePageProps = {
   params: Promise<{ locale: string }>;
