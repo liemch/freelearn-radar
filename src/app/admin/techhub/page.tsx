@@ -37,9 +37,9 @@ export default async function AdminTechhubPage() {
         description={t.techhub.description}
       />
       <TechhubPushAdmin
+        locale={locale}
         initialConfigured={configured}
         initialConnected={connected}
-        labels={t.techhub}
       />
     </>
   );

@@ -5,48 +5,12 @@ import { useCallback, useEffect, useState, useTransition } from "react";
 import { AdminPanel } from "@/components/admin/admin-panel";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { getAdminDictionary } from "@/lib/i18n/admin";
+import type { Locale } from "@/lib/i18n/config";
 import type { TechhubPost } from "@/services/techhub/types";
 
-type TechhubLabels = {
-  notConfigured: string;
-  notConfiguredHint: string;
-  connectionFailed: string;
-  retry: string;
-  globalSettings: string;
-  globalSettingsHint: string;
-  maxComments: string;
-  pushUltra: string;
-  exceedMax1: string;
-  exceedMax3: string;
-  saveSettings: string;
-  reloadSettings: string;
-  pushPost: string;
-  pushPostHint: string;
-  techhubId: string;
-  lookupPost: string;
-  enableUltra: string;
-  disableUltra: string;
-  deleteInteractions: string;
-  deleteConfirm: (count: number, techhubId: number, username: string) => string;
-  deleteHint: string;
-  loadingSettings: string;
-  settingsLoaded: string;
-  settingsSaved: string;
-  lookingUpPost: string;
-  postNotFound: (techhubId: number) => string;
-  postFound: (count: number) => string;
-  noInteractions: (techhubId: number) => string;
-  interactionsDeleted: (deleted: number, remaining: number) => string;
-  ultraEnabled: (techhubId: number) => string;
-  ultraDisabled: (techhubId: number) => string;
-  invalidTechhubId: string;
-  invalidMaxComments: string;
-  saveFailed: string;
-  loadFailed: string;
-};
-
 type TechhubPushAdminProps = {
-  labels: TechhubLabels;
+  locale: Locale;
   initialConfigured: boolean;
   initialConnected: boolean;
 };
@@ -60,10 +24,11 @@ function formatPostPreview(post: TechhubPost): string {
 }
 
 export function TechhubPushAdmin({
-  labels,
+  locale,
   initialConfigured,
   initialConnected,
 }: TechhubPushAdminProps) {
+  const labels = getAdminDictionary(locale).techhub;
   const [pending, startTransition] = useTransition();
   const [configured] = useState(initialConfigured);
   const [connected, setConnected] = useState(initialConnected);
