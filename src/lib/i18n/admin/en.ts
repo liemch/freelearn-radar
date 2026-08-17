@@ -58,6 +58,7 @@ export const adminEn: AdminDictionary = {
     mediaQuality: "Media quality",
     mediaStorage: "Media storage",
     branding: "Interface config",
+    techhub: "TechHub Push",
   },
   login: {
     heading: "Admin Sign In",
@@ -631,5 +632,50 @@ export const adminEn: AdminDictionary = {
     previewMissing: "No image yet",
     usingDefault: "using default",
     readOnly: "Only ADMIN can edit interface configuration.",
+  },
+  techhub: {
+    heading: "TechHub Push Admin",
+    description:
+      "Manage push thresholds and is_ultra flags for TechHub posts. Uses a separate Supabase project (same as ext-admin).",
+    notConfigured: "TechHub Supabase is not configured",
+    notConfiguredHint:
+      "Set TECHHUB_SUPABASE_URL and TECHHUB_SUPABASE_ANON_KEY in environment (copy from ext-admin/config.js).",
+    connectionFailed: "Could not connect to TechHub Supabase",
+    retry: "Retry",
+    globalSettings: "Thresholds / global push",
+    globalSettingsHint: "Shared settings for post push automation.",
+    maxComments: "max_comments",
+    pushUltra: "push_ultra",
+    exceedMax1: "exceed_max_1_users",
+    exceedMax3: "exceed_max_3_users",
+    saveSettings: "Save settings",
+    reloadSettings: "Reload",
+    pushPost: "Push one post (is_ultra)",
+    pushPostHint: "Look up a post by techhub_id and manage ultra flag / interactions.",
+    techhubId: "techhub_id",
+    lookupPost: "View post",
+    enableUltra: "Enable Ultra",
+    disableUltra: "Disable Ultra",
+    deleteInteractions: "Delete interactions",
+    deleteConfirm: (count, techhubId, username) =>
+      `Delete ${count} interactions for post #${techhubId} (@${username})?\n\nThis does not remove comments/likes on TechHub.`,
+    deleteHint:
+      "Deleting interactions reopens interaction slots for previous users; it does not remove existing TechHub comments/likes.",
+    loadingSettings: "Loading settings...",
+    settingsLoaded: "Settings loaded",
+    settingsSaved: "Settings saved (preserved updated_at)",
+    lookingUpPost: "Looking up post...",
+    postNotFound: (techhubId) => `Post ${techhubId} not found`,
+    postFound: (count) => `Post found · ${count} interactions in DB`,
+    noInteractions: (techhubId) => `Post ${techhubId} has no interactions`,
+    interactionsDeleted: (deleted, remaining) =>
+      `Deleted ${deleted} interactions · ${remaining} remaining`,
+    ultraEnabled: (techhubId) =>
+      `Enabled is_ultra for post ${techhubId}. Remember to enable push_ultra if it is off.`,
+    ultraDisabled: (techhubId) => `Disabled is_ultra for post ${techhubId}`,
+    invalidTechhubId: "Enter a valid techhub_id",
+    invalidMaxComments: "max_comments must be a number >= 1",
+    saveFailed: "Could not save",
+    loadFailed: "Could not load data",
   },
 };

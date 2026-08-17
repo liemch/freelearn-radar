@@ -51,7 +51,14 @@ export function AdminShell({ session, locale, children }: AdminShellProps) {
     { href: "/admin/providers", label: t.nav.providers, icon: "providers" },
     { href: "/admin/taxonomy", label: t.nav.taxonomy, icon: "taxonomy" },
     ...(session.role === "ADMIN"
-      ? [{ href: "/admin/users", label: t.nav.users, icon: "users" as const }]
+      ? [
+          { href: "/admin/users", label: t.nav.users, icon: "users" as const },
+          {
+            href: "/admin/techhub",
+            label: t.nav.techhub,
+            icon: "techhub" as const,
+          },
+        ]
       : []),
     { href: "/admin/analytics", label: t.nav.analytics, icon: "analytics" },
     { href: "/admin/search", label: t.nav.search, icon: "search" },

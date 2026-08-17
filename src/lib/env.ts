@@ -217,6 +217,10 @@ const baseEnvSchema = z.object({
     .int()
     .positive()
     .default(10_000),
+  /** TechHub Push Admin — separate Supabase project (ext-admin). */
+  TECHHUB_SUPABASE_URL: optionalString,
+  TECHHUB_SUPABASE_ANON_KEY: optionalString,
+  TECHHUB_SUPABASE_USERS_TABLE: z.string().default("users"),
 });
 
 export type ServerEnv = z.infer<typeof baseEnvSchema>;

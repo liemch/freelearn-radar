@@ -9,6 +9,7 @@ import {
   Layers,
   CircleDollarSign,
   ListFilter,
+  Megaphone,
   Menu,
   Palette,
   PieChart,
@@ -47,7 +48,8 @@ export type AdminNavIcon =
   | "coverage"
   | "mediaQuality"
   | "mediaStorage"
-  | "branding";
+  | "branding"
+  | "techhub";
 
 export type AdminNavItem = {
   href: string;
@@ -82,6 +84,7 @@ const ICONS: Record<AdminNavIcon, typeof LayoutDashboard> = {
   mediaQuality: Image,
   mediaStorage: HardDrive,
   branding: Palette,
+  techhub: Megaphone,
 };
 
 /**

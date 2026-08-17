@@ -58,6 +58,7 @@ export const adminVi: AdminDictionary = {
     mediaQuality: "Chất lượng ảnh",
     mediaStorage: "Kho lưu trữ",
     branding: "Cấu hình giao diện",
+    techhub: "TechHub Push",
   },
   login: {
     heading: "Đăng nhập quản trị",
@@ -636,5 +637,50 @@ export const adminVi: AdminDictionary = {
     previewMissing: "Chưa có ảnh",
     usingDefault: "đang dùng mặc định",
     readOnly: "Chỉ ADMIN mới được chỉnh cấu hình giao diện.",
+  },
+  techhub: {
+    heading: "TechHub Push Admin",
+    description:
+      "Quản lý ngưỡng push và bật/tắt is_ultra cho bài TechHub. Dùng Supabase riêng (cùng project ext-admin).",
+    notConfigured: "TechHub Supabase chưa được cấu hình",
+    notConfiguredHint:
+      "Thêm TECHHUB_SUPABASE_URL và TECHHUB_SUPABASE_ANON_KEY vào biến môi trường (copy từ ext-admin/config.js).",
+    connectionFailed: "Không kết nối được Supabase TechHub",
+    retry: "Thử lại",
+    globalSettings: "Ngưỡng / Push global",
+    globalSettingsHint: "Các setting dùng chung cho automation push bài.",
+    maxComments: "max_comments",
+    pushUltra: "push_ultra",
+    exceedMax1: "exceed_max_1_users",
+    exceedMax3: "exceed_max_3_users",
+    saveSettings: "Lưu settings",
+    reloadSettings: "Tải lại",
+    pushPost: "Push 1 bài (is_ultra)",
+    pushPostHint: "Tra cứu bài theo techhub_id và quản lý cờ ultra / interactions.",
+    techhubId: "techhub_id",
+    lookupPost: "Xem bài",
+    enableUltra: "Bật Ultra",
+    disableUltra: "Tắt Ultra",
+    deleteInteractions: "Xóa interactions",
+    deleteConfirm: (count, techhubId, username) =>
+      `Xóa ${count} interactions của bài #${techhubId} (@${username})?\n\nThao tác này không xóa comment/like trên TechHub.`,
+    deleteHint:
+      "Xóa interactions sẽ mở lại lượt tương tác cho các user cũ; không xóa comment/like đã có trên TechHub.",
+    loadingSettings: "Đang tải settings...",
+    settingsLoaded: "Đã tải settings",
+    settingsSaved: "Đã lưu settings (giữ updated_at cũ)",
+    lookingUpPost: "Đang tìm bài...",
+    postNotFound: (techhubId) => `Không tìm thấy bài ${techhubId}`,
+    postFound: (count) => `Đã tìm thấy bài · ${count} interactions trong DB`,
+    noInteractions: (techhubId) => `Bài ${techhubId} không có interactions`,
+    interactionsDeleted: (deleted, remaining) =>
+      `Đã xóa ${deleted} interactions · còn ${remaining}`,
+    ultraEnabled: (techhubId) =>
+      `Đã bật is_ultra cho bài ${techhubId}. Nhớ bật push_ultra nếu đang tắt.`,
+    ultraDisabled: (techhubId) => `Đã tắt is_ultra cho bài ${techhubId}`,
+    invalidTechhubId: "Nhập techhub_id hợp lệ",
+    invalidMaxComments: "max_comments phải là số >= 1",
+    saveFailed: "Không lưu được",
+    loadFailed: "Không tải được dữ liệu",
   },
 };
