@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { z } from "zod";
 
 import { getDb } from "@/db";
+import { recordApiUsage } from "@/domain/admin/api-usage";
 import { requestWatch } from "@/domain/alerts/watch-service";
 import { getEmailProvider } from "@/services/email/email-provider";
 import { getServerEnv } from "@/lib/env";
@@ -94,12 +95,23 @@ export async function POST(request: Request) {
           : `Click to confirm your watch: ${confirmUrl}`;
 
       try {
-        await getEmailProvider().sendEmail({
+        const startedAt = Date.now();
+        const sent = await getEmailProvider().sendEmail({
           to: watch.email,
           subject,
           html: `<p><a href="${confirmUrl}">${text}</a></p>`,
           text,
           tags: ["CONFIRM_WATCH"],
+        });
+
+        await recordApiUsage(db, {
+          kind: "email",
+          provider: sent.dryRun ? "dry_run" : "resend",
+          operation: "watch_confirm",
+          courseId: parsed.data.courseId,
+          ok: sent.ok,
+          latencyMs: Date.now() - startedAt,
+          error: sent.ok ? null : (sent.error ?? "send failed"),
         });
       } catch (error) {
         logger.warn("watches.confirm_email", {

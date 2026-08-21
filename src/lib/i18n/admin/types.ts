@@ -281,6 +281,10 @@ export type AdminDictionary = {
     empty: string;
     email: string;
     role: string;
+    sessions: string;
+    revokeSessions: string;
+    revokeSessionsDone: string;
+    revokeSessionsFailed: string;
     updateFailed: string;
     lastAdmin: string;
   };
@@ -364,6 +368,12 @@ export type AdminDictionary = {
     noClicks: string;
     clicks: string;
     period: string;
+    apiUsage: string;
+    apiUsageDescription: string;
+    noApiUsage: string;
+    apiCalls: string;
+    apiFailures: string;
+    apiAvgLatency: string;
   };
   search: {
     heading: string;

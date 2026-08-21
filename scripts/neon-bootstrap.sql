@@ -1255,6 +1255,15 @@ ALTER TABLE "courses"
   ADD COLUMN IF NOT EXISTS "image_cache_asset_id" uuid
     REFERENCES "managed_assets"("id") ON DELETE SET NULL;
 
+-- ========== MIGRATION 0017_session_revocation ==========
+-- Session revocation: the admin JWT is self-contained, so deleting a user or
+-- demoting them left their existing cookie valid until it expired. Requests now
+-- re-read this counter, which gives operators a revoke lever that does not
+-- require rotating AUTH_SECRET for everyone.
+
+ALTER TABLE "users"
+  ADD COLUMN IF NOT EXISTS "session_version" integer DEFAULT 1 NOT NULL;
+
 -- ========== DRIZZLE MIGRATION TRACKING ==========
 CREATE SCHEMA IF NOT EXISTS "drizzle";
 CREATE TABLE IF NOT EXISTS "drizzle"."__drizzle_migrations" (
@@ -1263,56 +1272,59 @@ CREATE TABLE IF NOT EXISTS "drizzle"."__drizzle_migrations" (
   created_at bigint
 );
 INSERT INTO "drizzle"."__drizzle_migrations" ("hash", "created_at")
-SELECT 'b08add4492a300a58b6d7959bb6e3529db24d1dc19b577605d1b5d64e2dfb39f', 1723449600000
-WHERE NOT EXISTS (SELECT 1 FROM "drizzle"."__drizzle_migrations" WHERE hash = 'b08add4492a300a58b6d7959bb6e3529db24d1dc19b577605d1b5d64e2dfb39f');
+SELECT 'e19d994c15aa446daaa43ef9ceb49b4f1ef0157be7ba025e134df31abd0d2b5a', 1723449600000
+WHERE NOT EXISTS (SELECT 1 FROM "drizzle"."__drizzle_migrations" WHERE hash = 'e19d994c15aa446daaa43ef9ceb49b4f1ef0157be7ba025e134df31abd0d2b5a');
 INSERT INTO "drizzle"."__drizzle_migrations" ("hash", "created_at")
-SELECT '5d67fb13aad149afcd1cb813600abc0e8a3284010f26b72071e5f5af251e2bb4', 1723536000000
-WHERE NOT EXISTS (SELECT 1 FROM "drizzle"."__drizzle_migrations" WHERE hash = '5d67fb13aad149afcd1cb813600abc0e8a3284010f26b72071e5f5af251e2bb4');
+SELECT '3a2f50159856b92acffc170a058e84004572120e37e215e0e2cc9560ec097d7f', 1723536000000
+WHERE NOT EXISTS (SELECT 1 FROM "drizzle"."__drizzle_migrations" WHERE hash = '3a2f50159856b92acffc170a058e84004572120e37e215e0e2cc9560ec097d7f');
 INSERT INTO "drizzle"."__drizzle_migrations" ("hash", "created_at")
-SELECT '9539bd8062647a58e4616fda0413652fc3dda86d42ab85dedbbbb82a5d4c12a4', 1723622400000
-WHERE NOT EXISTS (SELECT 1 FROM "drizzle"."__drizzle_migrations" WHERE hash = '9539bd8062647a58e4616fda0413652fc3dda86d42ab85dedbbbb82a5d4c12a4');
+SELECT 'b633f43170c93e82a5543eeef2cf399bfa6e5663b4f336842d24a34b322970da', 1723622400000
+WHERE NOT EXISTS (SELECT 1 FROM "drizzle"."__drizzle_migrations" WHERE hash = 'b633f43170c93e82a5543eeef2cf399bfa6e5663b4f336842d24a34b322970da');
 INSERT INTO "drizzle"."__drizzle_migrations" ("hash", "created_at")
-SELECT '9b5585cc468d77c20518fea79209aaa6379e3581cfc20b618d35ad77a3883fbf', 1723708800000
-WHERE NOT EXISTS (SELECT 1 FROM "drizzle"."__drizzle_migrations" WHERE hash = '9b5585cc468d77c20518fea79209aaa6379e3581cfc20b618d35ad77a3883fbf');
+SELECT 'df4a2645f3d2e18221448c5184f61ac3d169e6080225993cdf5fa5469d01c559', 1723708800000
+WHERE NOT EXISTS (SELECT 1 FROM "drizzle"."__drizzle_migrations" WHERE hash = 'df4a2645f3d2e18221448c5184f61ac3d169e6080225993cdf5fa5469d01c559');
 INSERT INTO "drizzle"."__drizzle_migrations" ("hash", "created_at")
-SELECT 'b42f9dbd2e47c2eb515142098eccf47631254bbc1aac3c0e048707e7e7804e34', 1723795200000
-WHERE NOT EXISTS (SELECT 1 FROM "drizzle"."__drizzle_migrations" WHERE hash = 'b42f9dbd2e47c2eb515142098eccf47631254bbc1aac3c0e048707e7e7804e34');
+SELECT '59762599af669989db83bd79d34043bc41dc2e47b754e821646df04cc71d5d7d', 1723795200000
+WHERE NOT EXISTS (SELECT 1 FROM "drizzle"."__drizzle_migrations" WHERE hash = '59762599af669989db83bd79d34043bc41dc2e47b754e821646df04cc71d5d7d');
 INSERT INTO "drizzle"."__drizzle_migrations" ("hash", "created_at")
-SELECT 'a2086074093d7f04d662a21dd67da362578f5dfd5ab66da3e96202abbad6002f', 1723881600000
-WHERE NOT EXISTS (SELECT 1 FROM "drizzle"."__drizzle_migrations" WHERE hash = 'a2086074093d7f04d662a21dd67da362578f5dfd5ab66da3e96202abbad6002f');
+SELECT '26542c8d8683632c94f981d25f25d0505a6591c959425ccc8a086bca991ceeab', 1723881600000
+WHERE NOT EXISTS (SELECT 1 FROM "drizzle"."__drizzle_migrations" WHERE hash = '26542c8d8683632c94f981d25f25d0505a6591c959425ccc8a086bca991ceeab');
 INSERT INTO "drizzle"."__drizzle_migrations" ("hash", "created_at")
-SELECT '0b490ccc4b865cf972f607ec84a453e670b5443f9bc7177cd7cbc6902f5118ea', 1723968000000
-WHERE NOT EXISTS (SELECT 1 FROM "drizzle"."__drizzle_migrations" WHERE hash = '0b490ccc4b865cf972f607ec84a453e670b5443f9bc7177cd7cbc6902f5118ea');
+SELECT '150d5b1100ffc6b3ebf1854642023c60e87c22fc1cfeb080f2f5667ec54c2ace', 1723968000000
+WHERE NOT EXISTS (SELECT 1 FROM "drizzle"."__drizzle_migrations" WHERE hash = '150d5b1100ffc6b3ebf1854642023c60e87c22fc1cfeb080f2f5667ec54c2ace');
 INSERT INTO "drizzle"."__drizzle_migrations" ("hash", "created_at")
-SELECT 'aaf369d3a08b1dbb819ab27817ccba32424323aaf81c56c27a37503f0d57f8ee', 1724054400000
-WHERE NOT EXISTS (SELECT 1 FROM "drizzle"."__drizzle_migrations" WHERE hash = 'aaf369d3a08b1dbb819ab27817ccba32424323aaf81c56c27a37503f0d57f8ee');
+SELECT '19adf9c9b025f3b9bccd6a759a3588cce84df991df16dc60f10f5e47480b1864', 1724054400000
+WHERE NOT EXISTS (SELECT 1 FROM "drizzle"."__drizzle_migrations" WHERE hash = '19adf9c9b025f3b9bccd6a759a3588cce84df991df16dc60f10f5e47480b1864');
 INSERT INTO "drizzle"."__drizzle_migrations" ("hash", "created_at")
-SELECT '3c4522bd9b56659d835859e6634a6e19aa9266a0a022d33a50ff3788bb9d21ba', 1724140800000
-WHERE NOT EXISTS (SELECT 1 FROM "drizzle"."__drizzle_migrations" WHERE hash = '3c4522bd9b56659d835859e6634a6e19aa9266a0a022d33a50ff3788bb9d21ba');
+SELECT '732675e08d2577f896fa7bb31a700f27bba6a7d9da73e1fb5518322bfa1d058d', 1724140800000
+WHERE NOT EXISTS (SELECT 1 FROM "drizzle"."__drizzle_migrations" WHERE hash = '732675e08d2577f896fa7bb31a700f27bba6a7d9da73e1fb5518322bfa1d058d');
 INSERT INTO "drizzle"."__drizzle_migrations" ("hash", "created_at")
-SELECT '79aa4ad71d2926277b05521a39006d5c02d62e57c32769c06ee2d695faf562d9', 1724227200000
-WHERE NOT EXISTS (SELECT 1 FROM "drizzle"."__drizzle_migrations" WHERE hash = '79aa4ad71d2926277b05521a39006d5c02d62e57c32769c06ee2d695faf562d9');
+SELECT 'c6b6e7a9185e348c48a5c1961ea10320a4001f7d7bd6d6c9c70a63fbff7fd033', 1724227200000
+WHERE NOT EXISTS (SELECT 1 FROM "drizzle"."__drizzle_migrations" WHERE hash = 'c6b6e7a9185e348c48a5c1961ea10320a4001f7d7bd6d6c9c70a63fbff7fd033');
 INSERT INTO "drizzle"."__drizzle_migrations" ("hash", "created_at")
-SELECT 'a45128de981468cf13189e1fa2a685a33cacee5da70fa9586f6ad1cda598ec53', 1724313600000
-WHERE NOT EXISTS (SELECT 1 FROM "drizzle"."__drizzle_migrations" WHERE hash = 'a45128de981468cf13189e1fa2a685a33cacee5da70fa9586f6ad1cda598ec53');
+SELECT 'fb7be390b759de79148c6a02ecb6b23e9d158ec3e86a3977297024a2537882dc', 1724313600000
+WHERE NOT EXISTS (SELECT 1 FROM "drizzle"."__drizzle_migrations" WHERE hash = 'fb7be390b759de79148c6a02ecb6b23e9d158ec3e86a3977297024a2537882dc');
 INSERT INTO "drizzle"."__drizzle_migrations" ("hash", "created_at")
-SELECT '7116fd6d8c2815afafbe77106390fd8a82258a6dc91f275a22b61bd1f6d49ebb', 1724400000000
-WHERE NOT EXISTS (SELECT 1 FROM "drizzle"."__drizzle_migrations" WHERE hash = '7116fd6d8c2815afafbe77106390fd8a82258a6dc91f275a22b61bd1f6d49ebb');
+SELECT '45512483487cc9fdae11087190a92c3f76621c7a93c534d8edb6b9e82929fb14', 1724400000000
+WHERE NOT EXISTS (SELECT 1 FROM "drizzle"."__drizzle_migrations" WHERE hash = '45512483487cc9fdae11087190a92c3f76621c7a93c534d8edb6b9e82929fb14');
 INSERT INTO "drizzle"."__drizzle_migrations" ("hash", "created_at")
-SELECT 'aac276b90b021b84c154c8e53b2821af0800ba4dc3a74a03d95dec20a9ddd5d0', 1724486400000
-WHERE NOT EXISTS (SELECT 1 FROM "drizzle"."__drizzle_migrations" WHERE hash = 'aac276b90b021b84c154c8e53b2821af0800ba4dc3a74a03d95dec20a9ddd5d0');
+SELECT '7ca0bad62be1607d0b53b9ca39db61a43fd9eef892f9fc23995722761ef9e555', 1724486400000
+WHERE NOT EXISTS (SELECT 1 FROM "drizzle"."__drizzle_migrations" WHERE hash = '7ca0bad62be1607d0b53b9ca39db61a43fd9eef892f9fc23995722761ef9e555');
 INSERT INTO "drizzle"."__drizzle_migrations" ("hash", "created_at")
-SELECT 'e2091585b7e446dd3970557508b6ae81d352cbdabdb47b12107c827b96b70451', 1724572800000
-WHERE NOT EXISTS (SELECT 1 FROM "drizzle"."__drizzle_migrations" WHERE hash = 'e2091585b7e446dd3970557508b6ae81d352cbdabdb47b12107c827b96b70451');
+SELECT '9d62c548102c97f620a043e34efc3a69bdbcff9b9750b9be9985a10da833277e', 1724572800000
+WHERE NOT EXISTS (SELECT 1 FROM "drizzle"."__drizzle_migrations" WHERE hash = '9d62c548102c97f620a043e34efc3a69bdbcff9b9750b9be9985a10da833277e');
 INSERT INTO "drizzle"."__drizzle_migrations" ("hash", "created_at")
-SELECT '87382410761e3ecf36c73951431156eab204e46883586aca9fac73ec3cc97510', 1724659200000
-WHERE NOT EXISTS (SELECT 1 FROM "drizzle"."__drizzle_migrations" WHERE hash = '87382410761e3ecf36c73951431156eab204e46883586aca9fac73ec3cc97510');
+SELECT '9001e58e82ac231fbaf215e22cf0d718febb084106b0cd03728f463b4308697c', 1724659200000
+WHERE NOT EXISTS (SELECT 1 FROM "drizzle"."__drizzle_migrations" WHERE hash = '9001e58e82ac231fbaf215e22cf0d718febb084106b0cd03728f463b4308697c');
 INSERT INTO "drizzle"."__drizzle_migrations" ("hash", "created_at")
-SELECT '5a2e326f93af791214cccf8e0393edc74ef51b73123d0e7427bfb8f8c25d8e95', 1724745600000
-WHERE NOT EXISTS (SELECT 1 FROM "drizzle"."__drizzle_migrations" WHERE hash = '5a2e326f93af791214cccf8e0393edc74ef51b73123d0e7427bfb8f8c25d8e95');
+SELECT '6db0bfffdff217c6b08caf21478fdef11436d7ee2aec2d4b9b1690a43fcd84a7', 1724745600000
+WHERE NOT EXISTS (SELECT 1 FROM "drizzle"."__drizzle_migrations" WHERE hash = '6db0bfffdff217c6b08caf21478fdef11436d7ee2aec2d4b9b1690a43fcd84a7');
 INSERT INTO "drizzle"."__drizzle_migrations" ("hash", "created_at")
-SELECT 'cd4584809f1f5ebf03468a91d8c1ffa9b9b20d888c6cd6c719f79ca7bf04eb6c', 1724832000000
-WHERE NOT EXISTS (SELECT 1 FROM "drizzle"."__drizzle_migrations" WHERE hash = 'cd4584809f1f5ebf03468a91d8c1ffa9b9b20d888c6cd6c719f79ca7bf04eb6c');
+SELECT '5a24688806fb738a4b741dd99223a4d5822b4a2032ad74c3ea242f91c8ca90ea', 1724832000000
+WHERE NOT EXISTS (SELECT 1 FROM "drizzle"."__drizzle_migrations" WHERE hash = '5a24688806fb738a4b741dd99223a4d5822b4a2032ad74c3ea242f91c8ca90ea');
+INSERT INTO "drizzle"."__drizzle_migrations" ("hash", "created_at")
+SELECT '25f9b26050a7871598d549b34e0192464d0958363031fb2f839f7dc7beb686d1', 1724918400000
+WHERE NOT EXISTS (SELECT 1 FROM "drizzle"."__drizzle_migrations" WHERE hash = '25f9b26050a7871598d549b34e0192464d0958363031fb2f839f7dc7beb686d1');
 
 -- ========== SEED: providers ==========
 INSERT INTO "providers" ("name", "slug", "domain") VALUES

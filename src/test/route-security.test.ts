@@ -111,6 +111,13 @@ describe("admin API authentication", () => {
   });
 });
 
+/**
+ * An authenticated request reaches the database once, to check the session
+ * against the user row (revocation). Anything beyond that single access would
+ * mean business work ran despite the rejection.
+ */
+const SESSION_CHECK_DB_ACCESS = 1;
+
 describe("admin API authorization", () => {
   it("forbids EDITOR from approving candidates (ADMIN only)", async () => {
     cookieValue.current = await sessionCookieFor("EDITOR");
@@ -125,7 +132,7 @@ describe("admin API authorization", () => {
     );
 
     expect(response.status).toBe(403);
-    expect(getDb).not.toHaveBeenCalled();
+    expect(getDb).toHaveBeenCalledTimes(SESSION_CHECK_DB_ACCESS);
   });
 
   it("forbids EDITOR from running discovery (ADMIN only)", async () => {
@@ -138,7 +145,7 @@ describe("admin API authorization", () => {
     );
 
     expect(response.status).toBe(403);
-    expect(getDb).not.toHaveBeenCalled();
+    expect(getDb).toHaveBeenCalledTimes(SESSION_CHECK_DB_ACCESS);
   });
 
   it("rejects a forged session cookie", async () => {

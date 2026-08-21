@@ -8,7 +8,15 @@ export type SessionPayload = {
   userId: string;
   email: string;
   role: UserRole;
+  /**
+   * Value of `users.session_version` when the token was minted. Tokens issued
+   * before this claim existed are treated as version 1, so adding it does not
+   * sign everyone out on deploy.
+   */
+  sessionVersion?: number;
 };
+
+export const DEFAULT_SESSION_VERSION = 1;
 
 function getAuthSecretKey() {
   const env = getServerEnv();
@@ -26,6 +34,7 @@ export async function createSessionToken(
   return new SignJWT({
     email: payload.email,
     role: payload.role,
+    sv: payload.sessionVersion ?? DEFAULT_SESSION_VERSION,
   })
     .setProtectedHeader({ alg: "HS256" })
     .setSubject(payload.userId)
@@ -58,6 +67,8 @@ export async function verifySessionToken(
       userId: payload.sub,
       email: payload.email,
       role: payload.role,
+      sessionVersion:
+        typeof payload.sv === "number" ? payload.sv : DEFAULT_SESSION_VERSION,
     };
   } catch {
     return null;

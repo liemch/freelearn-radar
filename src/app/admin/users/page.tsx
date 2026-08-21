@@ -10,6 +10,7 @@ import {
   AdminTr,
 } from "@/components/admin/admin-table";
 import { UserRoleSelect } from "@/components/admin/user-role-select";
+import { UserSessionRevokeButton } from "@/components/admin/user-session-revoke-button";
 import { Badge } from "@/components/ui/badge";
 import { getDb } from "@/db";
 import { listUsers } from "@/db/repositories/user-repository";
@@ -54,6 +55,7 @@ export default async function AdminUsersPage() {
               <tr>
                 <AdminTh>{t.users.email}</AdminTh>
                 <AdminTh>{t.users.role}</AdminTh>
+                <AdminTh>{t.users.sessions}</AdminTh>
               </tr>
             </thead>
             <tbody>
@@ -72,6 +74,16 @@ export default async function AdminUsersPage() {
                       labels={{
                         updateFailed: t.users.updateFailed,
                         lastAdmin: t.users.lastAdmin,
+                      }}
+                    />
+                  </AdminTd>
+                  <AdminTd className="whitespace-nowrap">
+                    <UserSessionRevokeButton
+                      userId={user.id}
+                      labels={{
+                        action: t.users.revokeSessions,
+                        done: t.users.revokeSessionsDone,
+                        failed: t.users.revokeSessionsFailed,
                       }}
                     />
                   </AdminTd>

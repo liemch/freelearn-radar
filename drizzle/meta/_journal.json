@@ -120,6 +120,13 @@
       "when": 1724832000000,
       "tag": "0016_m24_managed_assets",
       "breakpoints": true
+    },
+    {
+      "idx": 17,
+      "version": "7",
+      "when": 1724918400000,
+      "tag": "0017_session_revocation",
+      "breakpoints": true
     }
   ]
 }

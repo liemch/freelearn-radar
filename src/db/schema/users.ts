@@ -1,4 +1,5 @@
 import {
+  integer,
   pgTable,
   text,
   timestamp,
@@ -16,6 +17,12 @@ export const users = pgTable(
     name: text("name").notNull(),
     passwordHash: text("password_hash").notNull(),
     role: userRoleEnum("role").notNull().default("EDITOR"),
+    /**
+     * Bumped to invalidate every session already issued to this user. The JWT
+     * carries the value it was minted with, so a mismatch means "signed in
+     * before the revoke".
+     */
+    sessionVersion: integer("session_version").notNull().default(1),
     createdAt: timestamp("created_at", { withTimezone: true })
       .notNull()
       .defaultNow(),

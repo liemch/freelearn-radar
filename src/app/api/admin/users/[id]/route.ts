@@ -5,6 +5,7 @@ import { getDb } from "@/db";
 import {
   countUsersByRole,
   findUserById,
+  revokeUserSessions,
   updateUserRole,
 } from "@/db/repositories/user-repository";
 import { writeAuditLog } from "@/domain/admin/audit-log";
@@ -14,9 +15,15 @@ import { logger } from "@/lib/logger";
 
 type RouteContext = { params: Promise<{ id: string }> };
 
-const patchSchema = z.object({
-  role: z.enum(["ADMIN", "EDITOR"]),
-});
+const patchSchema = z
+  .object({
+    role: z.enum(["ADMIN", "EDITOR"]).optional(),
+    /** Force every existing session of this user to fail its next request. */
+    revokeSessions: z.boolean().optional(),
+  })
+  .refine((body) => body.role !== undefined || body.revokeSessions === true, {
+    message: "Provide a role or revokeSessions",
+  });
 
 export async function PATCH(request: Request, context: RouteContext) {
   try {
@@ -39,6 +46,7 @@ export async function PATCH(request: Request, context: RouteContext) {
     }
 
     if (
+      parsed.data.role !== undefined &&
       existing.role === "ADMIN" &&
       parsed.data.role !== "ADMIN"
     ) {
@@ -51,16 +59,25 @@ export async function PATCH(request: Request, context: RouteContext) {
       }
     }
 
-    const user = await updateUserRole(db, id, parsed.data.role);
+    const user =
+      parsed.data.role !== undefined
+        ? await updateUserRole(db, id, parsed.data.role)
+        : await revokeUserSessions(db, id);
 
     await writeAuditLog(db, {
       actorType: "USER",
       actorId: session.userId,
-      action: "USER_ROLE_UPDATE",
+      action:
+        parsed.data.role !== undefined
+          ? "USER_ROLE_UPDATE"
+          : "USER_SESSIONS_REVOKED",
       entityType: "user",
       entityId: id,
-      before: { role: existing.role },
-      after: { role: user.role },
+      before: {
+        role: existing.role,
+        sessionVersion: existing.sessionVersion,
+      },
+      after: { role: user.role, sessionVersion: user.sessionVersion },
     });
 
     return NextResponse.json({

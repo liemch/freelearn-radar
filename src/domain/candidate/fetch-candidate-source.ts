@@ -5,6 +5,7 @@ import {
   findCandidateById,
 } from "@/db/repositories/candidate-repository";
 import type { CourseCandidate } from "@/db/schema";
+import { recordApiUsage } from "@/domain/admin/api-usage";
 import { writeAuditLog } from "@/domain/admin/audit-log";
 import { logger } from "@/lib/logger";
 import {
@@ -73,6 +74,14 @@ function serializeSourceResult(result: CourseSourceResult): Record<string, unkno
   };
 }
 
+function hostnameOf(url: string): string | null {
+  try {
+    return new URL(url).hostname;
+  } catch {
+    return null;
+  }
+}
+
 function mapFetchFailureStatus(reason: string): "ERROR" | "INVALID" {
   if (
     reason === "http_404" ||
@@ -117,14 +126,28 @@ export async function fetchCandidateSource(
     fetchImpl: options.fetchImpl,
   });
 
+  const durationMs = Date.now() - started;
+
   logger.info("candidate.source_fetch", {
     candidate_id: candidateId,
     provider: candidate.provider,
     requested_url: result.requestedUrl,
     final_url: result.finalUrl,
     status: result.status,
-    duration_ms: Date.now() - started,
+    duration_ms: durationMs,
     error: result.errors[0] ?? null,
+  });
+
+  await recordApiUsage(db, {
+    kind: "source_fetch",
+    provider: candidate.provider ?? null,
+    operation: "candidate_source",
+    domain: hostnameOf(result.finalUrl ?? result.requestedUrl),
+    httpStatus: result.httpStatus,
+    ok: result.status === "ok",
+    latencyMs: durationMs,
+    error: result.errors[0] ?? null,
+    meta: { candidateId, fetchPolicy: result.policy.fetch },
   });
 
   if (result.status === "skipped") {

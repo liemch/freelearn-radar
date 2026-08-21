@@ -54,9 +54,34 @@ export async function updateUserRole(
   id: string,
   role: UserRole,
 ): Promise<User> {
+  // The role travels inside the session token, so a demotion that left the old
+  // token usable would keep ADMIN powers alive until it expired.
   const rows = await db
     .update(users)
-    .set({ role, updatedAt: new Date() })
+    .set({
+      role,
+      sessionVersion: sql`${users.sessionVersion} + 1`,
+      updatedAt: new Date(),
+    })
+    .where(eq(users.id, id))
+    .returning();
+
+  const user = rows[0];
+  if (!user) {
+    throw new Error("User not found");
+  }
+
+  return user;
+}
+
+/** Invalidate every session already issued to this user. */
+export async function revokeUserSessions(db: Db, id: string): Promise<User> {
+  const rows = await db
+    .update(users)
+    .set({
+      sessionVersion: sql`${users.sessionVersion} + 1`,
+      updatedAt: new Date(),
+    })
     .where(eq(users.id, id))
     .returning();
 

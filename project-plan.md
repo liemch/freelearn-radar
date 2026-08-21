@@ -1,6 +1,10 @@
 # FreeLearn Radar — MVP Project Plan
 
-**Progress (as of 2026-08-14):** WP0–WP14 shipped · M15–M17 complete · WP18 / M18.1–M18.4 complete · **M19 core complete** (flags OFF; see `docs/M19_FINAL_REPORT.md` + `project-plan-v1.2.md`). M18.5 not started.
+**Progress (as of 2026-08-21):** WP0–WP14 shipped · M15–M17 complete · WP18 / M18.1–M18.4 complete · M19–M27 code complete with most feature flags still OFF (see `project-plan-v1.2.md`, `project-plan-v1.3.1.md` and the `docs/M2*_FINAL_REPORT.md` series). M18.5 not started.
+
+> This file is the original MVP plan and is kept for intent, not for status.
+> For the current state of the codebase read `docs/audit/` (00 → 05) and
+> `CLAUDE.md`; for deployment facts read `docs/PRODUCTION_READINESS.md`.
 
 ## 1. Product Vision
 

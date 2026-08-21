@@ -53,6 +53,7 @@ export async function POST(request: Request) {
       userId: user.id,
       email: user.email,
       role: user.role,
+      sessionVersion: user.sessionVersion,
     });
 
     await writeAuditLog(db, {

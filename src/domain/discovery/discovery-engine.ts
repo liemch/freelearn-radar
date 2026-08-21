@@ -1,5 +1,6 @@
 import type { Db } from "@/db";
 import { bumpDiscoveryCategoryStats } from "@/db/repositories/coupon-repository";
+import { measureApiUsage } from "@/domain/admin/api-usage";
 import { ingestSearchResult } from "@/domain/candidate/candidate-service";
 import {
   listDueDiscoveryQueries,
@@ -75,11 +76,23 @@ export async function runDiscoveryBatch(
       let invalidForQuery = 0;
 
       try {
-      const results = await searchProvider.search({
-        query: query.query,
-        maxResults: resultLimit,
-        includeDomains: domain ? [domain] : undefined,
-      });
+      const results = await measureApiUsage(
+        db,
+        {
+          kind: "search",
+          provider: "tavily",
+          operation: "discovery_search",
+          domain: domain ?? null,
+          meta: { discoveryQueryId: query.id, maxResults: resultLimit },
+        },
+        () =>
+          searchProvider.search({
+            query: query.query,
+            maxResults: resultLimit,
+            includeDomains: domain ? [domain] : undefined,
+          }),
+        (found) => ({ meta: { resultCount: found.length } }),
+      );
 
       for (const result of results) {
         const outcome = await ingestSearchResult(db, {

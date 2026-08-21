@@ -31,9 +31,20 @@ jobs:
         env:
           DATABASE_URL: postgresql://user:password@localhost:5432/freelearn_radar_test
           AUTH_SECRET: ci-test-auth-secret-with-more-than-thirty-two-characters
+          CRON_SECRET: ci-cron-secret-1234567890
 
       - name: Build
         run: npm run build
         env:
           DATABASE_URL: postgresql://user:password@localhost:5432/freelearn_radar_test
           AUTH_SECRET: ci-test-auth-secret-with-more-than-thirty-two-characters
+          CRON_SECRET: ci-cron-secret-1234567890
+
+      # Advisory: the remaining high findings are transitive through Next
+      # (postcss, sharp) and only clear with a Next 16 upgrade, so this reports
+      # without blocking merges. Fail the build on anything critical.
+      - name: Dependency audit (report)
+        run: npm audit --audit-level=high || true
+
+      - name: Dependency audit (block on critical)
+        run: npm audit --audit-level=critical

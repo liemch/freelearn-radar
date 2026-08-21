@@ -7,6 +7,7 @@ import {
   applyAutoReject,
   evaluateAutoReject,
 } from "@/domain/candidate/auto-reject";
+import { measureApiUsage } from "@/domain/admin/api-usage";
 import { writeAuditLog } from "@/domain/admin/audit-log";
 import { shouldRouteToExtraReview } from "@/domain/quality/confidence";
 import {
@@ -141,13 +142,25 @@ export async function analyzeCandidate(
   }
 
   try {
-    const analysis = await ai.analyzeCourse({
-      url: candidate.canonicalUrl,
-      title: candidate.rawTitle,
-      description: candidate.rawDescription,
-      content: candidate.rawContent,
-      providerHint: candidate.provider,
-    });
+    const analysis = await measureApiUsage(
+      db,
+      {
+        kind: "ai_analysis",
+        provider: "nvidia",
+        operation: "analyze_course",
+        // Read straight from process.env: a missing or malformed env must not
+        // turn a working analysis into a candidate marked ERROR.
+        meta: { candidateId, model: process.env.NVIDIA_MODEL || null },
+      },
+      () =>
+        ai.analyzeCourse({
+          url: candidate.canonicalUrl,
+          title: candidate.rawTitle,
+          description: candidate.rawDescription,
+          content: candidate.rawContent,
+          providerHint: candidate.provider,
+        }),
+    );
 
     const needsExtraReview =
       analysis.is_course && shouldRouteToExtraReview(analysis.confidence);

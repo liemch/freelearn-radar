@@ -30,7 +30,21 @@ describe("session tokens", () => {
       userId: "user-123",
       email: "admin@example.com",
       role: "ADMIN",
+      sessionVersion: 1,
     });
+  });
+
+  it("round-trips the session version used for revocation", async () => {
+    const token = await createSessionToken({
+      userId: "user-123",
+      email: "admin@example.com",
+      role: "ADMIN",
+      sessionVersion: 4,
+    });
+
+    const session = await verifySessionToken(token);
+
+    expect(session?.sessionVersion).toBe(4);
   });
 
   it("rejects tampered tokens", async () => {

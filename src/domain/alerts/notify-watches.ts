@@ -3,6 +3,7 @@ import { and, eq } from "drizzle-orm";
 import type { Db } from "@/db";
 import { courseWatches, courses, type CoursePriceEvent } from "@/db/schema";
 import { deriveUnsubscribeToken } from "@/domain/alerts/watch-token";
+import { recordApiUsage } from "@/domain/admin/api-usage";
 import { writeAuditLog } from "@/domain/admin/audit-log";
 import { getEmailProvider } from "@/services/email/email-provider";
 import { getServerEnv } from "@/lib/env";
@@ -109,6 +110,7 @@ export async function notifyWatchesForEvents(
       const html = `<p>${text.replace(/\n/g, "<br/>")}</p>`;
 
       try {
+        const startedAt = Date.now();
         const result = await email.sendEmail({
           to: watch.email,
           subject,
@@ -116,6 +118,17 @@ export async function notifyWatchesForEvents(
           text,
           tags: ["COURSE_WENT_FREE"],
           listUnsubscribeUrl: unsubUrl,
+        });
+
+        await recordApiUsage(db, {
+          kind: "email",
+          provider: result.dryRun ? "dry_run" : "resend",
+          operation: "watch_went_free",
+          courseId: course.id,
+          ok: result.ok,
+          latencyMs: Date.now() - startedAt,
+          workerVersion: env.MONITOR_WORKER_VERSION,
+          error: result.ok ? null : (result.error ?? "send failed"),
         });
 
         if (!result.ok) {
