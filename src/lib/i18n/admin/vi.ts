@@ -659,10 +659,19 @@ export const adminVi: AdminDictionary = {
     retry: "Thử lại",
     globalSettings: "Ngưỡng / Push global",
     globalSettingsHint: "Các setting dùng chung cho automation push bài.",
+    enableAutoReply: "Tự động trả lời bình luận (enable_auto_reply)",
+    enableBulkComment: "Comment hàng loạt (enable_bulk_comment)",
     maxComments: "Giới hạn comment (max_comments)",
+    targetMaxAgeDays: "Tuổi bài tối đa, theo ngày (target_max_age_days)",
+    maxInteractionsPerPost:
+      "Tương tác tối đa mỗi bài (max_interactions_per_post)",
     pushUltra: "Bật push ultra (push_ultra)",
     exceedMax1: "User vượt ngưỡng 1 (exceed_max_1_users)",
     exceedMax3: "User vượt ngưỡng 3 (exceed_max_3_users)",
+    phatNv8ExceptionHint: (included) =>
+      included
+        ? "phatnv8 đang nằm trong danh sách user ngoại lệ vượt ngưỡng."
+        : "phatnv8 hiện không nằm trong danh sách user ngoại lệ vượt ngưỡng.",
     saveSettings: "Lưu settings",
     reloadSettings: "Tải lại",
     pushPost: "Push 1 bài (is_ultra)",
@@ -690,6 +699,9 @@ export const adminVi: AdminDictionary = {
     ultraDisabled: (techhubId) => `Đã tắt is_ultra cho bài ${techhubId}`,
     invalidTechhubId: "Nhập techhub_id hợp lệ",
     invalidMaxComments: "max_comments phải là số >= 1",
+    invalidTargetMaxAgeDays: "target_max_age_days phải là số nguyên >= 1",
+    invalidMaxInteractionsPerPost:
+      "max_interactions_per_post phải là số nguyên >= 1",
     saveFailed: "Không lưu được",
     loadFailed: "Không tải được dữ liệu",
   },

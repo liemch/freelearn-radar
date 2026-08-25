@@ -23,6 +23,13 @@ function formatPostPreview(post: TechhubPost): string {
   return `#${post.techhub_id} · @${post.username ?? "-"} · cmt=${post.comments_count} · fs=${post.feed_score} · ultra=${post.is_ultra ?? false} · ${post.title ?? ""}`;
 }
 
+function includesUsername(csv: string, username: string): boolean {
+  return csv
+    .split(",")
+    .map((value) => value.trim().toLowerCase())
+    .includes(username.toLowerCase());
+}
+
 export function TechhubPushAdmin({
   locale,
   initialConfigured,
@@ -34,6 +41,10 @@ export function TechhubPushAdmin({
   const [connected, setConnected] = useState(initialConnected);
 
   const [maxComments, setMaxComments] = useState("");
+  const [enableAutoReply, setEnableAutoReply] = useState(false);
+  const [enableBulkComment, setEnableBulkComment] = useState(false);
+  const [targetMaxAgeDays, setTargetMaxAgeDays] = useState("");
+  const [maxInteractionsPerPost, setMaxInteractionsPerPost] = useState("");
   const [pushUltra, setPushUltra] = useState(false);
   const [exceedMax1, setExceedMax1] = useState("");
   const [exceedMax3, setExceedMax3] = useState("");
@@ -44,6 +55,9 @@ export function TechhubPushAdmin({
   const [postPreview, setPostPreview] = useState<string | null>(null);
   const [postMessage, setPostMessage] = useState<string | null>(null);
   const [postError, setPostError] = useState<string | null>(null);
+  const phatNv8IsException =
+    includesUsername(exceedMax1, "phatnv8") ||
+    includesUsername(exceedMax3, "phatnv8");
 
   const loadSettings = useCallback(async () => {
     setSettingsMessage(labels.loadingSettings);
@@ -59,6 +73,20 @@ export function TechhubPushAdmin({
       setMaxComments(
         payload.settings?.max_comments != null
           ? String(payload.settings.max_comments)
+          : "",
+      );
+      setEnableAutoReply(parseSettingBool(payload.settings?.enable_auto_reply));
+      setEnableBulkComment(
+        parseSettingBool(payload.settings?.enable_bulk_comment),
+      );
+      setTargetMaxAgeDays(
+        payload.settings?.target_max_age_days != null
+          ? String(payload.settings.target_max_age_days)
+          : "",
+      );
+      setMaxInteractionsPerPost(
+        payload.settings?.max_interactions_per_post != null
+          ? String(payload.settings.max_interactions_per_post)
           : "",
       );
       setPushUltra(parseSettingBool(payload.settings?.push_ultra));
@@ -82,8 +110,21 @@ export function TechhubPushAdmin({
       setSettingsError(null);
 
       const maxCommentsValue = Number(maxComments);
+      const targetMaxAgeDaysValue = Number(targetMaxAgeDays);
+      const maxInteractionsPerPostValue = Number(maxInteractionsPerPost);
       if (!Number.isFinite(maxCommentsValue) || maxCommentsValue < 1) {
         setSettingsError(labels.invalidMaxComments);
+        return;
+      }
+      if (!Number.isInteger(targetMaxAgeDaysValue) || targetMaxAgeDaysValue < 1) {
+        setSettingsError(labels.invalidTargetMaxAgeDays);
+        return;
+      }
+      if (
+        !Number.isInteger(maxInteractionsPerPostValue) ||
+        maxInteractionsPerPostValue < 1
+      ) {
+        setSettingsError(labels.invalidMaxInteractionsPerPost);
         return;
       }
 
@@ -92,7 +133,11 @@ export function TechhubPushAdmin({
           method: "PATCH",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({
+            enable_auto_reply: enableAutoReply,
+            enable_bulk_comment: enableBulkComment,
             max_comments: maxCommentsValue,
+            target_max_age_days: targetMaxAgeDaysValue,
+            max_interactions_per_post: maxInteractionsPerPostValue,
             push_ultra: pushUltra,
             exceed_max_1_users: exceedMax1,
             exceed_max_3_users: exceedMax3,
@@ -253,6 +298,24 @@ export function TechhubPushAdmin({
     <div className="grid gap-4 lg:grid-cols-2">
       <AdminPanel title={labels.globalSettings} description={labels.globalSettingsHint}>
         <div className="space-y-3 text-[0.8125rem]">
+          <label className="flex items-center gap-2">
+            <input
+              type="checkbox"
+              checked={enableAutoReply}
+              onChange={(event) => setEnableAutoReply(event.target.checked)}
+            />
+            <span>{labels.enableAutoReply}</span>
+          </label>
+
+          <label className="flex items-center gap-2">
+            <input
+              type="checkbox"
+              checked={enableBulkComment}
+              onChange={(event) => setEnableBulkComment(event.target.checked)}
+            />
+            <span>{labels.enableBulkComment}</span>
+          </label>
+
           <label className="block space-y-1">
             <span className="text-xs font-medium text-muted-foreground">
               {labels.maxComments}
@@ -263,6 +326,32 @@ export function TechhubPushAdmin({
               max={200}
               value={maxComments}
               onChange={(event) => setMaxComments(event.target.value)}
+            />
+          </label>
+
+          <label className="block space-y-1">
+            <span className="text-xs font-medium text-muted-foreground">
+              {labels.targetMaxAgeDays}
+            </span>
+            <Input
+              type="number"
+              min={1}
+              max={365}
+              value={targetMaxAgeDays}
+              onChange={(event) => setTargetMaxAgeDays(event.target.value)}
+            />
+          </label>
+
+          <label className="block space-y-1">
+            <span className="text-xs font-medium text-muted-foreground">
+              {labels.maxInteractionsPerPost}
+            </span>
+            <Input
+              type="number"
+              min={1}
+              max={100}
+              value={maxInteractionsPerPost}
+              onChange={(event) => setMaxInteractionsPerPost(event.target.value)}
             />
           </label>
 
@@ -296,6 +385,10 @@ export function TechhubPushAdmin({
               onChange={(event) => setExceedMax3(event.target.value)}
             />
           </label>
+
+          <p className="rounded border border-border/60 bg-muted/30 px-2.5 py-2 text-xs text-muted-foreground">
+            {labels.phatNv8ExceptionHint(phatNv8IsException)}
+          </p>
 
           <div className="flex flex-wrap gap-2 pt-1">
             <Button type="button" size="sm" disabled={pending} onClick={saveSettings}>

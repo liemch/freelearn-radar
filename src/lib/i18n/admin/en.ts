@@ -654,10 +654,19 @@ export const adminEn: AdminDictionary = {
     retry: "Retry",
     globalSettings: "Thresholds / global push",
     globalSettingsHint: "Shared settings for post push automation.",
+    enableAutoReply: "Auto reply to comments (enable_auto_reply)",
+    enableBulkComment: "Bulk comment (enable_bulk_comment)",
     maxComments: "max_comments",
+    targetMaxAgeDays: "Maximum post age in days (target_max_age_days)",
+    maxInteractionsPerPost:
+      "Maximum interactions per post (max_interactions_per_post)",
     pushUltra: "push_ultra",
     exceedMax1: "exceed_max_1_users",
     exceedMax3: "exceed_max_3_users",
+    phatNv8ExceptionHint: (included) =>
+      included
+        ? "phatnv8 is included in a threshold exception list."
+        : "phatnv8 is currently not included in either threshold exception list.",
     saveSettings: "Save settings",
     reloadSettings: "Reload",
     pushPost: "Push one post (is_ultra)",
@@ -685,6 +694,9 @@ export const adminEn: AdminDictionary = {
     ultraDisabled: (techhubId) => `Disabled is_ultra for post ${techhubId}`,
     invalidTechhubId: "Enter a valid techhub_id",
     invalidMaxComments: "max_comments must be a number >= 1",
+    invalidTargetMaxAgeDays: "target_max_age_days must be an integer >= 1",
+    invalidMaxInteractionsPerPost:
+      "max_interactions_per_post must be an integer >= 1",
     saveFailed: "Could not save",
     loadFailed: "Could not load data",
   },

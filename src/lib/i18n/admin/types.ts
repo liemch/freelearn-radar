@@ -626,10 +626,15 @@ export type AdminDictionary = {
     retry: string;
     globalSettings: string;
     globalSettingsHint: string;
+    enableAutoReply: string;
+    enableBulkComment: string;
     maxComments: string;
+    targetMaxAgeDays: string;
+    maxInteractionsPerPost: string;
     pushUltra: string;
     exceedMax1: string;
     exceedMax3: string;
+    phatNv8ExceptionHint: (included: boolean) => string;
     saveSettings: string;
     reloadSettings: string;
     pushPost: string;
@@ -653,6 +658,8 @@ export type AdminDictionary = {
     ultraDisabled: (techhubId: number) => string;
     invalidTechhubId: string;
     invalidMaxComments: string;
+    invalidTargetMaxAgeDays: string;
+    invalidMaxInteractionsPerPost: string;
     saveFailed: string;
     loadFailed: string;
   };
