@@ -12,7 +12,7 @@ export async function GET() {
   try {
     await requireTechhubAdmin();
     const client = getTechhubClient();
-    const map = await client.getSettings([...TECHHUB_ADMIN_SETTING_KEYS]);
+    const map = await client.getSettings();
 
     return NextResponse.json({
       settings: {

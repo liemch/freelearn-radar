@@ -40,7 +40,7 @@ export class TechhubSupabaseClient {
   }
 
   async getSettings(keys: string[] | null = null): Promise<Record<string, TechhubSettingRow>> {
-    let url = `${this.restUrl}/settings?select=id,key,value,description,updated_at&order=key`;
+    let url = `${this.restUrl}/settings?select=*&order=key`;
     if (keys && keys.length > 0) {
       url += `&key=in.(${keys.map((key) => encodeURIComponent(key)).join(",")})`;
     }
@@ -51,7 +51,8 @@ export class TechhubSupabaseClient {
       cache: "no-store",
     });
     if (!response.ok) {
-      throw new Error(`Failed to fetch settings: ${response.status}`);
+      const errText = await response.text().catch(() => "");
+      throw new Error(`Failed to fetch settings: ${response.status} ${errText}`);
     }
 
     const rows = (await response.json()) as TechhubSettingRow[];
@@ -68,10 +69,25 @@ export class TechhubSupabaseClient {
     options: UpdateSettingOptions = {},
   ): Promise<TechhubSettingRow | null> {
     const preserveUpdatedAt = options.preserveUpdatedAt !== false;
-    const currentMap = await this.getSettings([key]);
+    const currentMap = await this.getSettings([key]).catch(() => ({}));
     const current = currentMap[key];
     if (!current) {
-      throw new Error(`Setting not found: ${key}`);
+      const url = `${this.restUrl}/settings`;
+      const response = await fetch(url, {
+        method: "POST",
+        headers: {
+          ...this.getHeaders(),
+          Prefer: "return=representation, resolution=merge-duplicates",
+        },
+        body: JSON.stringify({ key, value }),
+        cache: "no-store",
+      });
+      if (!response.ok) {
+        const errText = await response.text().catch(() => "");
+        throw new Error(`Failed to create setting ${key}: ${response.status} ${errText}`);
+      }
+      const data = (await response.json().catch(() => [])) as TechhubSettingRow[];
+      return Array.isArray(data) && data.length > 0 ? data[0] : null;
     }
 
     const payload: { value: unknown; updated_at?: string } = { value };
@@ -87,12 +103,12 @@ export class TechhubSupabaseClient {
       cache: "no-store",
     });
     if (!response.ok) {
-      const errText = await response.text();
+      const errText = await response.text().catch(() => "");
       throw new Error(`Failed to update setting ${key}: ${response.status} ${errText}`);
     }
 
-    const data = (await response.json()) as TechhubSettingRow[];
-    return data.length > 0 ? data[0] : null;
+    const data = (await response.json().catch(() => [])) as TechhubSettingRow[];
+    return Array.isArray(data) && data.length > 0 ? data[0] : null;
   }
 
   async getPostByTechhubId(techhubId: number): Promise<TechhubPost | null> {
