@@ -632,9 +632,6 @@ export type AdminDictionary = {
     targetMaxAgeDays: string;
     maxInteractionsPerPost: string;
     pushUltra: string;
-    exceedMax1: string;
-    exceedMax3: string;
-    phatNv8ExceptionHint: (included: boolean) => string;
     saveSettings: string;
     reloadSettings: string;
     pushPost: string;

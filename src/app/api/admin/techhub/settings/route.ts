@@ -23,8 +23,6 @@ export async function GET() {
         max_interactions_per_post:
           map.max_interactions_per_post?.value ?? null,
         push_ultra: map.push_ultra?.value ?? null,
-        exceed_max_1_users: map.exceed_max_1_users?.value ?? null,
-        exceed_max_3_users: map.exceed_max_3_users?.value ?? null,
       },
     });
   } catch (error) {
@@ -44,8 +42,6 @@ const patchSchema = z.object({
   target_max_age_days: z.number().int().min(1).max(365),
   max_interactions_per_post: z.number().int().min(1).max(100),
   push_ultra: z.boolean(),
-  exceed_max_1_users: z.string(),
-  exceed_max_3_users: z.string(),
 });
 
 export async function PATCH(request: Request) {
@@ -67,8 +63,6 @@ export async function PATCH(request: Request) {
       target_max_age_days,
       max_interactions_per_post,
       push_ultra,
-      exceed_max_1_users,
-      exceed_max_3_users,
     } = parsed.data;
 
     await client.updateSetting("enable_auto_reply", enable_auto_reply, {
@@ -91,16 +85,6 @@ export async function PATCH(request: Request) {
     await client.updateSetting("push_ultra", push_ultra, {
       preserveUpdatedAt: true,
     });
-    await client.updateSetting(
-      "exceed_max_1_users",
-      exceed_max_1_users.trim(),
-      { preserveUpdatedAt: true },
-    );
-    await client.updateSetting(
-      "exceed_max_3_users",
-      exceed_max_3_users.trim(),
-      { preserveUpdatedAt: true },
-    );
 
     return NextResponse.json({ ok: true });
   } catch (error) {

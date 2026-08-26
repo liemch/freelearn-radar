@@ -23,13 +23,6 @@ function formatPostPreview(post: TechhubPost): string {
   return `#${post.techhub_id} · @${post.username ?? "-"} · cmt=${post.comments_count} · fs=${post.feed_score} · ultra=${post.is_ultra ?? false} · ${post.title ?? ""}`;
 }
 
-function includesUsername(csv: string, username: string): boolean {
-  return csv
-    .split(",")
-    .map((value) => value.trim().toLowerCase())
-    .includes(username.toLowerCase());
-}
-
 export function TechhubPushAdmin({
   locale,
   initialConfigured,
@@ -46,8 +39,6 @@ export function TechhubPushAdmin({
   const [targetMaxAgeDays, setTargetMaxAgeDays] = useState("");
   const [maxInteractionsPerPost, setMaxInteractionsPerPost] = useState("");
   const [pushUltra, setPushUltra] = useState(false);
-  const [exceedMax1, setExceedMax1] = useState("");
-  const [exceedMax3, setExceedMax3] = useState("");
   const [settingsMessage, setSettingsMessage] = useState<string | null>(null);
   const [settingsError, setSettingsError] = useState<string | null>(null);
 
@@ -55,9 +46,6 @@ export function TechhubPushAdmin({
   const [postPreview, setPostPreview] = useState<string | null>(null);
   const [postMessage, setPostMessage] = useState<string | null>(null);
   const [postError, setPostError] = useState<string | null>(null);
-  const phatNv8IsException =
-    includesUsername(exceedMax1, "phatnv8") ||
-    includesUsername(exceedMax3, "phatnv8");
 
   const loadSettings = useCallback(async () => {
     setSettingsMessage(labels.loadingSettings);
@@ -90,8 +78,6 @@ export function TechhubPushAdmin({
           : "",
       );
       setPushUltra(parseSettingBool(payload.settings?.push_ultra));
-      setExceedMax1(String(payload.settings?.exceed_max_1_users ?? ""));
-      setExceedMax3(String(payload.settings?.exceed_max_3_users ?? ""));
       setSettingsMessage(labels.settingsLoaded);
     } catch (error) {
       setSettingsError(error instanceof Error ? error.message : labels.loadFailed);
@@ -139,8 +125,6 @@ export function TechhubPushAdmin({
             target_max_age_days: targetMaxAgeDaysValue,
             max_interactions_per_post: maxInteractionsPerPostValue,
             push_ultra: pushUltra,
-            exceed_max_1_users: exceedMax1,
-            exceed_max_3_users: exceedMax3,
           }),
         });
         const payload = await response.json().catch(() => ({}));
@@ -363,33 +347,6 @@ export function TechhubPushAdmin({
             />
             <span>{labels.pushUltra}</span>
           </label>
-
-          <label className="block space-y-1">
-            <span className="text-xs font-medium text-muted-foreground">
-              {labels.exceedMax1}
-            </span>
-            <Input
-              value={exceedMax1}
-              placeholder="user1,user2"
-              onChange={(event) => setExceedMax1(event.target.value)}
-            />
-          </label>
-
-          <label className="block space-y-1">
-            <span className="text-xs font-medium text-muted-foreground">
-              {labels.exceedMax3}
-            </span>
-            <Input
-              value={exceedMax3}
-              placeholder="user1,user2"
-              onChange={(event) => setExceedMax3(event.target.value)}
-            />
-          </label>
-
-          <p className="rounded border border-border/60 bg-muted/30 px-2.5 py-2 text-xs text-muted-foreground">
-            {labels.phatNv8ExceptionHint(phatNv8IsException)}
-          </p>
-
           <div className="flex flex-wrap gap-2 pt-1">
             <Button type="button" size="sm" disabled={pending} onClick={saveSettings}>
               {labels.saveSettings}

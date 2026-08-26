@@ -666,12 +666,6 @@ export const adminVi: AdminDictionary = {
     maxInteractionsPerPost:
       "Tương tác tối đa mỗi bài (max_interactions_per_post)",
     pushUltra: "Bật push ultra (push_ultra)",
-    exceedMax1: "User vượt ngưỡng 1 (exceed_max_1_users)",
-    exceedMax3: "User vượt ngưỡng 3 (exceed_max_3_users)",
-    phatNv8ExceptionHint: (included) =>
-      included
-        ? "phatnv8 đang nằm trong danh sách user ngoại lệ vượt ngưỡng."
-        : "phatnv8 hiện không nằm trong danh sách user ngoại lệ vượt ngưỡng.",
     saveSettings: "Lưu settings",
     reloadSettings: "Tải lại",
     pushPost: "Push 1 bài (is_ultra)",

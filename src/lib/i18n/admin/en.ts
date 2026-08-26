@@ -661,12 +661,6 @@ export const adminEn: AdminDictionary = {
     maxInteractionsPerPost:
       "Maximum interactions per post (max_interactions_per_post)",
     pushUltra: "push_ultra",
-    exceedMax1: "exceed_max_1_users",
-    exceedMax3: "exceed_max_3_users",
-    phatNv8ExceptionHint: (included) =>
-      included
-        ? "phatnv8 is included in a threshold exception list."
-        : "phatnv8 is currently not included in either threshold exception list.",
     saveSettings: "Save settings",
     reloadSettings: "Reload",
     pushPost: "Push one post (is_ultra)",

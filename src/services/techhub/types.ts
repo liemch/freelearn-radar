@@ -5,8 +5,6 @@ export const TECHHUB_ADMIN_SETTING_KEYS = [
   "target_max_age_days",
   "max_interactions_per_post",
   "push_ultra",
-  "exceed_max_1_users",
-  "exceed_max_3_users",
 ] as const;
 
 export type TechhubSettingKey = (typeof TECHHUB_ADMIN_SETTING_KEYS)[number];
