@@ -69,25 +69,10 @@ export class TechhubSupabaseClient {
     options: UpdateSettingOptions = {},
   ): Promise<TechhubSettingRow | null> {
     const preserveUpdatedAt = options.preserveUpdatedAt !== false;
-    const currentMap = await this.getSettings([key]).catch(() => ({}));
+    const currentMap = await this.getSettings([key]);
     const current = currentMap[key];
     if (!current) {
-      const url = `${this.restUrl}/settings`;
-      const response = await fetch(url, {
-        method: "POST",
-        headers: {
-          ...this.getHeaders(),
-          Prefer: "return=representation, resolution=merge-duplicates",
-        },
-        body: JSON.stringify({ key, value }),
-        cache: "no-store",
-      });
-      if (!response.ok) {
-        const errText = await response.text().catch(() => "");
-        throw new Error(`Failed to create setting ${key}: ${response.status} ${errText}`);
-      }
-      const data = (await response.json().catch(() => [])) as TechhubSettingRow[];
-      return Array.isArray(data) && data.length > 0 ? data[0] : null;
+      throw new Error(`Setting not found: ${key}`);
     }
 
     const payload: { value: unknown; updated_at?: string } = { value };
