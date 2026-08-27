@@ -46,6 +46,8 @@ export function TechhubPushAdmin({
   const [postPreview, setPostPreview] = useState<string | null>(null);
   const [postMessage, setPostMessage] = useState<string | null>(null);
   const [postError, setPostError] = useState<string | null>(null);
+  const [ultraPosts, setUltraPosts] = useState<TechhubPost[]>([]);
+  const [ultraScanMessage, setUltraScanMessage] = useState<string | null>(null);
 
   const loadSettings = useCallback(async () => {
     setSettingsMessage(labels.loadingSettings);
@@ -164,6 +166,31 @@ export function TechhubPushAdmin({
         setPostPreview(null);
         setPostError(error instanceof Error ? error.message : labels.loadFailed);
         setPostMessage(null);
+      }
+    });
+  }
+
+  function scanUltraPosts() {
+    startTransition(async () => {
+      setUltraScanMessage(labels.scanningUltraPosts);
+      setPostError(null);
+
+      try {
+        const response = await fetch("/api/admin/techhub/posts/ultra");
+        const payload = await response.json().catch(() => ({}));
+        if (!response.ok) {
+          throw new Error(payload.error ?? labels.scanUltraFailed);
+        }
+
+        const posts = Array.isArray(payload.posts) ? payload.posts : [];
+        setUltraPosts(posts);
+        setUltraScanMessage(labels.ultraPostsFound(posts.length));
+      } catch (error) {
+        setUltraPosts([]);
+        setUltraScanMessage(null);
+        setPostError(
+          error instanceof Error ? error.message : labels.scanUltraFailed,
+        );
       }
     });
   }
@@ -398,6 +425,15 @@ export function TechhubPushAdmin({
               variant="secondary"
               size="sm"
               disabled={pending}
+              onClick={scanUltraPosts}
+            >
+              {labels.scanUltraPosts}
+            </Button>
+            <Button
+              type="button"
+              variant="secondary"
+              size="sm"
+              disabled={pending}
               onClick={lookupPost}
             >
               {labels.lookupPost}
@@ -429,6 +465,29 @@ export function TechhubPushAdmin({
               {labels.deleteInteractions}
             </Button>
           </div>
+
+          {ultraScanMessage ? (
+            <p className="text-xs text-muted-foreground">{ultraScanMessage}</p>
+          ) : null}
+
+          {ultraPosts.length > 0 ? (
+            <div className="max-h-80 space-y-2 overflow-y-auto rounded border border-border/60 p-2">
+              {ultraPosts.map((post) => (
+                <button
+                  key={post.id}
+                  type="button"
+                  className="block w-full rounded border border-border/60 bg-muted/20 px-2.5 py-2 text-left text-xs text-muted-foreground hover:bg-muted/50"
+                  onClick={() => {
+                    setTechhubId(String(post.techhub_id ?? ""));
+                    setPostPreview(formatPostPreview(post));
+                    setPostMessage(labels.ultraPostSelected(post.techhub_id ?? 0));
+                  }}
+                >
+                  {formatPostPreview(post)}
+                </button>
+              ))}
+            </div>
+          ) : null}
 
           {postMessage ? (
             <p className="text-xs text-muted-foreground">{postMessage}</p>

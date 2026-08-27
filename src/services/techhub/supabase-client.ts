@@ -111,6 +111,33 @@ export class TechhubSupabaseClient {
     return data.length > 0 ? data[0] : null;
   }
 
+  async getUltraPosts(): Promise<TechhubPost[]> {
+    const pageSize = 1000;
+    const posts: TechhubPost[] = [];
+
+    for (let offset = 0; ; offset += pageSize) {
+      const url =
+        `${this.restUrl}/posts?is_ultra=eq.true` +
+        "&select=id,title,status,techhub_id,techhub_uuid,username,url,votes_score,comments_count,feed_score,is_ultra,is_blacklisted,created_at,published_at" +
+        "&order=created_at.desc" +
+        `&limit=${pageSize}&offset=${offset}`;
+      const response = await fetch(url, {
+        method: "GET",
+        headers: this.getHeaders(),
+        cache: "no-store",
+      });
+      if (!response.ok) {
+        throw new Error(`Failed to fetch ultra posts: ${response.status}`);
+      }
+
+      const page = (await response.json()) as TechhubPost[];
+      posts.push(...page);
+      if (page.length < pageSize) break;
+    }
+
+    return posts;
+  }
+
   async updatePostFlags(
     techhubId: number,
     updates: { is_ultra?: boolean; is_blacklisted?: boolean },
