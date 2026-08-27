@@ -645,6 +645,16 @@ export type AdminDictionary = {
     userPostSelected: (techhubId: number) => string;
     scanUserPostsFailed: string;
     invalidFilterUsername: string;
+    selectAllUserPosts: string;
+    clearUserPostSelection: string;
+    selectedPostCount: (count: number) => string;
+    selectPost: (techhubId: number) => string;
+    enableSelectedUltra: string;
+    disableSelectedUltra: string;
+    selectAtLeastOnePost: string;
+    updatingSelectedPosts: (count: number, enabled: boolean) => string;
+    selectedPostsUpdated: (count: number, enabled: boolean) => string;
+    bulkUltraFailed: string;
     scanUltraPosts: string;
     scanningUltraPosts: string;
     ultraPostsFound: (count: number) => string;

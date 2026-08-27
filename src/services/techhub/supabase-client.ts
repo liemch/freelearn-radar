@@ -189,6 +189,33 @@ export class TechhubSupabaseClient {
     return data.length > 0 ? data[0] : null;
   }
 
+  async updatePostsUltra(
+    techhubIds: number[],
+    enabled: boolean,
+  ): Promise<TechhubPost[]> {
+    const ids = [...new Set(techhubIds)].filter(
+      (id) => Number.isInteger(id) && id > 0,
+    );
+    if (ids.length === 0 || ids.length > 20) {
+      throw new Error("Bulk Ultra update requires 1 to 20 valid post IDs");
+    }
+
+    const url = `${this.restUrl}/posts?techhub_id=in.(${ids.join(",")})`;
+    const response = await fetch(url, {
+      method: "PATCH",
+      headers: this.getHeaders(),
+      // Deliberately update only this flag; do not send timestamps or post data.
+      body: JSON.stringify({ is_ultra: enabled }),
+      cache: "no-store",
+    });
+    if (!response.ok) {
+      const errText = await response.text();
+      throw new Error(`Failed to update Ultra posts: ${response.status} ${errText}`);
+    }
+
+    return (await response.json()) as TechhubPost[];
+  }
+
   async getInteractionsByTechhubId(techhubId: number): Promise<TechhubInteraction[]> {
     const url =
       `${this.restUrl}/interactions?techhub_id=eq.${techhubId}` +

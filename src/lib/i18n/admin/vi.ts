@@ -682,6 +682,18 @@ export const adminVi: AdminDictionary = {
       `Đã chọn bài ${techhubId}; bấm “Bật Ultra” để cập nhật`,
     scanUserPostsFailed: "Không lấy được danh sách bài của user",
     invalidFilterUsername: "Nhập username hợp lệ để lọc bài",
+    selectAllUserPosts: "Chọn tất cả",
+    clearUserPostSelection: "Bỏ chọn",
+    selectedPostCount: (count) => `Đã chọn ${count} bài`,
+    selectPost: (techhubId) => `Chọn bài ${techhubId}`,
+    enableSelectedUltra: "Bật Ultra các bài đã chọn",
+    disableSelectedUltra: "Tắt Ultra các bài đã chọn",
+    selectAtLeastOnePost: "Chọn ít nhất một bài để cập nhật Ultra",
+    updatingSelectedPosts: (count, enabled) =>
+      `Đang ${enabled ? "bật" : "tắt"} Ultra cho ${count} bài...`,
+    selectedPostsUpdated: (count, enabled) =>
+      `Đã ${enabled ? "bật" : "tắt"} Ultra cho ${count} bài`,
+    bulkUltraFailed: "Không cập nhật được Ultra cho các bài đã chọn",
     scanUltraPosts: "Quét bài Ultra chưa publish",
     scanningUltraPosts:
       "Đang quét các bài có is_ultra = true và chưa publish...",

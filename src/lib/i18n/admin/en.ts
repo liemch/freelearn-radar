@@ -677,6 +677,18 @@ export const adminEn: AdminDictionary = {
       `Selected post ${techhubId}; click “Enable Ultra” to update it`,
     scanUserPostsFailed: "Could not load posts for this user",
     invalidFilterUsername: "Enter a valid username to filter posts",
+    selectAllUserPosts: "Select all",
+    clearUserPostSelection: "Clear selection",
+    selectedPostCount: (count) => `${count} posts selected`,
+    selectPost: (techhubId) => `Select post ${techhubId}`,
+    enableSelectedUltra: "Enable Ultra for selected",
+    disableSelectedUltra: "Disable Ultra for selected",
+    selectAtLeastOnePost: "Select at least one post to update Ultra",
+    updatingSelectedPosts: (count, enabled) =>
+      `${enabled ? "Enabling" : "Disabling"} Ultra for ${count} posts...`,
+    selectedPostsUpdated: (count, enabled) =>
+      `${enabled ? "Enabled" : "Disabled"} Ultra for ${count} posts`,
+    bulkUltraFailed: "Could not update Ultra for the selected posts",
     scanUltraPosts: "Scan unpublished Ultra posts",
     scanningUltraPosts:
       "Scanning posts with is_ultra = true that are not published...",

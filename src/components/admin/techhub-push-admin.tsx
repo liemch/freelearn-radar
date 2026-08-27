@@ -51,6 +51,7 @@ export function TechhubPushAdmin({
   const [filterUsername, setFilterUsername] = useState("");
   const [userPosts, setUserPosts] = useState<TechhubPost[]>([]);
   const [userPostsMessage, setUserPostsMessage] = useState<string | null>(null);
+  const [selectedUserPostIds, setSelectedUserPostIds] = useState<number[]>([]);
 
   const loadSettings = useCallback(async () => {
     setSettingsMessage(labels.loadingSettings);
@@ -222,12 +223,68 @@ export function TechhubPushAdmin({
 
         const posts = Array.isArray(payload.posts) ? payload.posts : [];
         setUserPosts(posts);
+        setSelectedUserPostIds([]);
         setUserPostsMessage(labels.userPostsFound(payload.username ?? username, posts.length));
       } catch (error) {
-        setUserPosts([]);
+      setUserPosts([]);
+      setSelectedUserPostIds([]);
         setUserPostsMessage(null);
         setPostError(
           error instanceof Error ? error.message : labels.scanUserPostsFailed,
+        );
+      }
+    });
+  }
+
+  function toggleUserPostSelection(techhubId: number, selected: boolean) {
+    setSelectedUserPostIds((current) =>
+      selected
+        ? [...new Set([...current, techhubId])]
+        : current.filter((id) => id !== techhubId),
+    );
+  }
+
+  function setSelectedPostsUltra(enabled: boolean) {
+    if (selectedUserPostIds.length === 0) {
+      setPostError(labels.selectAtLeastOnePost);
+      return;
+    }
+
+    startTransition(async () => {
+      setPostError(null);
+      setUserPostsMessage(
+        labels.updatingSelectedPosts(selectedUserPostIds.length, enabled),
+      );
+
+      try {
+        const response = await fetch("/api/admin/techhub/posts/bulk-ultra", {
+          method: "PATCH",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            techhub_ids: selectedUserPostIds,
+            is_ultra: enabled,
+          }),
+        });
+        const payload = await response.json().catch(() => ({}));
+        if (!response.ok) {
+          throw new Error(payload.error ?? labels.bulkUltraFailed);
+        }
+
+        const updatedPosts = Array.isArray(payload.posts) ? payload.posts : [];
+        const updatedById = new Map<number, TechhubPost>(
+          updatedPosts.map((post: TechhubPost) => [post.techhub_id ?? 0, post]),
+        );
+        setUserPosts((current) =>
+          current.map((post) => updatedById.get(post.techhub_id ?? 0) ?? post),
+        );
+        setSelectedUserPostIds([]);
+        setUserPostsMessage(
+          labels.selectedPostsUpdated(payload.updated ?? 0, enabled),
+        );
+      } catch (error) {
+        setUserPostsMessage(null);
+        setPostError(
+          error instanceof Error ? error.message : labels.bulkUltraFailed,
         );
       }
     });
@@ -486,23 +543,90 @@ export function TechhubPushAdmin({
             ) : null}
 
             {userPosts.length > 0 ? (
-              <div className="max-h-80 space-y-2 overflow-y-auto">
-                {userPosts.map((post) => (
-                  <button
-                    key={post.id}
+              <div className="space-y-2">
+                <div className="flex flex-wrap items-center gap-2">
+                  <Button
                     type="button"
-                    className="block w-full rounded border border-border/60 bg-muted/20 px-2.5 py-2 text-left text-xs text-muted-foreground hover:bg-muted/50"
-                    onClick={() => {
-                      setTechhubId(String(post.techhub_id ?? ""));
-                      setPostPreview(formatPostPreview(post));
-                      setPostMessage(
-                        labels.userPostSelected(post.techhub_id ?? 0),
-                      );
-                    }}
+                    variant="secondary"
+                    size="sm"
+                    disabled={pending}
+                    onClick={() =>
+                      setSelectedUserPostIds(
+                        userPosts.flatMap((post) =>
+                          post.techhub_id == null ? [] : [post.techhub_id],
+                        ),
+                      )
+                    }
                   >
-                    {formatPostPreview(post)}
-                  </button>
-                ))}
+                    {labels.selectAllUserPosts}
+                  </Button>
+                  <Button
+                    type="button"
+                    variant="secondary"
+                    size="sm"
+                    disabled={pending || selectedUserPostIds.length === 0}
+                    onClick={() => setSelectedUserPostIds([])}
+                  >
+                    {labels.clearUserPostSelection}
+                  </Button>
+                  <span className="text-xs text-muted-foreground">
+                    {labels.selectedPostCount(selectedUserPostIds.length)}
+                  </span>
+                </div>
+
+                <div className="flex flex-wrap gap-2">
+                  <Button
+                    type="button"
+                    size="sm"
+                    disabled={pending || selectedUserPostIds.length === 0}
+                    onClick={() => setSelectedPostsUltra(true)}
+                  >
+                    {labels.enableSelectedUltra}
+                  </Button>
+                  <Button
+                    type="button"
+                    variant="secondary"
+                    size="sm"
+                    disabled={pending || selectedUserPostIds.length === 0}
+                    onClick={() => setSelectedPostsUltra(false)}
+                  >
+                    {labels.disableSelectedUltra}
+                  </Button>
+                </div>
+
+                <div className="max-h-80 space-y-2 overflow-y-auto">
+                  {userPosts.map((post) => {
+                    const id = post.techhub_id;
+                    if (id == null) return null;
+                    return (
+                      <div
+                        key={post.id}
+                        className="flex items-start gap-2 rounded border border-border/60 bg-muted/20 px-2.5 py-2"
+                      >
+                        <input
+                          type="checkbox"
+                          className="mt-0.5"
+                          checked={selectedUserPostIds.includes(id)}
+                          onChange={(event) =>
+                            toggleUserPostSelection(id, event.target.checked)
+                          }
+                          aria-label={labels.selectPost(id)}
+                        />
+                        <button
+                          type="button"
+                          className="min-w-0 flex-1 text-left text-xs text-muted-foreground hover:text-foreground"
+                          onClick={() => {
+                            setTechhubId(String(id));
+                            setPostPreview(formatPostPreview(post));
+                            setPostMessage(labels.userPostSelected(id));
+                          }}
+                        >
+                          {formatPostPreview(post)}
+                        </button>
+                      </div>
+                    );
+                  })}
+                </div>
               </div>
             ) : null}
           </div>
