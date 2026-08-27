@@ -117,7 +117,7 @@ export class TechhubSupabaseClient {
 
     for (let offset = 0; ; offset += pageSize) {
       const url =
-        `${this.restUrl}/posts?is_ultra=eq.true` +
+        `${this.restUrl}/posts?is_ultra=eq.true&status=eq.open&published_at=is.null` +
         "&select=id,title,status,techhub_id,techhub_uuid,username,url,votes_score,comments_count,feed_score,is_ultra,is_blacklisted,created_at,published_at" +
         "&order=created_at.desc" +
         `&limit=${pageSize}&offset=${offset}`;

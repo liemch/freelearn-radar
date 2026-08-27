@@ -667,9 +667,11 @@ export const adminEn: AdminDictionary = {
     pushPostHint: "Look up a post by techhub_id and manage ultra flag / interactions.",
     techhubId: "techhub_id",
     lookupPost: "View post",
-    scanUltraPosts: "Scan Ultra posts",
-    scanningUltraPosts: "Scanning all posts with is_ultra = true...",
-    ultraPostsFound: (count) => `Found ${count} posts with Ultra enabled`,
+    scanUltraPosts: "Scan unpublished Ultra posts",
+    scanningUltraPosts:
+      "Scanning posts with is_ultra = true that are not published...",
+    ultraPostsFound: (count) =>
+      `Found ${count} unpublished posts with Ultra enabled`,
     ultraPostSelected: (techhubId) => `Selected post ${techhubId} from the Ultra list`,
     scanUltraFailed: "Could not scan Ultra posts",
     enableUltra: "Enable Ultra",
