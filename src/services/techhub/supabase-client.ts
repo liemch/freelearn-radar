@@ -138,6 +138,30 @@ export class TechhubSupabaseClient {
     return posts;
   }
 
+  async getRecentUnpublishedPostsByUsername(
+    username: string,
+    limit = 20,
+  ): Promise<TechhubPost[]> {
+    const normalizedUsername = username.trim().toLowerCase();
+    const safeLimit = Math.min(Math.max(Math.trunc(limit), 1), 20);
+    const url =
+      `${this.restUrl}/posts?username=eq.${encodeURIComponent(normalizedUsername)}` +
+      "&status=eq.open&published_at=is.null" +
+      "&select=id,title,status,techhub_id,techhub_uuid,username,url,votes_score,comments_count,feed_score,is_ultra,is_blacklisted,created_at,published_at" +
+      "&order=created_at.desc" +
+      `&limit=${safeLimit}`;
+    const response = await fetch(url, {
+      method: "GET",
+      headers: this.getHeaders(),
+      cache: "no-store",
+    });
+    if (!response.ok) {
+      throw new Error(`Failed to fetch user posts: ${response.status}`);
+    }
+
+    return (await response.json()) as TechhubPost[];
+  }
+
   async updatePostFlags(
     techhubId: number,
     updates: { is_ultra?: boolean; is_blacklisted?: boolean },

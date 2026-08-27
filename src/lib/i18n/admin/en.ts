@@ -667,6 +667,16 @@ export const adminEn: AdminDictionary = {
     pushPostHint: "Look up a post by techhub_id and manage ultra flag / interactions.",
     techhubId: "techhub_id",
     lookupPost: "View post",
+    filterUsername: "Username to filter",
+    scanUserPosts: "Get 20 unpublished posts",
+    scanningUserPosts: (username) =>
+      `Loading the latest unpublished posts by @${username}...`,
+    userPostsFound: (username, count) =>
+      `Found ${count} latest unpublished posts by @${username}`,
+    userPostSelected: (techhubId) =>
+      `Selected post ${techhubId}; click “Enable Ultra” to update it`,
+    scanUserPostsFailed: "Could not load posts for this user",
+    invalidFilterUsername: "Enter a valid username to filter posts",
     scanUltraPosts: "Scan unpublished Ultra posts",
     scanningUltraPosts:
       "Scanning posts with is_ultra = true that are not published...",

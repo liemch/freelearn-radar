@@ -672,6 +672,16 @@ export const adminVi: AdminDictionary = {
     pushPostHint: "Tra cứu bài theo techhub_id và quản lý cờ ultra / interactions.",
     techhubId: "Mã bài TechHub (techhub_id)",
     lookupPost: "Xem bài",
+    filterUsername: "Username cần lấy bài",
+    scanUserPosts: "Lấy 20 bài chưa publish",
+    scanningUserPosts: (username) =>
+      `Đang lấy bài chưa publish gần nhất của @${username}...`,
+    userPostsFound: (username, count) =>
+      `Tìm thấy ${count} bài chưa publish gần nhất của @${username}`,
+    userPostSelected: (techhubId) =>
+      `Đã chọn bài ${techhubId}; bấm “Bật Ultra” để cập nhật`,
+    scanUserPostsFailed: "Không lấy được danh sách bài của user",
+    invalidFilterUsername: "Nhập username hợp lệ để lọc bài",
     scanUltraPosts: "Quét bài Ultra chưa publish",
     scanningUltraPosts:
       "Đang quét các bài có is_ultra = true và chưa publish...",

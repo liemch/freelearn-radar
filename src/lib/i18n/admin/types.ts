@@ -638,6 +638,13 @@ export type AdminDictionary = {
     pushPostHint: string;
     techhubId: string;
     lookupPost: string;
+    filterUsername: string;
+    scanUserPosts: string;
+    scanningUserPosts: (username: string) => string;
+    userPostsFound: (username: string, count: number) => string;
+    userPostSelected: (techhubId: number) => string;
+    scanUserPostsFailed: string;
+    invalidFilterUsername: string;
     scanUltraPosts: string;
     scanningUltraPosts: string;
     ultraPostsFound: (count: number) => string;

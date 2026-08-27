@@ -48,6 +48,9 @@ export function TechhubPushAdmin({
   const [postError, setPostError] = useState<string | null>(null);
   const [ultraPosts, setUltraPosts] = useState<TechhubPost[]>([]);
   const [ultraScanMessage, setUltraScanMessage] = useState<string | null>(null);
+  const [filterUsername, setFilterUsername] = useState("");
+  const [userPosts, setUserPosts] = useState<TechhubPost[]>([]);
+  const [userPostsMessage, setUserPostsMessage] = useState<string | null>(null);
 
   const loadSettings = useCallback(async () => {
     setSettingsMessage(labels.loadingSettings);
@@ -190,6 +193,41 @@ export function TechhubPushAdmin({
         setUltraScanMessage(null);
         setPostError(
           error instanceof Error ? error.message : labels.scanUltraFailed,
+        );
+      }
+    });
+  }
+
+  function scanUserPosts() {
+    const username = filterUsername.trim();
+    if (!username) {
+      setPostError(labels.invalidFilterUsername);
+      setUserPosts([]);
+      setUserPostsMessage(null);
+      return;
+    }
+
+    startTransition(async () => {
+      setUserPostsMessage(labels.scanningUserPosts(username));
+      setPostError(null);
+
+      try {
+        const response = await fetch(
+          `/api/admin/techhub/posts/recent?username=${encodeURIComponent(username)}`,
+        );
+        const payload = await response.json().catch(() => ({}));
+        if (!response.ok) {
+          throw new Error(payload.error ?? labels.scanUserPostsFailed);
+        }
+
+        const posts = Array.isArray(payload.posts) ? payload.posts : [];
+        setUserPosts(posts);
+        setUserPostsMessage(labels.userPostsFound(payload.username ?? username, posts.length));
+      } catch (error) {
+        setUserPosts([]);
+        setUserPostsMessage(null);
+        setPostError(
+          error instanceof Error ? error.message : labels.scanUserPostsFailed,
         );
       }
     });
@@ -418,6 +456,56 @@ export function TechhubPushAdmin({
               {postPreview}
             </p>
           ) : null}
+
+          <div className="space-y-2 rounded border border-border/60 p-2.5">
+            <label className="block space-y-1">
+              <span className="text-xs font-medium text-muted-foreground">
+                {labels.filterUsername}
+              </span>
+              <Input
+                value={filterUsername}
+                placeholder="vd: phatnv8"
+                onChange={(event) => setFilterUsername(event.target.value)}
+                onKeyDown={(event) => {
+                  if (event.key === "Enter") scanUserPosts();
+                }}
+              />
+            </label>
+            <Button
+              type="button"
+              variant="secondary"
+              size="sm"
+              disabled={pending}
+              onClick={scanUserPosts}
+            >
+              {labels.scanUserPosts}
+            </Button>
+
+            {userPostsMessage ? (
+              <p className="text-xs text-muted-foreground">{userPostsMessage}</p>
+            ) : null}
+
+            {userPosts.length > 0 ? (
+              <div className="max-h-80 space-y-2 overflow-y-auto">
+                {userPosts.map((post) => (
+                  <button
+                    key={post.id}
+                    type="button"
+                    className="block w-full rounded border border-border/60 bg-muted/20 px-2.5 py-2 text-left text-xs text-muted-foreground hover:bg-muted/50"
+                    onClick={() => {
+                      setTechhubId(String(post.techhub_id ?? ""));
+                      setPostPreview(formatPostPreview(post));
+                      setPostMessage(
+                        labels.userPostSelected(post.techhub_id ?? 0),
+                      );
+                    }}
+                  >
+                    {formatPostPreview(post)}
+                  </button>
+                ))}
+              </div>
+            ) : null}
+          </div>
 
           <div className="flex flex-wrap gap-2">
             <Button
