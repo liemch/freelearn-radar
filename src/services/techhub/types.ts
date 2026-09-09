@@ -44,5 +44,6 @@ export type TechhubInteraction = {
 export type TechhubConfig = {
   url: string;
   anonKey: string;
+  adminPasscode: string;
   usersTable: string;
 };

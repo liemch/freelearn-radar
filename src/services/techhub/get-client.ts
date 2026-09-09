@@ -6,6 +6,7 @@ export function getTechhubConfig(): TechhubConfig | null {
   const env = getServerEnv();
   const url = env.TECHHUB_SUPABASE_URL.trim();
   const anonKey = env.TECHHUB_SUPABASE_ANON_KEY.trim();
+  const adminPasscode = env.TECHHUB_SUPABASE_ADMIN_PASSCODE.trim();
 
   if (!url || !anonKey) {
     return null;
@@ -14,6 +15,7 @@ export function getTechhubConfig(): TechhubConfig | null {
   return {
     url,
     anonKey,
+    adminPasscode,
     usersTable: env.TECHHUB_SUPABASE_USERS_TABLE.trim() || "users",
   };
 }

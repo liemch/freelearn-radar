@@ -173,20 +173,52 @@ export class TechhubSupabaseClient {
       throw new Error("No post flags to update");
     }
 
-    const url = `${this.restUrl}/posts?techhub_id=eq.${techhubId}`;
-    const response = await fetch(url, {
-      method: "PATCH",
+    if ("is_ultra" in payload) {
+      await this.updatePostUltraStatus(techhubId, payload.is_ultra!);
+      delete payload.is_ultra;
+    }
+
+    if (Object.keys(payload).length > 0) {
+      const url = `${this.restUrl}/posts?techhub_id=eq.${techhubId}`;
+      const response = await fetch(url, {
+        method: "PATCH",
+        headers: this.getHeaders(),
+        body: JSON.stringify(payload),
+        cache: "no-store",
+      });
+      if (!response.ok) {
+        const errText = await response.text();
+        throw new Error(`Failed to update post: ${response.status} ${errText}`);
+      }
+    }
+
+    return this.getPostByTechhubId(techhubId);
+  }
+
+  private async updatePostUltraStatus(
+    techhubId: number,
+    enabled: boolean,
+  ): Promise<void> {
+    if (!this.config.adminPasscode) {
+      throw new Error("TECHHUB_ADMIN_PASSCODE_NOT_CONFIGURED");
+    }
+
+    const response = await fetch(`${this.restUrl}/rpc/admin_set_post_ultra`, {
+      method: "POST",
       headers: this.getHeaders(),
-      body: JSON.stringify(payload),
+      body: JSON.stringify({
+        p_techhub_id: techhubId,
+        p_is_ultra: enabled,
+        p_passcode: this.config.adminPasscode,
+      }),
       cache: "no-store",
     });
     if (!response.ok) {
-      const errText = await response.text();
-      throw new Error(`Failed to update post: ${response.status} ${errText}`);
+      const errText = await response.text().catch(() => "");
+      throw new Error(
+        `Failed to update Ultra post ${techhubId}: ${response.status} ${errText}`,
+      );
     }
-
-    const data = (await response.json()) as TechhubPost[];
-    return data.length > 0 ? data[0] : null;
   }
 
   async updatePostsUltra(
@@ -200,20 +232,10 @@ export class TechhubSupabaseClient {
       throw new Error("Bulk Ultra update requires 1 to 20 valid post IDs");
     }
 
-    const url = `${this.restUrl}/posts?techhub_id=in.(${ids.join(",")})`;
-    const response = await fetch(url, {
-      method: "PATCH",
-      headers: this.getHeaders(),
-      // Deliberately update only this flag; do not send timestamps or post data.
-      body: JSON.stringify({ is_ultra: enabled }),
-      cache: "no-store",
-    });
-    if (!response.ok) {
-      const errText = await response.text();
-      throw new Error(`Failed to update Ultra posts: ${response.status} ${errText}`);
-    }
+    await Promise.all(ids.map((id) => this.updatePostUltraStatus(id, enabled)));
 
-    return (await response.json()) as TechhubPost[];
+    const posts = await Promise.all(ids.map((id) => this.getPostByTechhubId(id)));
+    return posts.filter((post): post is TechhubPost => post !== null);
   }
 
   async getInteractionsByTechhubId(techhubId: number): Promise<TechhubInteraction[]> {

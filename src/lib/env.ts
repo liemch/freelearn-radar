@@ -220,6 +220,7 @@ const baseEnvSchema = z.object({
   /** TechHub Push Admin — separate Supabase project (ext-admin). */
   TECHHUB_SUPABASE_URL: optionalString,
   TECHHUB_SUPABASE_ANON_KEY: optionalString,
+  TECHHUB_SUPABASE_ADMIN_PASSCODE: optionalString,
   TECHHUB_SUPABASE_USERS_TABLE: z.string().default("users"),
 });
 
