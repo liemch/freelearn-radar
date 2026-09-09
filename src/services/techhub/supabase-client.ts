@@ -2,6 +2,7 @@ import type {
   TechhubConfig,
   TechhubInteraction,
   TechhubPost,
+  TechhubPostDeleteResult,
   TechhubSettingRow,
 } from "@/services/techhub/types";
 
@@ -267,5 +268,64 @@ export class TechhubSupabaseClient {
     }
 
     return (await response.json()) as TechhubInteraction[];
+  }
+
+  private async deleteRowsByTechhubId(
+    table: string,
+    techhubId: number,
+  ): Promise<number> {
+    const url = `${this.restUrl}/${table}?techhub_id=eq.${techhubId}`;
+    const response = await fetch(url, {
+      method: "DELETE",
+      headers: this.getHeaders(),
+      cache: "no-store",
+    });
+    if (!response.ok) {
+      const errText = await response.text().catch(() => "");
+      throw new Error(
+        `Failed to delete ${table} for post ${techhubId}: ${response.status} ${errText}`,
+      );
+    }
+
+    const rows = (await response.json().catch(() => [])) as unknown[];
+    return Array.isArray(rows) ? rows.length : 0;
+  }
+
+  async deletePostByTechhubId(
+    techhubId: number,
+  ): Promise<TechhubPostDeleteResult> {
+    const post = await this.getPostByTechhubId(techhubId);
+    const deleted = {
+      posts: 0,
+      interactions: 0,
+      post_discussions: 0,
+      user_post_discussions: 0,
+      posts_to_unvote: 0,
+      posts_to_delete: 0,
+    };
+
+    if (post) {
+      deleted.posts = await this.deleteRowsByTechhubId("posts", techhubId);
+      const remainingPost = await this.getPostByTechhubId(techhubId);
+      if (remainingPost) {
+        throw new Error(`Post ${techhubId} still exists after delete`);
+      }
+      // Some PostgREST configurations return an empty body for a successful delete.
+      if (deleted.posts === 0) deleted.posts = 1;
+    }
+
+    // post_discussions and user_post_discussions normally cascade from posts,
+    // but explicit cleanup also removes historical orphan rows safely.
+    for (const table of [
+      "interactions",
+      "user_post_discussions",
+      "post_discussions",
+      "posts_to_unvote",
+      "posts_to_delete",
+    ] as const) {
+      deleted[table] = await this.deleteRowsByTechhubId(table, techhubId);
+    }
+
+    return { post, deleted };
   }
 }

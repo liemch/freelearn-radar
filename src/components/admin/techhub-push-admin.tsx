@@ -367,6 +367,50 @@ export function TechhubPushAdmin({
     });
   }
 
+  function deletePost() {
+    const id = Number(techhubId);
+    if (!Number.isFinite(id) || id < 1) {
+      setPostError(labels.invalidTechhubId);
+      return;
+    }
+
+    startTransition(async () => {
+      setPostError(null);
+
+      try {
+        const lookupResponse = await fetch(`/api/admin/techhub/posts/${id}`);
+        const lookupPayload = await lookupResponse.json().catch(() => ({}));
+        if (!lookupResponse.ok) {
+          throw new Error(lookupPayload.error ?? labels.postNotFound(id));
+        }
+
+        const post = lookupPayload.post as TechhubPost;
+        const confirmed = window.confirm(
+          labels.deletePostConfirm(id, post.username ?? "-", post.title ?? ""),
+        );
+        if (!confirmed) return;
+
+        const response = await fetch(`/api/admin/techhub/posts/${id}`, {
+          method: "DELETE",
+        });
+        const payload = await response.json().catch(() => ({}));
+        if (!response.ok) {
+          throw new Error(payload.error ?? labels.deletePostFailed);
+        }
+
+        setPostPreview(null);
+        setUltraPosts((current) => current.filter((item) => item.techhub_id !== id));
+        setUserPosts((current) => current.filter((item) => item.techhub_id !== id));
+        setSelectedUserPostIds((current) => current.filter((item) => item !== id));
+        setPostMessage(labels.postDeleted(id));
+      } catch (error) {
+        setPostError(
+          error instanceof Error ? error.message : labels.deletePostFailed,
+        );
+      }
+    });
+  }
+
   if (!configured) {
     return (
       <div className="rounded border border-border bg-card px-3.5 py-3 text-[0.8125rem] text-muted-foreground">
@@ -676,6 +720,15 @@ export function TechhubPushAdmin({
             >
               {labels.deleteInteractions}
             </Button>
+            <Button
+              type="button"
+              variant="destructive"
+              size="sm"
+              disabled={pending}
+              onClick={deletePost}
+            >
+              {labels.deletePost}
+            </Button>
           </div>
 
           {ultraScanMessage ? (
@@ -709,6 +762,7 @@ export function TechhubPushAdmin({
           ) : null}
 
           <p className="text-xs text-muted-foreground">{labels.deleteHint}</p>
+          <p className="text-xs text-destructive">{labels.deletePostHint}</p>
         </div>
       </AdminPanel>
     </div>

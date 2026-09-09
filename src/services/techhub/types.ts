@@ -47,3 +47,16 @@ export type TechhubConfig = {
   adminPasscode: string;
   usersTable: string;
 };
+
+export type TechhubPostDeleteResult = {
+  post: TechhubPost | null;
+  deleted: Record<
+    | "posts"
+    | "interactions"
+    | "post_discussions"
+    | "user_post_discussions"
+    | "posts_to_unvote"
+    | "posts_to_delete",
+    number
+  >;
+};

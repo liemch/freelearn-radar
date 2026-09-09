@@ -704,6 +704,14 @@ export const adminVi: AdminDictionary = {
     enableUltra: "Bật Ultra",
     disableUltra: "Tắt Ultra",
     deleteInteractions: "Xóa interactions",
+    deletePost: "Xóa bài khỏi DB",
+    deletePostConfirm: (techhubId, username, title) =>
+      `XÓA VĨNH VIỄN bài #${techhubId} (@${username}) khỏi Supabase?\n\n${title}\n\nToàn bộ interactions, câu thảo luận AI, lịch sử claim và hàng chờ liên quan cũng sẽ bị xóa. Thao tác này không thể hoàn tác.`,
+    deletePostFailed: "Không xóa được bài và dữ liệu liên quan",
+    postDeleted: (techhubId) =>
+      `Đã xóa bài #${techhubId} và dữ liệu liên quan khỏi Supabase`,
+    deletePostHint:
+      "Xóa bài khỏi DB là thao tác vĩnh viễn trong Supabase; không xóa bài thật trên TechHub.",
     deleteConfirm: (count, techhubId, username) =>
       `Xóa ${count} interactions của bài #${techhubId} (@${username})?\n\nThao tác này không xóa comment/like trên TechHub.`,
     deleteHint:

@@ -699,6 +699,14 @@ export const adminEn: AdminDictionary = {
     enableUltra: "Enable Ultra",
     disableUltra: "Disable Ultra",
     deleteInteractions: "Delete interactions",
+    deletePost: "Delete post from DB",
+    deletePostConfirm: (techhubId, username, title) =>
+      `PERMANENTLY DELETE post #${techhubId} (@${username}) from Supabase?\n\n${title}\n\nAll related interactions, AI discussions, claim history, and queue rows will also be deleted. This cannot be undone.`,
+    deletePostFailed: "Could not delete the post and related data",
+    postDeleted: (techhubId) =>
+      `Deleted post #${techhubId} and related data from Supabase`,
+    deletePostHint:
+      "Deleting a post from the DB is permanent in Supabase; it does not delete the real TechHub article.",
     deleteConfirm: (count, techhubId, username) =>
       `Delete ${count} interactions for post #${techhubId} (@${username})?\n\nThis does not remove comments/likes on TechHub.`,
     deleteHint:

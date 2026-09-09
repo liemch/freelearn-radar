@@ -663,6 +663,15 @@ export type AdminDictionary = {
     enableUltra: string;
     disableUltra: string;
     deleteInteractions: string;
+    deletePost: string;
+    deletePostConfirm: (
+      techhubId: number,
+      username: string,
+      title: string,
+    ) => string;
+    deletePostFailed: string;
+    postDeleted: (techhubId: number) => string;
+    deletePostHint: string;
     deleteConfirm: (count: number, techhubId: number, username: string) => string;
     deleteHint: string;
     loadingSettings: string;

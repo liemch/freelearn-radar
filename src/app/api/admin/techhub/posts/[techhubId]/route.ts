@@ -87,4 +87,32 @@ export async function PATCH(request: Request, context: RouteContext) {
   }
 }
 
+export async function DELETE(_request: Request, context: RouteContext) {
+  try {
+    await requireTechhubAdmin();
+    const { techhubId: rawId } = await context.params;
+    const techhubId = parseTechhubId(rawId);
+    if (techhubId === null) {
+      return NextResponse.json({ error: "techhub_id không hợp lệ" }, { status: 400 });
+    }
+
+    const result = await getTechhubClient().deletePostByTechhubId(techhubId);
+    if (!result.post) {
+      return NextResponse.json(
+        { error: `Không tìm thấy bài ${techhubId}` },
+        { status: 404 },
+      );
+    }
+
+    return NextResponse.json({ ok: true, ...result });
+  } catch (error) {
+    const handled = techhubErrorResponse(error);
+    if (handled) return handled;
+    return NextResponse.json(
+      { error: error instanceof Error ? error.message : "Không xóa được bài viết" },
+      { status: 500 },
+    );
+  }
+}
+
 export const dynamic = "force-dynamic";
