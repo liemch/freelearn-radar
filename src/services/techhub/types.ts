@@ -1,22 +1,3 @@
-export const TECHHUB_ADMIN_SETTING_KEYS = [
-  "enable_auto_reply",
-  "enable_bulk_comment",
-  "max_comments",
-  "target_max_age_days",
-  "max_interactions_per_post",
-  "push_ultra",
-] as const;
-
-export type TechhubSettingKey = (typeof TECHHUB_ADMIN_SETTING_KEYS)[number];
-
-export type TechhubSettingRow = {
-  id: number;
-  key: string;
-  value: unknown;
-  description: string | null;
-  updated_at: string | null;
-};
-
 export type TechhubPost = {
   id: number;
   title: string | null;

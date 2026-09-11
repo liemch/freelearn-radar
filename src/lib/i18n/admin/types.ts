@@ -624,16 +624,6 @@ export type AdminDictionary = {
     notConfiguredHint: string;
     connectionFailed: string;
     retry: string;
-    globalSettings: string;
-    globalSettingsHint: string;
-    enableAutoReply: string;
-    enableBulkComment: string;
-    maxComments: string;
-    targetMaxAgeDays: string;
-    maxInteractionsPerPost: string;
-    pushUltra: string;
-    saveSettings: string;
-    reloadSettings: string;
     pushPost: string;
     pushPostHint: string;
     techhubId: string;
@@ -674,9 +664,6 @@ export type AdminDictionary = {
     deletePostHint: string;
     deleteConfirm: (count: number, techhubId: number, username: string) => string;
     deleteHint: string;
-    loadingSettings: string;
-    settingsLoaded: string;
-    settingsSaved: string;
     lookingUpPost: string;
     postNotFound: (techhubId: number) => string;
     postFound: (count: number) => string;
@@ -685,9 +672,6 @@ export type AdminDictionary = {
     ultraEnabled: (techhubId: number) => string;
     ultraDisabled: (techhubId: number) => string;
     invalidTechhubId: string;
-    invalidMaxComments: string;
-    invalidTargetMaxAgeDays: string;
-    invalidMaxInteractionsPerPost: string;
     saveFailed: string;
     loadFailed: string;
   };

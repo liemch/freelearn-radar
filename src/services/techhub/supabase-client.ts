@@ -3,12 +3,7 @@ import type {
   TechhubInteraction,
   TechhubPost,
   TechhubPostDeleteResult,
-  TechhubSettingRow,
 } from "@/services/techhub/types";
-
-type UpdateSettingOptions = {
-  preserveUpdatedAt?: boolean;
-};
 
 export class TechhubSupabaseClient {
   private readonly restUrl: string;
@@ -38,63 +33,6 @@ export class TechhubSupabaseClient {
     } catch {
       return false;
     }
-  }
-
-  async getSettings(keys: string[] | null = null): Promise<Record<string, TechhubSettingRow>> {
-    let url = `${this.restUrl}/settings?select=*&order=key`;
-    if (keys && keys.length > 0) {
-      url += `&key=in.(${keys.map((key) => encodeURIComponent(key)).join(",")})`;
-    }
-
-    const response = await fetch(url, {
-      method: "GET",
-      headers: this.getHeaders(),
-      cache: "no-store",
-    });
-    if (!response.ok) {
-      const errText = await response.text().catch(() => "");
-      throw new Error(`Failed to fetch settings: ${response.status} ${errText}`);
-    }
-
-    const rows = (await response.json()) as TechhubSettingRow[];
-    const map: Record<string, TechhubSettingRow> = {};
-    for (const row of rows) {
-      map[row.key] = row;
-    }
-    return map;
-  }
-
-  async updateSetting(
-    key: string,
-    value: unknown,
-    options: UpdateSettingOptions = {},
-  ): Promise<TechhubSettingRow | null> {
-    const preserveUpdatedAt = options.preserveUpdatedAt !== false;
-    const currentMap = await this.getSettings([key]);
-    const current = currentMap[key];
-    if (!current) {
-      throw new Error(`Setting not found: ${key}`);
-    }
-
-    const payload: { value: unknown; updated_at?: string } = { value };
-    if (preserveUpdatedAt && current.updated_at) {
-      payload.updated_at = current.updated_at;
-    }
-
-    const url = `${this.restUrl}/settings?key=eq.${encodeURIComponent(key)}`;
-    const response = await fetch(url, {
-      method: "PATCH",
-      headers: this.getHeaders(),
-      body: JSON.stringify(payload),
-      cache: "no-store",
-    });
-    if (!response.ok) {
-      const errText = await response.text().catch(() => "");
-      throw new Error(`Failed to update setting ${key}: ${response.status} ${errText}`);
-    }
-
-    const data = (await response.json().catch(() => [])) as TechhubSettingRow[];
-    return Array.isArray(data) && data.length > 0 ? data[0] : null;
   }
 
   async getPostByTechhubId(techhubId: number): Promise<TechhubPost | null> {

@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useState, useTransition } from "react";
+import { useState, useTransition } from "react";
 
 import { AdminPanel } from "@/components/admin/admin-panel";
 import { Button } from "@/components/ui/button";
@@ -14,10 +14,6 @@ type TechhubPushAdminProps = {
   initialConfigured: boolean;
   initialConnected: boolean;
 };
-
-function parseSettingBool(value: unknown): boolean {
-  return value === true || value === "true" || value === 1 || value === "1";
-}
 
 function formatPostPreview(post: TechhubPost): string {
   return `#${post.techhub_id} · @${post.username ?? "-"} · cmt=${post.comments_count} · fs=${post.feed_score} · ultra=${post.is_ultra ?? false} · ${post.title ?? ""}`;
@@ -33,15 +29,6 @@ export function TechhubPushAdmin({
   const [configured] = useState(initialConfigured);
   const [connected, setConnected] = useState(initialConnected);
 
-  const [maxComments, setMaxComments] = useState("");
-  const [enableAutoReply, setEnableAutoReply] = useState(false);
-  const [enableBulkComment, setEnableBulkComment] = useState(false);
-  const [targetMaxAgeDays, setTargetMaxAgeDays] = useState("");
-  const [maxInteractionsPerPost, setMaxInteractionsPerPost] = useState("");
-  const [pushUltra, setPushUltra] = useState(false);
-  const [settingsMessage, setSettingsMessage] = useState<string | null>(null);
-  const [settingsError, setSettingsError] = useState<string | null>(null);
-
   const [techhubId, setTechhubId] = useState("");
   const [postPreview, setPostPreview] = useState<string | null>(null);
   const [postMessage, setPostMessage] = useState<string | null>(null);
@@ -52,97 +39,6 @@ export function TechhubPushAdmin({
   const [userPosts, setUserPosts] = useState<TechhubPost[]>([]);
   const [userPostsMessage, setUserPostsMessage] = useState<string | null>(null);
   const [selectedUserPostIds, setSelectedUserPostIds] = useState<number[]>([]);
-
-  const loadSettings = useCallback(async () => {
-    setSettingsMessage(labels.loadingSettings);
-    setSettingsError(null);
-
-    try {
-      const response = await fetch("/api/admin/techhub/settings");
-      const payload = await response.json().catch(() => ({}));
-      if (!response.ok) {
-        throw new Error(payload.error ?? labels.loadFailed);
-      }
-
-      setMaxComments(
-        payload.settings?.max_comments != null
-          ? String(payload.settings.max_comments)
-          : "",
-      );
-      setEnableAutoReply(parseSettingBool(payload.settings?.enable_auto_reply));
-      setEnableBulkComment(
-        parseSettingBool(payload.settings?.enable_bulk_comment),
-      );
-      setTargetMaxAgeDays(
-        payload.settings?.target_max_age_days != null
-          ? String(payload.settings.target_max_age_days)
-          : "",
-      );
-      setMaxInteractionsPerPost(
-        payload.settings?.max_interactions_per_post != null
-          ? String(payload.settings.max_interactions_per_post)
-          : "",
-      );
-      setPushUltra(parseSettingBool(payload.settings?.push_ultra));
-      setSettingsMessage(labels.settingsLoaded);
-    } catch (error) {
-      setSettingsError(error instanceof Error ? error.message : labels.loadFailed);
-      setSettingsMessage(null);
-    }
-  }, [labels]);
-
-  useEffect(() => {
-    if (!configured || !connected) return;
-    void loadSettings();
-  }, [configured, connected, loadSettings]);
-
-  function saveSettings() {
-    startTransition(async () => {
-      setSettingsMessage(null);
-      setSettingsError(null);
-
-      const maxCommentsValue = Number(maxComments);
-      const targetMaxAgeDaysValue = Number(targetMaxAgeDays);
-      const maxInteractionsPerPostValue = Number(maxInteractionsPerPost);
-      if (!Number.isFinite(maxCommentsValue) || maxCommentsValue < 1) {
-        setSettingsError(labels.invalidMaxComments);
-        return;
-      }
-      if (!Number.isInteger(targetMaxAgeDaysValue) || targetMaxAgeDaysValue < 1) {
-        setSettingsError(labels.invalidTargetMaxAgeDays);
-        return;
-      }
-      if (
-        !Number.isInteger(maxInteractionsPerPostValue) ||
-        maxInteractionsPerPostValue < 1
-      ) {
-        setSettingsError(labels.invalidMaxInteractionsPerPost);
-        return;
-      }
-
-      try {
-        const response = await fetch("/api/admin/techhub/settings", {
-          method: "PATCH",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({
-            enable_auto_reply: enableAutoReply,
-            enable_bulk_comment: enableBulkComment,
-            max_comments: maxCommentsValue,
-            target_max_age_days: targetMaxAgeDaysValue,
-            max_interactions_per_post: maxInteractionsPerPostValue,
-            push_ultra: pushUltra,
-          }),
-        });
-        const payload = await response.json().catch(() => ({}));
-        if (!response.ok) {
-          throw new Error(payload.error ?? labels.saveFailed);
-        }
-        setSettingsMessage(labels.settingsSaved);
-      } catch (error) {
-        setSettingsError(error instanceof Error ? error.message : labels.saveFailed);
-      }
-    });
-  }
 
   function lookupPost() {
     const id = Number(techhubId);
@@ -445,98 +341,7 @@ export function TechhubPushAdmin({
   }
 
   return (
-    <div className="grid gap-4 lg:grid-cols-2">
-      <AdminPanel title={labels.globalSettings} description={labels.globalSettingsHint}>
-        <div className="space-y-3 text-[0.8125rem]">
-          <label className="flex items-center gap-2">
-            <input
-              type="checkbox"
-              checked={enableAutoReply}
-              onChange={(event) => setEnableAutoReply(event.target.checked)}
-            />
-            <span>{labels.enableAutoReply}</span>
-          </label>
-
-          <label className="flex items-center gap-2">
-            <input
-              type="checkbox"
-              checked={enableBulkComment}
-              onChange={(event) => setEnableBulkComment(event.target.checked)}
-            />
-            <span>{labels.enableBulkComment}</span>
-          </label>
-
-          <label className="block space-y-1">
-            <span className="text-xs font-medium text-muted-foreground">
-              {labels.maxComments}
-            </span>
-            <Input
-              type="number"
-              min={1}
-              max={200}
-              value={maxComments}
-              onChange={(event) => setMaxComments(event.target.value)}
-            />
-          </label>
-
-          <label className="block space-y-1">
-            <span className="text-xs font-medium text-muted-foreground">
-              {labels.targetMaxAgeDays}
-            </span>
-            <Input
-              type="number"
-              min={1}
-              max={365}
-              value={targetMaxAgeDays}
-              onChange={(event) => setTargetMaxAgeDays(event.target.value)}
-            />
-          </label>
-
-          <label className="block space-y-1">
-            <span className="text-xs font-medium text-muted-foreground">
-              {labels.maxInteractionsPerPost}
-            </span>
-            <Input
-              type="number"
-              min={1}
-              max={100}
-              value={maxInteractionsPerPost}
-              onChange={(event) => setMaxInteractionsPerPost(event.target.value)}
-            />
-          </label>
-
-          <label className="flex items-center gap-2">
-            <input
-              type="checkbox"
-              checked={pushUltra}
-              onChange={(event) => setPushUltra(event.target.checked)}
-            />
-            <span>{labels.pushUltra}</span>
-          </label>
-          <div className="flex flex-wrap gap-2 pt-1">
-            <Button type="button" size="sm" disabled={pending} onClick={saveSettings}>
-              {labels.saveSettings}
-            </Button>
-            <Button
-              type="button"
-              variant="secondary"
-              size="sm"
-              disabled={pending}
-              onClick={() => void loadSettings()}
-            >
-              {labels.reloadSettings}
-            </Button>
-          </div>
-
-          {settingsMessage ? (
-            <p className="text-xs text-muted-foreground">{settingsMessage}</p>
-          ) : null}
-          {settingsError ? (
-            <p className="text-xs text-destructive">{settingsError}</p>
-          ) : null}
-        </div>
-      </AdminPanel>
-
+    <div className="grid gap-4">
       <AdminPanel title={labels.pushPost} description={labels.pushPostHint}>
         <div className="space-y-3 text-[0.8125rem]">
           <label className="block space-y-1">
