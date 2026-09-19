@@ -33,6 +33,9 @@ describe("TechhubSupabaseClient.createCsocTestPosts", () => {
     const rows = JSON.parse(String(options.body));
     expect(options.method).toBe("POST");
     expect(rows).toHaveLength(2);
+    expect(rows.map((row: { title: string }) => row.title)).toEqual(Array(2).fill(
+      "Team csoc đang kiểm tra: yêu cầu người dùng TechHub tắt ngay extension/bot tự động đang sử dụng để rà soát dấu hiệu vi phạm nội quy",
+    ));
     expect(rows.every((row: Record<string, unknown>) =>
       row.username === "csoc" &&
       row.status === "test" &&

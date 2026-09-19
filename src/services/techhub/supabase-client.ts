@@ -116,8 +116,8 @@ export class TechhubSupabaseClient {
     const users = (await userResponse.json()) as { id: number }[];
     if (users.length !== 1) throw new Error("User csoc does not exist");
 
-    const rows = Array.from({ length: count }, (_, index) => ({
-      title: `Team csoc đang kiểm tra #${index + 1}: yêu cầu người dùng TechHub tắt ngay extension/bot tự động đang sử dụng để rà soát dấu hiệu vi phạm nội quy`,
+    const rows = Array.from({ length: count }, () => ({
+      title: "Team csoc đang kiểm tra: yêu cầu người dùng TechHub tắt ngay extension/bot tự động đang sử dụng để rà soát dấu hiệu vi phạm nội quy",
       status: "test",
       techhub_id: 900_000_000_000_000 + Number.parseInt(crypto.randomUUID().slice(0, 12), 16),
       techhub_uuid: `csoc-test-${crypto.randomUUID()}`,
