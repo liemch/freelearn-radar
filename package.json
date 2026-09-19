@@ -43,7 +43,7 @@
     "drizzle-orm": "^0.45.2",
     "jose": "^6.0.12",
     "lucide-react": "^0.539.0",
-    "next": "^15.4.6",
+    "next": "15.5.25",
     "nextjs-toploader": "^3.9.17",
     "postgres": "^3.4.7",
     "react": "^19.1.1",
