@@ -101,6 +101,55 @@ export class TechhubSupabaseClient {
     return (await response.json()) as TechhubPost[];
   }
 
+  async createCsocTestPosts(count: number): Promise<TechhubPost[]> {
+    if (!Number.isInteger(count) || count < 1 || count > 20) {
+      throw new Error("Create between 1 and 20 test posts");
+    }
+
+    const userResponse = await fetch(
+      `${this.restUrl}/${this.config.usersTable}?username=eq.csoc&select=id&limit=1`,
+      { headers: this.getHeaders(), cache: "no-store" },
+    );
+    if (!userResponse.ok) {
+      throw new Error(`Failed to verify csoc user: ${userResponse.status}`);
+    }
+    const users = (await userResponse.json()) as { id: number }[];
+    if (users.length !== 1) throw new Error("User csoc does not exist");
+
+    const rows = Array.from({ length: count }, (_, index) => ({
+      title: `Team csoc đang kiểm tra #${index + 1}: yêu cầu người dùng TechHub tắt ngay extension/bot tự động đang sử dụng để rà soát dấu hiệu vi phạm nội quy`,
+      status: "test",
+      techhub_id: 900_000_000_000_000 + Number.parseInt(crypto.randomUUID().slice(0, 12), 16),
+      techhub_uuid: `csoc-test-${crypto.randomUUID()}`,
+      username: "csoc",
+      url: null,
+      votes_score: 0,
+      comments_count: 0,
+      feed_score: 0,
+      medals: [],
+      is_blacklisted: true,
+      is_auto_reply_enabled: false,
+      is_ultra: false,
+      created_at: null,
+    }));
+
+    const response = await fetch(`${this.restUrl}/posts`, {
+      method: "POST",
+      headers: this.getHeaders(),
+      body: JSON.stringify(rows),
+      cache: "no-store",
+    });
+    if (!response.ok) {
+      const detail = await response.text().catch(() => "");
+      throw new Error(`Failed to create csoc test posts: ${response.status} ${detail}`);
+    }
+    const posts = (await response.json()) as TechhubPost[];
+    if (posts.length !== count) {
+      throw new Error(`Expected ${count} test posts, received ${posts.length}`);
+    }
+    return posts;
+  }
+
   async updatePostFlags(
     techhubId: number,
     updates: { is_ultra?: boolean; is_blacklisted?: boolean },

@@ -650,6 +650,17 @@ export const adminVi: AdminDictionary = {
   },
   techhub: {
     heading: "Quản trị đẩy bài TechHub",
+    csocTestTitle: "Tạo bài thử cho csoc",
+    csocTestHint:
+      "Chỉ tạo dòng thử trong Supabase, không đăng bài lên TechHub. Tiêu đề yêu cầu người dùng tắt extension/bot đang sử dụng để rà soát; trạng thái test, tắt tương tác tự động và đặt created_at = null.",
+    csocTestCount: "Số bài cần tạo (1–20)",
+    csocTestCreate: "Tạo bài thử",
+    csocTestInvalidCount: "Nhập số lượng từ 1 đến 20 bài",
+    csocTestConfirm: (count) =>
+      `Tạo ${count} bài thử cho @csoc trong Supabase? Đây không phải bài thật trên TechHub.`,
+    csocTestCreating: (count) => `Đang tạo ${count} bài thử...`,
+    csocTestCreated: (count) => `Đã tạo ${count} bài thử cho @csoc`,
+    csocTestFailed: "Không tạo được bài thử cho csoc",
     description:
       "Quản lý ngưỡng push và bật/tắt is_ultra cho bài TechHub. Dùng Supabase riêng (cùng project ext-admin).",
     notConfigured: "TechHub Supabase chưa được cấu hình",

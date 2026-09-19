@@ -645,6 +645,17 @@ export const adminEn: AdminDictionary = {
   },
   techhub: {
     heading: "TechHub Push Admin",
+    csocTestTitle: "Create csoc test posts",
+    csocTestHint:
+      "Creates test rows in Supabase only, not real TechHub articles. Titles ask TechHub users to turn off the extensions/bots they use pending review; status is test, automation is off, and created_at is null.",
+    csocTestCount: "Number of posts (1–20)",
+    csocTestCreate: "Create test posts",
+    csocTestInvalidCount: "Enter a number from 1 to 20",
+    csocTestConfirm: (count) =>
+      `Create ${count} test posts for @csoc in Supabase? These are not real TechHub articles.`,
+    csocTestCreating: (count) => `Creating ${count} test posts...`,
+    csocTestCreated: (count) => `Created ${count} test posts for @csoc`,
+    csocTestFailed: "Could not create csoc test posts",
     description:
       "Manage push thresholds and is_ultra flags for TechHub posts. Uses a separate Supabase project (same as ext-admin).",
     notConfigured: "TechHub Supabase is not configured",

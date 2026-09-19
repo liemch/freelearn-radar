@@ -619,6 +619,15 @@ export type AdminDictionary = {
   };
   techhub: {
     heading: string;
+    csocTestTitle: string;
+    csocTestHint: string;
+    csocTestCount: string;
+    csocTestCreate: string;
+    csocTestInvalidCount: string;
+    csocTestConfirm: (count: number) => string;
+    csocTestCreating: (count: number) => string;
+    csocTestCreated: (count: number) => string;
+    csocTestFailed: string;
     description: string;
     notConfigured: string;
     notConfiguredHint: string;

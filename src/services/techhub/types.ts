@@ -11,7 +11,7 @@ export type TechhubPost = {
   feed_score: number;
   is_ultra?: boolean;
   is_blacklisted?: boolean;
-  created_at: string;
+  created_at: string | null;
   published_at: string | null;
 };
 

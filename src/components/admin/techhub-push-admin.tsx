@@ -39,6 +39,40 @@ export function TechhubPushAdmin({
   const [userPosts, setUserPosts] = useState<TechhubPost[]>([]);
   const [userPostsMessage, setUserPostsMessage] = useState<string | null>(null);
   const [selectedUserPostIds, setSelectedUserPostIds] = useState<number[]>([]);
+  const [csocTestCount, setCsocTestCount] = useState("1");
+  const [csocTestMessage, setCsocTestMessage] = useState<string | null>(null);
+  const [csocTestPosts, setCsocTestPosts] = useState<TechhubPost[]>([]);
+
+  function createCsocTestPosts() {
+    const count = Number(csocTestCount);
+    if (!Number.isInteger(count) || count < 1 || count > 20) {
+      setPostError(labels.csocTestInvalidCount);
+      return;
+    }
+    if (!window.confirm(labels.csocTestConfirm(count))) return;
+
+    startTransition(async () => {
+      setPostError(null);
+      setCsocTestMessage(labels.csocTestCreating(count));
+      try {
+        const response = await fetch("/api/admin/techhub/posts/csoc-test", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ count }),
+        });
+        const payload = await response.json().catch(() => ({}));
+        if (!response.ok) {
+          throw new Error(payload.error ?? labels.csocTestFailed);
+        }
+        const posts = Array.isArray(payload.posts) ? payload.posts as TechhubPost[] : [];
+        setCsocTestPosts(posts);
+        setCsocTestMessage(labels.csocTestCreated(posts.length));
+      } catch (error) {
+        setCsocTestMessage(null);
+        setPostError(error instanceof Error ? error.message : labels.csocTestFailed);
+      }
+    });
+  }
 
   function lookupPost() {
     const id = Number(techhubId);
@@ -342,6 +376,33 @@ export function TechhubPushAdmin({
 
   return (
     <div className="grid gap-4">
+      <AdminPanel title={labels.csocTestTitle} description={labels.csocTestHint}>
+        <div className="space-y-3 text-[0.8125rem]">
+          <label className="block space-y-1">
+            <span className="text-xs font-medium text-muted-foreground">
+              {labels.csocTestCount}
+            </span>
+            <Input
+              type="number"
+              min={1}
+              max={20}
+              value={csocTestCount}
+              onChange={(event) => setCsocTestCount(event.target.value)}
+            />
+          </label>
+          <Button type="button" size="sm" disabled={pending} onClick={createCsocTestPosts}>
+            {labels.csocTestCreate}
+          </Button>
+          {csocTestMessage ? <p className="text-xs text-muted-foreground">{csocTestMessage}</p> : null}
+          {csocTestPosts.length > 0 ? (
+            <div className="max-h-40 space-y-1 overflow-y-auto text-xs text-muted-foreground">
+              {csocTestPosts.map((post) => (
+                <p key={post.id}>#{post.techhub_id} · {post.title}</p>
+              ))}
+            </div>
+          ) : null}
+        </div>
+      </AdminPanel>
       <AdminPanel title={labels.pushPost} description={labels.pushPostHint}>
         <div className="space-y-3 text-[0.8125rem]">
           <label className="block space-y-1">
